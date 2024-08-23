@@ -1,8 +1,10 @@
 import { errorHandler } from "../utils/error.js";
 import User from "../models/user.model.js";
-import RefreshToken from "../models/refreshToken.model.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+
+dotenv.config();
 
 export const signUpController = async (req, res, next) => {
   try {
@@ -44,21 +46,16 @@ export const signInController = async (req, res, next) => {
       expiresIn: process.env.ACCESS_TOKEN_EXPIRE,
       subject: "accessApi",
     });
-    const refreshToken = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRE,
-        subject: "refreshToken",
-      }
-    );
 
-    await RefreshToken.create({
-      token: refreshToken,
-      userId: user._id,
+    res.cookie("access_token", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-    user = { ...user._doc, accessToken, refreshToken };
-    return res.status(200).json(user);
+
+    user = user._doc;
+    return res.status(200).json({ ...user, accessToken });
   } catch (error) {
     next(error);
   }
@@ -77,50 +74,19 @@ export const getAuthUser = async (req, res, next) => {
   }
 };
 
-export async function ensureAuthenticated(req, res, next) {
-  const accessToken = req.headers.authorization;
-  if (!accessToken) {
-    return errorHandler(res, 401, "Access denied. Please login.");
-  }
-  try {
-    const decodedAccessToken = jwt.verify(accessToken, process.env.JWT_SECRET);
-    req.user = { id: decodedAccessToken.userId };
-    next();
-  } catch (error) {
-    return errorHandler(res, 401, "Invalid access token.");
-  }
-}
-
-export function authorize(roles = []) {
-  return async function (req, res, next) {
-    const user = await User.findById(req.user.id);
-    if (!user || !roles.includes(user.role)) {
-      return errorHandler(
-        res,
-        403,
-        "Access denied. You don't have the required permissions."
-      );
-    }
-    next();
-  };
-}
-
 export const refreshToken = async (req, res, next) => {
   try {
-    const { refreshToken } = req.body;
+    const cookies = req.cookies;
+    const refreshToken = cookies.access_token;
     if (!refreshToken) {
       return errorHandler(res, 401, "Refresh token is required.");
     }
     const token = jwt.verify(refreshToken, process.env.JWT_SECRET);
 
-    const userRefreshToken = await RefreshToken.findOne({
-      token,
-      userId: token.userId,
-    });
-    if (!userRefreshToken) {
-      return errorHandler(res, 401, "Invalid refresh token.");
+    if (!token) {
+      return errorHandler(res, 401, "Invalid access token.");
     }
-    await RefreshToken.deleteOne({ _id: userRefreshToken._id });
+
     const newAccessToken = jwt.sign(
       { userId: token.userId },
       process.env.JWT_SECRET,
@@ -130,22 +96,14 @@ export const refreshToken = async (req, res, next) => {
       }
     );
 
-    const newRefreshToken = jwt.sign(
-      { userId: token.userId },
-      process.env.JWT_SECRET,
-      {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRE,
-        subject: "refreshToken",
-      }
-    );
-    await RefreshToken.create({
-      token: newRefreshToken,
-      userId: token.userId,
+    res.cookie("access_token", newAccessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+      maxAge: 7 * 24 * 60 * 60 * 1000,
     });
-
     return res.status(200).json({
       accessToken: newAccessToken,
-      refreshToken: newRefreshToken,
     });
   } catch (error) {
     if (
@@ -154,6 +112,19 @@ export const refreshToken = async (req, res, next) => {
     ) {
       return errorHandler(res, 401, "Refresh token expired or invalid.");
     }
+    next(error);
+  }
+};
+
+export const logoutController = async (req, res, next) => {
+  try {
+    res.clearCookie("access_token", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
+    });
+    return res.status(200).json({ message: "Logged out successfully" });
+  } catch (error) {
     next(error);
   }
 };
