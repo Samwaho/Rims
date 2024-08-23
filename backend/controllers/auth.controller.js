@@ -3,6 +3,8 @@ import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import { generateVerificationCode } from "../utils/generateVerificationCode.js";
+import { sendVerificationEmail } from "../utils/sendVerificationEmail.js";
 
 dotenv.config();
 
@@ -19,6 +21,9 @@ export const signUpController = async (req, res, next) => {
       return errorHandler(res, 409, "Email already exists");
     }
     const hashedPassword = bcryptjs.hashSync(password, 10);
+    const verificationCode = generateVerificationCode();
+    await sendVerificationEmail(email, verificationCode);
+
     const newUser = await User.create({
       name,
       email,

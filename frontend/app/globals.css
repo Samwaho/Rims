@@ -69,4 +69,7 @@
   .bgImg {
     background-image: url("../public/CTAImg.png");
   }
+  .test {
+    color: #801415;
+  }
 }
