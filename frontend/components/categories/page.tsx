@@ -1,21 +1,56 @@
 import React from "react";
+import Image from "next/image";
+import Link from "next/link";
 import TiresCat from "@/public/TIresCat.png";
 import WheelsCat from "@/public/WheelsCat.png";
-import Image from "next/image";
-import { Button } from "../ui/button";
 
 const Categories = () => {
   return (
-    <section className="flex items-center gap-4 mt-4">
-      <div className="flex flex-col bg-gray-200 p-2 shadow-sm rounded-md">
-        <h2 className="font-bold text-lg text-center">Tires</h2>
-        <Image src={TiresCat} alt="Tires" width={200} height={150} />
-        <Button className="h-6 w-20">More Info</Button>
-      </div>
-      <div className="flex flex-col bg-gray-200 p-2 shadow-sm rounded-md">
-        <h2 className="font-bold text-lg text-center">Rims</h2>
-        <Image src={WheelsCat} alt="Tires" width={200} height={150} />
-        <Button className="h-6 w-20">More Info</Button>
+    <section className="">
+      <h2 className="text-2xl font-bold mt-6">Categories</h2>
+      <div className="grid grid-cols-2 gap-4 w-full py-4">
+        <div className="bg-gray-200 rounded-lg overflow-hidden shadow-md">
+          <Image
+            src={TiresCat}
+            width={250}
+            height={250}
+            alt="Tires"
+            className="mx-auto"
+          />
+          <div className="p-4">
+            <h2 className="text-lg font-bold tracking-tight mb-2">Tires</h2>
+            <p className="text-sm text-muted-foreground mb-3">
+              High-performance tires for exceptional grip and comfort.
+            </p>
+            <Link
+              href="/tyres"
+              className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-4 text-xs font-medium text-primary-foreground shadow transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            >
+              Shop Tires
+            </Link>
+          </div>
+        </div>
+        <div className="bg-gray-200 rounded-lg overflow-hidden shadow-md">
+          <Image
+            src={WheelsCat}
+            width={250}
+            height={250}
+            alt="Rims"
+            className="mx-auto"
+          />
+          <div className="p-4">
+            <h2 className="text-lg font-bold tracking-tight mb-2">Rims</h2>
+            <p className="text-sm text-muted-foreground mb-3">
+              Stylish and durable rims to complement your luxury vehicle.
+            </p>
+            <Link
+              href="/wheels"
+              className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-4 text-xs font-medium text-primary-foreground shadow transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
+            >
+              Shop Rims
+            </Link>
+          </div>
+        </div>
       </div>
     </section>
   );

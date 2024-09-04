@@ -2,6 +2,7 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRouter from "./routes/auth.route.js";
+import wheelsRouter from "./routes/wheels.route.js";
 import cookieParser from "cookie-parser";
 
 dotenv.config();
@@ -28,7 +29,7 @@ app.listen(port, () => {
 });
 
 app.use("/api/auth", authRouter);
-
+app.use("/api/wheels", wheelsRouter);
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

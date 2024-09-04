@@ -14,36 +14,78 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { IoMdClose } from "react-icons/io";
+import { Input } from "../ui/input";
 
 const Navbar = () => {
   return (
-    <nav className="flex items-center justify-between py-4">
-      <Image src={logo} alt="Logo" width={120} height={80} />
+    <nav className="flex items-center justify-between py-4 ">
+      <Image
+        src={logo}
+        alt="Logo"
+        width={120}
+        height={80}
+        className="w-24 md:w-28 lg:w-32"
+      />
+      <Input
+        type="text"
+        placeholder="Search"
+        className="hidden lg:flex items-center gap-4 max-w-xl"
+      />
       <div className="flex items-center gap-4">
-        <Button className="px-2 w-16 h-6 text-sm">
-          <p>Cart</p>
-          <IoCartOutline size={20} />
-        </Button>
+        <div className="hidden lg:flex items-center gap-4">
+          <div className="flex gap-6">
+            <h4 className="text-lg xl:text-xl hover:text-gray-600 cursor-pointer">
+              Home
+            </h4>
+            <h4 className="text-lg xl:text-xl hover:text-gray-600 cursor-pointer">
+              About
+            </h4>
+            <h4 className="text-lg xl:text-xl hover:text-gray-600 cursor-pointer">
+              Blog
+            </h4>
+          </div>
+
+          <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base">
+            <p>Cart</p>
+            <IoCartOutline size={20} />
+          </Button>
+        </div>
         <Drawer direction="left">
-          <DrawerTrigger>
-            <IoMenu size={40} />
+          <DrawerTrigger className="lg:hidden">
+            <IoMenu size={32} className="text-gray-800" />
           </DrawerTrigger>
-          <DrawerContent className="h-screen bg-slate-100 w-[80%]">
+          <DrawerContent className="h-screen w-[80%] sm:w-[60%] md:w-[50%]">
             <DrawerHeader>
-              <DrawerTitle className="flex justify-between">
-                <Image src={logo} alt="Logo" width={150} height={80} />
-                <DrawerClose className="">
-                  <IoMdClose size={25} />
+              <DrawerTitle className="flex justify-between items-center">
+                <Image
+                  src={logo}
+                  alt="Logo"
+                  width={120}
+                  height={80}
+                  className="w-24 md:w-28"
+                />
+                <DrawerClose>
+                  <IoMdClose size={24} className="text-gray-800" />
                 </DrawerClose>
               </DrawerTitle>
             </DrawerHeader>
-            <div className="flex flex-col gap-4 mt-4 px-4">
-              <h4 className="text-xl">Home</h4>
-              <h4 className="text-xl">About</h4>
-              <h4 className="text-xl">Blog</h4>
+            <div className="flex flex-col gap-6 mt-8 px-6">
+              <h4 className="text-xl hover:text-gray-600 cursor-pointer">
+                Home
+              </h4>
+              <h4 className="text-xl hover:text-gray-600 cursor-pointer">
+                About
+              </h4>
+              <h4 className="text-xl hover:text-gray-600 cursor-pointer">
+                Blog
+              </h4>
             </div>
             <DrawerFooter>
-              <Button>Login</Button>
+              <Button className="w-full">Login</Button>
+              <Button className="w-full mt-4">
+                <p>Cart</p>
+                <IoCartOutline size={20} className="ml-2" />
+              </Button>
             </DrawerFooter>
           </DrawerContent>
         </Drawer>

@@ -6,7 +6,21 @@ import User from "../models/user.model.js";
 dotenv.config();
 export async function ensureAuthenticated(req, res, next) {
   try {
-    const accessToken = req.cookies.access_token;
+    const authorizationHeader = req.headers.authorization;
+
+    if (!authorizationHeader) {
+      return errorHandler(res, 401, "Access denied. Please login.");
+    }
+
+    const parts = authorizationHeader.split(" ");
+    if (parts[0] !== "Bearer") {
+      return errorHandler(res, 401, "Invalid Access Token");
+    }
+
+    const accessToken = parts[1];
+    if (!accessToken) {
+      return errorHandler(res, 401, "Invalid Access Token");
+    }
 
     if (!accessToken) {
       return errorHandler(res, 401, "Access denied. Please login.");
