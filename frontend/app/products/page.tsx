@@ -113,7 +113,7 @@ const TyresPage = () => {
 
   return (
     <div className="w-full">
-      <section className="bg-primary-foreground py-12 md:py-20 ">
+      <section className="bg-primary-foreground py-12 md:py-20">
         <div className="container mx-auto px-4 md:px-6">
           <div className="grid gap-6 md:grid-cols-2 items-center">
             <div>

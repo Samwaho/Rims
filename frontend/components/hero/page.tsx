@@ -22,7 +22,7 @@ const Hero = () => {
           </Link>
         </div>
         <div className="relative">
-          <div className="absolute  sm:top-[-5%] lg:top-[-10%] left-[-3%] inset-0 bg-primary rounded-xl w-[60%] h-[230px] lg:h-[400px]  mx-auto"></div>
+          <div className="absolute  sm:top-[-5%] lg:top-[-10%] left-[-3%] inset-0 bg-primary rounded-xl w-[60%] h-[200px] lg:h-[400px]  mx-auto"></div>
           <Image
             src="/HeroCar.png"
             width={800}

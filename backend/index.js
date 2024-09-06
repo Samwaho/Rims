@@ -2,8 +2,9 @@ import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
 import authRouter from "./routes/auth.route.js";
-import wheelsRouter from "./routes/wheels.route.js";
+import productRouter from "./routes/product.route.js";
 import cookieParser from "cookie-parser";
+import cors from "cors";
 
 dotenv.config();
 
@@ -24,12 +25,13 @@ mongoose
 app.use(express.json());
 
 app.use(cookieParser());
+app.use(cors({ origin: "http://localhost:3000", credentials: true }));
 app.listen(port, () => {
   console.log("Server running on port ", port);
 });
 
 app.use("/api/auth", authRouter);
-app.use("/api/wheels", wheelsRouter);
+app.use("/api/products", productRouter);
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

@@ -30,9 +30,10 @@ const setAccessTokenCookie = (res, accessToken) => {
 
 export const signUpController = async (req, res, next) => {
   try {
-    const { name, email, password, phone, address, agency } = req.body;
+    const { firstName, lastName, email, password, phoneNumber, address } =
+      req.body;
 
-    if (!name || !email || !password) {
+    if (!firstName || !lastName || !email || !password) {
       return errorHandler(res, 422, "Please fill in all required fields");
     }
 
@@ -49,14 +50,16 @@ export const signUpController = async (req, res, next) => {
       return errorHandler(res, 500, "Error sending verification email");
     }
 
-    const newUser = await User.create({
-      name,
+    const newUser = await new User({
+      firstName,
+      lastName,
       email,
       password: hashedPassword,
-      phone,
+      phoneNumber,
       address,
-      agency,
     });
+
+    await newUser.save();
 
     res.status(201).json({ message: "User created successfully" });
   } catch (error) {
