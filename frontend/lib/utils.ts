@@ -71,18 +71,17 @@ export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(1, "Description is required"),
   price: z.number().min(0, "Price must be a positive number"),
-  stock: z.number().min(0, "Stock must be a non-negative number"),
+  stock: z.number().int().min(0, "Stock must be a non-negative integer"),
   images: z.array(z.string()).min(1, "At least one image is required"),
-  category: z.string().min(1, "Category is required"),
+  category: z.enum(["general", "wheel", "rim"]),
   brand: z.string().min(1, "Brand is required"),
-  productType: z.enum(["general", "wheel", "rim"]),
-  productDetails: z.object({}).passthrough(),
+  specifications: z.array(
+    z.object({
+      name: z.string().min(1, "Specification name is required"),
+      value: z.string().min(1, "Specification value is required"),
+    })
+  ),
 });
 
-// Additional validation for wheel and rim product types
-export const wheelRimDetailsSchema = z.object({
-  diameter: z.number().min(0, "Diameter must be a positive number"),
-  width: z.number().min(0, "Width must be a positive number"),
-  boltPattern: z.string().min(1, "Bolt pattern is required"),
-  offset: z.number(),
-});
+// Additional validation for wheel and rim product types can be handled in the form logic
+// as the product model doesn't have separate schemas for different product types

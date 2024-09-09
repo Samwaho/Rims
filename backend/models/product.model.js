@@ -13,10 +13,16 @@ const productSchema = new mongoose.Schema(
     price: {
       type: Number,
       required: true,
+      min: 0,
     },
     stock: {
       type: Number,
       required: true,
+      min: 0,
+      validate: {
+        validator: Number.isInteger,
+        message: "{VALUE} is not an integer value",
+      },
     },
     images: [
       {
@@ -27,58 +33,27 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
+      enum: ["general", "wheel", "rim"],
     },
     brand: {
       type: String,
       required: true,
     },
-    rating: {
-      type: Number,
-      default: 0,
-    },
-    reviews: [
+    specifications: [
       {
-        user: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "User",
+        name: {
+          type: String,
           required: true,
         },
-        rating: {
-          type: Number,
-          required: true,
-        },
-        comment: {
+        value: {
           type: String,
           required: true,
         },
       },
     ],
-    // Dynamic fields for different product types
-    productType: {
-      type: String,
-      required: true,
-      enum: ["general", "wheel", "rim"],
-    },
-    productDetails: {
-      type: mongoose.Schema.Types.Mixed,
-      default: {},
-    },
   },
-  { timestamps: true, strict: false }
+  { timestamps: true }
 );
-
-// Middleware to validate productDetails based on productType
-productSchema.pre("save", function (next) {
-  if (this.productType === "wheel" || this.productType === "rim") {
-    const requiredFields = ["diameter", "width", "boltPattern", "offset"];
-    for (let field of requiredFields) {
-      if (!this.productDetails[field]) {
-        return next(new Error(`${field} is required for ${this.productType}`));
-      }
-    }
-  }
-  next();
-});
 
 const Product = mongoose.model("Product", productSchema);
 

@@ -25,12 +25,12 @@ export default function RootLayout({
     <html lang="en">
       <body className={poppins.className}>
         <TanstackProvider>
-          <main className="min-h-screen px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 bg-gradient-to-tl from-gray-300 to-white">
-            <div className="max-w-7xl mx-auto ">
-              <Navbar />
+          <main className="min-h-screen bg-gradient-to-tl from-gray-300 to-white">
+            <Navbar />
+            <div className="max-w-8xl mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20">
               {children}
-              <Footer />
             </div>
+            <Footer />
           </main>
           <Toaster />
         </TanstackProvider>

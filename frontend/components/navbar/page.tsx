@@ -15,46 +15,58 @@ import {
 } from "@/components/ui/drawer";
 import { IoMdClose } from "react-icons/io";
 import { Input } from "../ui/input";
+import Link from "next/link";
 
 const Navbar = () => {
+  const loggedIn = false;
   return (
-    <nav className="flex items-center justify-between py-4 ">
-      <Image
-        src={logo}
-        alt="Logo"
-        width={120}
-        height={80}
-        className="w-24 md:w-28 lg:w-32"
-      />
+    <nav className="flex items-center justify-between py-4 px-4 md:px-6 lg:px-8">
+      <Link href="/">
+        <Image
+          src={logo}
+          alt="Logo"
+          width={120}
+          height={80}
+          className="w-24 md:w-28 lg:w-32"
+        />
+      </Link>
       <Input
         type="text"
         placeholder="Search"
         className="hidden lg:flex items-center gap-4 max-w-xl"
       />
       <div className="flex items-center gap-4">
-        <div className="hidden lg:flex items-center gap-4">
-          <div className="flex gap-6">
-            <h4 className="text-lg xl:text-xl hover:text-gray-600 cursor-pointer">
-              Home
-            </h4>
-            <h4 className="text-lg xl:text-xl hover:text-gray-600 cursor-pointer">
-              About
-            </h4>
-            <h4 className="text-lg xl:text-xl hover:text-gray-600 cursor-pointer">
-              Blog
-            </h4>
-          </div>
-
-          <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base">
-            <p>Cart</p>
-            <IoCartOutline size={20} />
-          </Button>
+        <div className="hidden lg:flex items-center gap-6">
+          <Link href="/" className="text-lg xl:text-xl hover:text-gray-600">
+            Home
+          </Link>
+          <Link
+            href="/about"
+            className="text-lg xl:text-xl hover:text-gray-600"
+          >
+            About
+          </Link>
+          <Link href="/blog" className="text-lg xl:text-xl hover:text-gray-600">
+            Blog
+          </Link>
+          {loggedIn ? (
+            <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base flex items-center gap-2">
+              <span>Cart</span>
+              <IoCartOutline size={20} />
+            </Button>
+          ) : (
+            <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base">
+              Login
+            </Button>
+          )}
         </div>
         <Drawer direction="left">
-          <DrawerTrigger className="lg:hidden">
-            <IoMenu size={32} className="text-gray-800" />
+          <DrawerTrigger asChild>
+            <Button variant="outline" size="icon" className="lg:hidden">
+              <IoMenu size={24} className="text-gray-800" />
+            </Button>
           </DrawerTrigger>
-          <DrawerContent className="h-screen w-[80%] sm:w-[60%] md:w-[50%]">
+          <DrawerContent className="bg-gradient-to-tl from-gray-300 to-white h-screen w-80">
             <DrawerHeader>
               <DrawerTitle className="flex justify-between items-center">
                 <Image
@@ -64,28 +76,33 @@ const Navbar = () => {
                   height={80}
                   className="w-24 md:w-28"
                 />
-                <DrawerClose>
-                  <IoMdClose size={24} className="text-gray-800" />
+                <DrawerClose asChild>
+                  <Button variant="outline" size="icon">
+                    <IoMdClose size={24} className="text-gray-800" />
+                  </Button>
                 </DrawerClose>
               </DrawerTitle>
             </DrawerHeader>
             <div className="flex flex-col gap-6 mt-8 px-6">
-              <h4 className="text-xl hover:text-gray-600 cursor-pointer">
+              <Link href="/" className="text-xl hover:text-gray-600">
                 Home
-              </h4>
-              <h4 className="text-xl hover:text-gray-600 cursor-pointer">
+              </Link>
+              <Link href="/about" className="text-xl hover:text-gray-600">
                 About
-              </h4>
-              <h4 className="text-xl hover:text-gray-600 cursor-pointer">
+              </Link>
+              <Link href="/blog" className="text-xl hover:text-gray-600">
                 Blog
-              </h4>
+              </Link>
             </div>
             <DrawerFooter>
-              <Button className="w-full">Login</Button>
-              <Button className="w-full mt-4">
-                <p>Cart</p>
-                <IoCartOutline size={20} className="ml-2" />
-              </Button>
+              {!loggedIn ? (
+                <Button className="w-full">Login</Button>
+              ) : (
+                <Button className="w-full mt-4 flex items-center justify-center gap-2">
+                  <span>Cart</span>
+                  <IoCartOutline size={20} />
+                </Button>
+              )}
             </DrawerFooter>
           </DrawerContent>
         </Drawer>

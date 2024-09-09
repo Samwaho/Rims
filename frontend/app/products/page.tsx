@@ -11,83 +11,64 @@ import {
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
+import { formatPrice } from "@/lib/utils";
 
-const TyresPage = () => {
-  const products = [
-    {
-      id: 1,
-      image: "/placeholder.svg",
-      title: "All-Season Radial Tires",
-      brand: "Michelin",
-      size: "215/55R17",
-      price: 99.99,
-    },
-    {
-      id: 2,
-      image: "/placeholder.svg",
-      title: "High-Performance Tires",
-      brand: "Pirelli",
-      size: "225/45R18",
-      price: 129.99,
-    },
-    {
-      id: 3,
-      image: "/placeholder.svg",
-      title: "All-Terrain Truck Tires",
-      brand: "Goodyear",
-      size: "265/70R17",
-      price: 149.99,
-    },
-    {
-      id: 4,
-      image: "/placeholder.svg",
-      title: "Lightweight Alloy Wheels",
-      brand: "Enkei",
-      size: "17x8",
-      price: 199.99,
-    },
-    {
-      id: 5,
-      image: "/placeholder.svg",
-      title: "Heavy-Duty Steel Wheels",
-      brand: "Vision",
-      size: "16x8",
-      price: 99.99,
-    },
-    {
-      id: 6,
-      image: "/placeholder.svg",
-      title: "Chrome Plated Wheels",
-      brand: "Focal",
-      size: "20x9",
-      price: 299.99,
-    },
-  ];
+// Sample data
+const sampleProducts = [
+  {
+    _id: "1",
+    name: "Sport Wheel X1",
+    brand: "SpeedMaster",
+    category: "wheel",
+    price: 12000,
+    images: ["https://example.com/wheel1.jpg"],
+  },
+  {
+    _id: "2",
+    name: "Alloy Rim R2",
+    brand: "RimKing",
+    category: "rim",
+    price: 8000,
+    images: ["https://example.com/rim1.jpg"],
+  },
+  {
+    _id: "3",
+    name: "Off-Road Tire T3",
+    brand: "TerrainMaster",
+    category: "general",
+    price: 15000,
+    images: ["https://example.com/tire1.jpg"],
+  },
+  // Add more sample products as needed
+];
 
+const ProductsPage = () => {
+  const [products] = useState(sampleProducts);
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<{
     brand: string[];
-    size: string[];
-    priceRange: number[];
+    category: string[];
+    priceRange: [number, number];
   }>({
     brand: [],
-    size: [],
-    priceRange: [0, 500],
+    category: [],
+    priceRange: [0, 50000],
   });
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       const brandMatch =
         filters.brand.length === 0 || filters.brand.includes(product.brand);
-      const sizeMatch =
-        filters.size.length === 0 || filters.size.includes(product.size);
+      const categoryMatch =
+        filters.category.length === 0 ||
+        filters.category.includes(product.category);
       const priceMatch =
         product.price >= filters.priceRange[0] &&
         product.price <= filters.priceRange[1];
-      const searchMatch = product.title
+      const searchMatch = product.name
         .toLowerCase()
         .includes(searchTerm.toLowerCase());
-      return brandMatch && sizeMatch && priceMatch && searchMatch;
+      return brandMatch && categoryMatch && priceMatch && searchMatch;
     });
   }, [products, filters, searchTerm]);
 
@@ -95,7 +76,7 @@ const TyresPage = () => {
     setSearchTerm(e.target.value);
   };
 
-  const handleFilterChange = (type: "brand" | "size", value: string) => {
+  const handleFilterChange = (type: "brand" | "category", value: string) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       [type]: prevFilters[type].includes(value)
@@ -104,7 +85,7 @@ const TyresPage = () => {
     }));
   };
 
-  const handlePriceRangeChange = (value: number[]) => {
+  const handlePriceRangeChange = (value: [number, number]) => {
     setFilters((prevFilters) => ({
       ...prevFilters,
       priceRange: value,
@@ -118,11 +99,11 @@ const TyresPage = () => {
           <div className="grid gap-6 md:grid-cols-2 items-center">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold tracking-tight">
-                Find the Perfect Tires and Wheels
+                Find the Perfect Products
               </h1>
               <p className="text-muted-foreground mt-4 text-lg">
-                Browse our wide selection of high-quality tires and wheels for
-                your vehicle.
+                Browse our wide selection of high-quality products for your
+                needs.
               </p>
             </div>
             <div>
@@ -148,14 +129,9 @@ const TyresPage = () => {
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="grid gap-2">
-                      {[
-                        "Michelin",
-                        "Pirelli",
-                        "Goodyear",
-                        "Enkei",
-                        "Vision",
-                        "Focal",
-                      ].map((brand) => (
+                      {Array.from(
+                        new Set(products.map((product) => product.brand))
+                      ).map((brand) => (
                         <Label
                           key={brand}
                           className="flex items-center gap-2 font-normal"
@@ -172,31 +148,24 @@ const TyresPage = () => {
                     </div>
                   </AccordionContent>
                 </AccordionItem>
-                <AccordionItem value="size">
+                <AccordionItem value="category">
                   <AccordionTrigger className="text-base font-medium">
-                    Size
+                    Category
                   </AccordionTrigger>
                   <AccordionContent>
                     <div className="grid gap-2">
-                      {[
-                        "215/55R17",
-                        "225/45R18",
-                        "265/70R17",
-                        "17x8",
-                        "16x8",
-                        "20x9",
-                      ].map((size) => (
+                      {["general", "wheel", "rim"].map((category) => (
                         <Label
-                          key={size}
+                          key={category}
                           className="flex items-center gap-2 font-normal"
                         >
                           <Checkbox
-                            checked={filters.size.includes(size)}
+                            checked={filters.category.includes(category)}
                             onCheckedChange={() =>
-                              handleFilterChange("size", size)
+                              handleFilterChange("category", category)
                             }
                           />
-                          {size}
+                          {category}
                         </Label>
                       ))}
                     </div>
@@ -209,8 +178,8 @@ const TyresPage = () => {
                   <AccordionContent>
                     <div className="w-full" />
                     <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                      <span>${filters.priceRange[0]}</span>
-                      <span>${filters.priceRange[1]}</span>
+                      <span>{formatPrice(filters.priceRange[0])}</span>
+                      <span>{formatPrice(filters.priceRange[1])}</span>
                     </div>
                   </AccordionContent>
                 </AccordionItem>
@@ -219,25 +188,25 @@ const TyresPage = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredProducts.map((product) => (
                 <div
-                  key={product.id}
+                  key={product._id}
                   className="bg-background rounded-md overflow-hidden shadow-sm hover:shadow-lg transition-shadow"
                 >
                   <img
-                    src={product.image}
-                    alt={product.title}
+                    src={product.images[0]}
+                    alt={product.name}
                     width={300}
                     height={200}
                     className="w-full h-48 object-cover"
                     style={{ aspectRatio: "300/200", objectFit: "cover" }}
                   />
                   <div className="p-4">
-                    <h3 className="text-lg font-medium">{product.title}</h3>
+                    <h3 className="text-lg font-medium">{product.name}</h3>
                     <p className="text-muted-foreground">
-                      {product.brand} - {product.size}
+                      {product.brand} - {product.category}
                     </p>
                     <div className="flex items-center justify-between mt-4">
                       <span className="text-2xl font-bold">
-                        ${product.price.toFixed(2)}
+                        {formatPrice(product.price)}
                       </span>
                       <Button variant="outline" size="sm">
                         Add to Cart
@@ -254,4 +223,4 @@ const TyresPage = () => {
   );
 };
 
-export default TyresPage;
+export default ProductsPage;
