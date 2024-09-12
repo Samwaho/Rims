@@ -16,9 +16,12 @@ import {
 import { IoMdClose } from "react-icons/io";
 import { Input } from "../ui/input";
 import Link from "next/link";
+import { getAuthUser } from "@/lib/actions";
 
-const Navbar = () => {
-  const loggedIn = false;
+const Navbar = async () => {
+  const user = await getAuthUser();
+  const loggedIn = !!user;
+
   return (
     <nav className="flex items-center justify-between py-4 px-4 md:px-6 lg:px-8">
       <Link href="/">
@@ -41,23 +44,36 @@ const Navbar = () => {
             Home
           </Link>
           <Link
-            href="/about"
+            href="/products"
             className="text-lg xl:text-xl hover:text-gray-600"
           >
-            About
+            Products
           </Link>
-          <Link href="/blog" className="text-lg xl:text-xl hover:text-gray-600">
-            Blog
+          <Link
+            href="/categories"
+            className="text-lg xl:text-xl hover:text-gray-600"
+          >
+            Categories
+          </Link>
+          <Link
+            href="/contact"
+            className="text-lg xl:text-xl hover:text-gray-600"
+          >
+            Contact
           </Link>
           {loggedIn ? (
-            <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base flex items-center gap-2">
-              <span>Cart</span>
-              <IoCartOutline size={20} />
-            </Button>
+            <Link href="/cart">
+              <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base flex items-center gap-2">
+                <span>Cart</span>
+                <IoCartOutline size={20} />
+              </Button>
+            </Link>
           ) : (
-            <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base">
-              Login
-            </Button>
+            <Link href="/sign-in">
+              <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base">
+                Sign In
+              </Button>
+            </Link>
           )}
         </div>
         <Drawer direction="left">
@@ -87,21 +103,28 @@ const Navbar = () => {
               <Link href="/" className="text-xl hover:text-gray-600">
                 Home
               </Link>
-              <Link href="/about" className="text-xl hover:text-gray-600">
-                About
+              <Link href="/products" className="text-xl hover:text-gray-600">
+                Products
               </Link>
-              <Link href="/blog" className="text-xl hover:text-gray-600">
-                Blog
+              <Link href="/categories" className="text-xl hover:text-gray-600">
+                Categories
+              </Link>
+              <Link href="/contact" className="text-xl hover:text-gray-600">
+                Contact
               </Link>
             </div>
             <DrawerFooter>
               {!loggedIn ? (
-                <Button className="w-full">Login</Button>
+                <Link href="/sign-in">
+                  <Button className="w-full">Sign In</Button>
+                </Link>
               ) : (
-                <Button className="w-full mt-4 flex items-center justify-center gap-2">
-                  <span>Cart</span>
-                  <IoCartOutline size={20} />
-                </Button>
+                <Link href="/cart">
+                  <Button className="w-full mt-4 flex items-center justify-center gap-2">
+                    <span>Cart</span>
+                    <IoCartOutline size={20} />
+                  </Button>
+                </Link>
               )}
             </DrawerFooter>
           </DrawerContent>

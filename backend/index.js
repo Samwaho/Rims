@@ -5,6 +5,7 @@ import authRouter from "./routes/auth.route.js";
 import productRouter from "./routes/product.route.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import cartRouter from "./routes/cart.route.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.listen(port, () => {
 
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
+app.use("/api/cart", cartRouter); // Add this line
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";

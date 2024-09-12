@@ -23,7 +23,7 @@ const Categories = () => {
               High-performance tires for exceptional grip and comfort.
             </p>
             <Link
-              href="/tyres"
+              href="/products?category=wheel"
               className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-4 text-xs font-medium text-primary-foreground shadow transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
             >
               Shop Tires
@@ -44,7 +44,7 @@ const Categories = () => {
               Stylish and durable rims to complement your luxury vehicle.
             </p>
             <Link
-              href="/wheels"
+              href="/products?category=rim"
               className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-4 text-xs font-medium text-primary-foreground shadow transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
             >
               Shop Rims

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { axiosHeaders } from "@/lib/actions";
@@ -35,6 +35,8 @@ import {
 } from "@/components/ui/form";
 import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useUploadThing } from "@/lib/uploadthing";
+import { useDropzone } from "react-dropzone";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
@@ -75,38 +77,34 @@ export default function CreateProduct() {
     },
   });
 
-  const uploadImageMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append("image", file);
-      const response = await axios.post(
-        "http://localhost:3001/api/upload",
-        formData,
-        {
-          headers: { "Content-Type": "multipart/form-data" },
-        }
-      );
-      return response.data.url;
-    },
-  });
+  const { startUpload, isUploading } = useUploadThing("productImage");
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files) {
+  const onDrop = useCallback(
+    async (acceptedFiles: File[]) => {
       setUploadingImages(true);
-      const files = Array.from(e.target.files);
       try {
-        const uploadedUrls = await Promise.all(
-          files.map((file) => uploadImageMutation.mutateAsync(file))
-        );
-        form.setValue("images", [...form.getValues("images"), ...uploadedUrls]);
+        const uploadedImages = await startUpload(acceptedFiles);
+        if (uploadedImages) {
+          const imageUrls = uploadedImages.map((image) => image.url);
+          form.setValue("images", [...form.getValues("images"), ...imageUrls]);
+        }
       } catch (error) {
         console.error("Error uploading images:", error);
         toast.error("Failed to upload one or more images");
       } finally {
         setUploadingImages(false);
       }
-    }
-  };
+    },
+    [form, startUpload]
+  );
+
+  const { getRootProps, getInputProps } = useDropzone({
+    onDrop,
+    accept: {
+      "image/*": [],
+    },
+    disabled: isUploading || uploadingImages,
+  });
 
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormValues) => {
@@ -243,26 +241,20 @@ export default function CreateProduct() {
                             </Button>
                           </div>
                         ))}
-                        <label
-                          htmlFor="image-upload"
+                        <div
+                          {...getRootProps()}
                           className="flex items-center justify-center border-2 border-dashed border-muted-foreground rounded-md cursor-pointer"
                         >
                           <div className="p-4 text-center">
                             <UploadIcon className="h-8 w-8 text-muted-foreground mx-auto" />
                             <p className="text-sm text-muted-foreground">
-                              {uploadingImages ? "Uploading..." : "Add images"}
+                              {isUploading || uploadingImages
+                                ? "Uploading..."
+                                : "Add images"}
                             </p>
                           </div>
-                          <input
-                            id="image-upload"
-                            type="file"
-                            multiple
-                            accept="image/*"
-                            className="hidden"
-                            onChange={handleImageUpload}
-                            disabled={uploadingImages}
-                          />
-                        </label>
+                          <input {...getInputProps()} />
+                        </div>
                       </div>
                     </div>
                   </FormControl>

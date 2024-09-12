@@ -63,8 +63,6 @@ export default function SignInForm() {
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-6 max-w-md mx-auto p-6 bg-card rounded-lg shadow-md"
       >
-        <h2 className="text-3xl font-bold text-center mb-6">Sign In</h2>
-
         <FormField
           control={form.control}
           name="email"

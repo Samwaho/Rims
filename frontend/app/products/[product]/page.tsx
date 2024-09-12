@@ -1,4 +1,6 @@
-import React from "react";
+"use client";
+
+import React, { useState } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,8 +14,12 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { formatPrice } from "@/lib/utils";
+import axios from "axios";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { axiosHeaders } from "@/lib/actions";
+import { toast } from "sonner";
 
-// Define the Product interface based on the model
 interface Specification {
   name: string;
   value: string;
@@ -33,146 +39,200 @@ interface Product {
   updatedAt: string;
 }
 
-// Update the getProduct function to include new fields
 async function getProduct(id: string): Promise<Product> {
-  // Implement API call here
-  // For now, return mock data with additional fields
-  return {
-    _id: id,
-    name: 'Acme Alloy Wheels - 18" Gunmetal',
-    description:
-      'The Acme Alloy Wheels - 18" Gunmetal are a premium set of wheels designed for the modern automotive enthusiast. Crafted from high-quality alloy, these wheels offer a perfect blend of strength, style, and performance.',
-    price: 39999,
-    stock: 10,
-    images: [
-      "/placeholder.svg",
-      "/placeholder.svg",
-      "/placeholder.svg",
-      "/placeholder.svg",
-    ],
-    category: "wheel",
-    brand: "Acme Wheels",
-    specifications: [
-      { name: "Wheel Size", value: "18 inches" },
-      { name: "Bolt Pattern", value: "5x114.3" },
-      { name: "Offset", value: "+35mm" },
-      { name: "Finish", value: "Gunmetal" },
-      { name: "Weight", value: "10 kg" },
-      { name: "Load Rating", value: "680 kg" },
-    ],
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString(),
-  };
+  try {
+    const response = await axios.get(
+      `http://localhost:3001/api/products/${id}`
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    throw new Error("Failed to fetch product");
+  }
 }
 
-export default async function ProductPage({
+export default function ProductPage({
   params,
 }: {
   params: { product: string };
 }) {
-  const product = await getProduct(params.product);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
+  const queryClient = useQueryClient();
+
+  const addToCartMutation = useMutation({
+    mutationFn: async ({
+      productId,
+      quantity,
+    }: {
+      productId: string;
+      quantity: number;
+    }) => {
+      await axios.post(
+        "http://localhost:3001/api/cart",
+        { productId, quantity },
+        await axiosHeaders()
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      toast.success("Product added to cart");
+    },
+    onError: () => {
+      toast.error("Failed to add product to cart");
+    },
+  });
+
+  const handleAddToCart = () => {
+    if (product) {
+      addToCartMutation.mutate({ productId: product._id, quantity: 1 });
+    }
+  };
+
+  React.useEffect(() => {
+    setIsLoading(true);
+    getProduct(params.product).then((data) => {
+      setProduct(data);
+      setIsLoading(false);
+    });
+  }, [params.product]);
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-8">
+        <div className="grid md:grid-cols-2 gap-8">
+          <div className="space-y-4">
+            <Skeleton className="w-full aspect-square rounded-lg" />
+            <div className="flex space-x-4">
+              {[...Array(4)].map((_, index) => (
+                <Skeleton key={index} className="w-20 h-20 rounded-lg" />
+              ))}
+            </div>
+          </div>
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-3/4" />
+            <Skeleton className="h-6 w-1/2" />
+            <div className="space-y-2">
+              {[...Array(4)].map((_, index) => (
+                <Skeleton key={index} className="h-6 w-full" />
+              ))}
+            </div>
+            <Skeleton className="h-20 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Separator />
+            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-40 w-full" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!product) {
+    return <div className="text-center py-8">Error loading product</div>;
+  }
 
   return (
-    <div className="grid md:grid-cols-2 gap-6 lg:gap-12 items-start max-w-6xl px-4 mx-auto py-6">
-      <div className="grid gap-4 md:gap-10 items-start">
-        <div className="grid gap-4">
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid md:grid-cols-2 gap-8">
+        <div className="space-y-4">
           <Image
-            src={product.images[0]}
+            src={product.images[selectedImageIndex]}
             alt={`${product.name} - Main Image`}
             width={600}
             height={600}
-            className="aspect-square object-cover border w-full rounded-lg overflow-hidden"
+            className="w-full aspect-square object-cover rounded-lg"
           />
-          <div className="hidden md:flex gap-4 items-start">
-            {product.images.slice(1).map((image, index) => (
+          <div className="flex flex-wrap gap-4">
+            {product.images.map((image, index) => (
               <button
                 key={index}
-                className="border hover:border-primary rounded-lg overflow-hidden transition-colors"
+                className={`rounded-lg overflow-hidden transition-all ${
+                  index === selectedImageIndex
+                    ? "ring-2 ring-primary"
+                    : "hover:ring-2 hover:ring-primary/50"
+                }`}
+                onClick={() => setSelectedImageIndex(index)}
               >
                 <Image
                   src={image}
-                  alt={`${product.name} - Image ${index + 2}`}
+                  alt={`${product.name} - Image ${index + 1}`}
                   width={100}
                   height={100}
-                  className="aspect-square object-cover"
+                  className="w-20 h-20 object-cover"
                 />
-                <span className="sr-only">View Image {index + 2}</span>
+                <span className="sr-only">View Image {index + 1}</span>
               </button>
             ))}
           </div>
         </div>
-      </div>
-      <div className="grid gap-4 md:gap-10 items-start">
-        <div className="grid gap-4">
-          <h1 className="font-bold text-3xl lg:text-4xl">{product.name}</h1>
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-0.5">
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold">{product.name}</h1>
+          <div className="flex items-center space-x-4">
+            <div className="flex">
               {[...Array(5)].map((_, i) => (
                 <StarIcon
                   key={i}
                   className={`w-5 h-5 ${
-                    i < 3
-                      ? "fill-primary"
-                      : "fill-muted stroke-muted-foreground"
+                    i < 3 ? "text-yellow-400" : "text-gray-300"
                   }`}
                 />
               ))}
             </div>
-            <div className="text-sm text-muted-foreground">(12 reviews)</div>
+            <span className="text-sm text-gray-500">(12 reviews)</span>
           </div>
-          <div className="grid gap-2">
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">Brand:</span>
-              <span>{product.brand}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">Category:</span>
-              <span>{product.category}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">Price:</span>
-              <span className="text-4xl font-bold">
-                {formatPrice(product.price)}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="font-semibold">Availability:</span>
-              <Badge
-                variant="outline"
-                className={`${
-                  product.stock > 0
-                    ? "bg-green-500 text-green-50"
-                    : "bg-red-500 text-red-50"
-                }`}
-              >
-                {product.stock > 0 ? "In Stock" : "Out of Stock"}
-              </Badge>
-            </div>
+          <div className="space-y-2">
+            <p>
+              <span className="font-semibold">Brand:</span> {product.brand}
+            </p>
+            <p>
+              <span className="font-semibold">Category:</span>{" "}
+              {product.category}
+            </p>
+            <p className="text-3xl font-bold">{formatPrice(product.price)}</p>
+            <Badge
+              variant="outline"
+              className={`${
+                product.stock > 0
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {product.stock > 0 ? "In Stock" : "Out of Stock"}
+            </Badge>
           </div>
-          <div className="grid gap-4">
-            <p>{product.description}</p>
-            <Button size="lg">Add to Cart</Button>
-          </div>
-        </div>
-        <Separator />
-        <div className="grid gap-4">
-          <h2 className="font-bold text-2xl">Product Specifications</h2>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Specification</TableHead>
-                <TableHead>Value</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {product.specifications.map((spec, index) => (
-                <TableRow key={index}>
-                  <TableCell>{spec.name}</TableCell>
-                  <TableCell>{spec.value}</TableCell>
+          <p className="text-gray-600">{product.description}</p>
+          <Button
+            size="lg"
+            className="w-full"
+            onClick={handleAddToCart}
+            disabled={product.stock === 0}
+          >
+            {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
+          </Button>
+          <Separator />
+          <div>
+            <h2 className="text-xl font-semibold mb-4">
+              Product Specifications
+            </h2>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Specification</TableHead>
+                  <TableHead>Value</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {product.specifications.map((spec, index) => (
+                  <TableRow key={index}>
+                    <TableCell className="font-medium">{spec.name}</TableCell>
+                    <TableCell>{spec.value}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </div>
       </div>
     </div>
@@ -184,16 +244,14 @@ function StarIcon(props: React.SVGProps<SVGSVGElement>) {
     <svg
       {...props}
       xmlns="http://www.w3.org/2000/svg"
-      width="24"
-      height="24"
       viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      fill="currentColor"
     >
-      <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" />
+      <path
+        fillRule="evenodd"
+        d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z"
+        clipRule="evenodd"
+      />
     </svg>
   );
 }
