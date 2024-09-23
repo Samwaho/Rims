@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,10 @@ import {
 import { formatPrice } from "@/lib/utils";
 import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { axiosHeaders } from "@/lib/actions";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
+import { axiosHeaders, getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface Specification {
   name: string;
@@ -39,27 +40,72 @@ interface Product {
   updatedAt: string;
 }
 
-async function getProduct(id: string): Promise<Product> {
-  try {
-    const response = await axios.get(
-      `http://localhost:3001/api/products/${id}`
-    );
-    return response.data;
-  } catch (error) {
-    console.error("Error fetching product:", error);
-    throw new Error("Failed to fetch product");
-  }
+interface Review {
+  id: number;
+  author: string;
+  rating: number;
+  comment: string;
+  date: string;
 }
+
+const sampleReviews: Review[] = [
+  {
+    id: 1,
+    author: "John Doe",
+    rating: 5,
+    comment: "Excellent product! Fits perfectly on my car.",
+    date: "2023-03-15",
+  },
+  {
+    id: 2,
+    author: "Jane Smith",
+    rating: 4,
+    comment: "Good quality, but shipping took longer than expected.",
+    date: "2023-02-28",
+  },
+  {
+    id: 3,
+    author: "Mike Johnson",
+    rating: 5,
+    comment: "These wheels look amazing on my vehicle. Highly recommended!",
+    date: "2023-04-02",
+  },
+];
+
+const fetchProduct = async (id: string): Promise<Product> => {
+  const response = await axios.get(`http://localhost:3001/api/products/${id}`);
+  return response.data;
+};
 
 export default function ProductPage({
   params,
 }: {
   params: { product: string };
 }) {
-  const [product, setProduct] = useState<Product | null>(null);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isLoading, setIsLoading] = useState(true);
+  const [isAuthenticated, setIsAuthenticated] = useState(false); // Add state for authentication status
   const queryClient = useQueryClient();
+
+  useEffect(() => {
+    // Check if the user is authenticated (this is just a placeholder, replace with actual auth check)
+    const checkAuth = async () => {
+      const response = await getAuthUser();
+      // Set the authentication status based on the response from getAuthUser.
+      // If the response exists and has data, set isAuthenticated to true.
+      // Otherwise, set it to false.
+      setIsAuthenticated(!!response && !!response.data);
+    };
+    checkAuth();
+  }, []);
+
+  const {
+    data: product,
+    isLoading,
+    error,
+  } = useQuery<Product>({
+    queryKey: ["product", params.product],
+    queryFn: () => fetchProduct(params.product),
+  });
 
   const addToCartMutation = useMutation({
     mutationFn: async ({
@@ -85,159 +131,252 @@ export default function ProductPage({
   });
 
   const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      window.location.href = "/sign-in"; // Redirect to sign-in page if not authenticated
+      return;
+    }
+
     if (product) {
       addToCartMutation.mutate({ productId: product._id, quantity: 1 });
     }
   };
 
-  React.useEffect(() => {
-    setIsLoading(true);
-    getProduct(params.product).then((data) => {
-      setProduct(data);
-      setIsLoading(false);
-    });
-  }, [params.product]);
-
   if (isLoading) {
-    return (
-      <div className="container mx-auto px-4 py-8">
-        <div className="grid md:grid-cols-2 gap-8">
-          <div className="space-y-4">
-            <Skeleton className="w-full aspect-square rounded-lg" />
-            <div className="flex space-x-4">
-              {[...Array(4)].map((_, index) => (
-                <Skeleton key={index} className="w-20 h-20 rounded-lg" />
-              ))}
-            </div>
-          </div>
-          <div className="space-y-4">
-            <Skeleton className="h-10 w-3/4" />
-            <Skeleton className="h-6 w-1/2" />
-            <div className="space-y-2">
-              {[...Array(4)].map((_, index) => (
-                <Skeleton key={index} className="h-6 w-full" />
-              ))}
-            </div>
-            <Skeleton className="h-20 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Separator />
-            <Skeleton className="h-8 w-1/2" />
-            <Skeleton className="h-40 w-full" />
-          </div>
-        </div>
-      </div>
-    );
+    return <ProductSkeleton />;
   }
 
-  if (!product) {
+  if (error || !product) {
     return <div className="text-center py-8">Error loading product</div>;
   }
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <div className="grid md:grid-cols-2 gap-8">
-        <div className="space-y-4">
-          <Image
-            src={product.images[selectedImageIndex]}
-            alt={`${product.name} - Main Image`}
-            width={600}
-            height={600}
-            className="w-full aspect-square object-cover rounded-lg"
-          />
-          <div className="flex flex-wrap gap-4">
-            {product.images.map((image, index) => (
-              <button
-                key={index}
-                className={`rounded-lg overflow-hidden transition-all ${
-                  index === selectedImageIndex
-                    ? "ring-2 ring-primary"
-                    : "hover:ring-2 hover:ring-primary/50"
-                }`}
-                onClick={() => setSelectedImageIndex(index)}
-              >
-                <Image
-                  src={image}
-                  alt={`${product.name} - Image ${index + 1}`}
-                  width={100}
-                  height={100}
-                  className="w-20 h-20 object-cover"
-                />
-                <span className="sr-only">View Image {index + 1}</span>
-              </button>
-            ))}
-          </div>
-        </div>
-        <div className="space-y-6">
-          <h1 className="text-3xl font-bold">{product.name}</h1>
-          <div className="flex items-center space-x-4">
-            <div className="flex">
-              {[...Array(5)].map((_, i) => (
-                <StarIcon
-                  key={i}
-                  className={`w-5 h-5 ${
-                    i < 3 ? "text-yellow-400" : "text-gray-300"
-                  }`}
-                />
-              ))}
-            </div>
-            <span className="text-sm text-gray-500">(12 reviews)</span>
-          </div>
-          <div className="space-y-2">
-            <p>
-              <span className="font-semibold">Brand:</span> {product.brand}
-            </p>
-            <p>
-              <span className="font-semibold">Category:</span>{" "}
-              {product.category}
-            </p>
-            <p className="text-3xl font-bold">{formatPrice(product.price)}</p>
-            <Badge
-              variant="outline"
-              className={`${
-                product.stock > 0
-                  ? "bg-green-100 text-green-800"
-                  : "bg-red-100 text-red-800"
-              }`}
-            >
-              {product.stock > 0 ? "In Stock" : "Out of Stock"}
-            </Badge>
-          </div>
-          <p className="text-gray-600">{product.description}</p>
-          <Button
-            size="lg"
-            className="w-full"
-            onClick={handleAddToCart}
-            disabled={product.stock === 0}
-          >
-            {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
-          </Button>
-          <Separator />
-          <div>
-            <h2 className="text-xl font-semibold mb-4">
-              Product Specifications
-            </h2>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Specification</TableHead>
-                  <TableHead>Value</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {product.specifications.map((spec, index) => (
-                  <TableRow key={index}>
-                    <TableCell className="font-medium">{spec.name}</TableCell>
-                    <TableCell>{spec.value}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        </div>
+      <div className="grid lg:grid-cols-2 gap-8">
+        <ProductImages
+          product={product}
+          selectedImageIndex={selectedImageIndex}
+          setSelectedImageIndex={setSelectedImageIndex}
+        />
+        <ProductDetails product={product} handleAddToCart={handleAddToCart} />
+      </div>
+      <Separator className="my-8" />
+      <div className="lg:hidden">
+        <ProductReviews reviews={sampleReviews} />
       </div>
     </div>
   );
 }
+
+const ProductImages = ({
+  product,
+  selectedImageIndex,
+  setSelectedImageIndex,
+}: {
+  product: Product;
+  selectedImageIndex: number;
+  setSelectedImageIndex: (index: number) => void;
+}) => (
+  <div className="space-y-4">
+    <div className="aspect-square w-full max-w-[500px]">
+      <Image
+        src={product.images[selectedImageIndex]}
+        alt={`${product.name} - Main Image`}
+        width={500}
+        height={500}
+        className="w-full h-full object-cover rounded-lg"
+      />
+    </div>
+    <div className="flex flex-wrap gap-4">
+      {product.images.map((image, index) => (
+        <button
+          key={index}
+          className={`rounded-lg overflow-hidden transition-all ${
+            index === selectedImageIndex
+              ? "ring-2 ring-primary"
+              : "hover:ring-2 hover:ring-primary/50"
+          }`}
+          onClick={() => setSelectedImageIndex(index)}
+        >
+          <Image
+            src={image}
+            alt={`${product.name} - Image ${index + 1}`}
+            width={80}
+            height={80}
+            className="w-16 h-16 object-cover"
+          />
+          <span className="sr-only">View Image {index + 1}</span>
+        </button>
+      ))}
+    </div>
+    <div className="pt-8 hidden lg:block">
+      <ProductReviews reviews={sampleReviews} />
+    </div>
+  </div>
+);
+
+const ProductDetails = ({
+  product,
+  handleAddToCart,
+}: {
+  product: Product;
+  handleAddToCart: () => void;
+}) => (
+  <div className="space-y-4">
+    <h1 className="text-2xl lg:text-3xl font-bold">{product.name}</h1>
+    <ProductRating rating={3} reviewCount={12} />
+    <ProductInfo product={product} />
+    <p className="text-gray-600 text-sm lg:text-base">{product.description}</p>
+    <Button
+      size="lg"
+      className="w-full bg-primary text-primary-foreground transition-colors duration-300"
+      onClick={handleAddToCart}
+      disabled={product.stock === 0}
+    >
+      {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
+    </Button>
+    <Separator />
+    <ProductSpecifications specifications={product.specifications} />
+  </div>
+);
+
+const ProductRating = ({
+  rating,
+  reviewCount,
+}: {
+  rating: number;
+  reviewCount: number;
+}) => (
+  <div className="flex items-center space-x-4">
+    <div className="flex">
+      {[...Array(5)].map((_, i) => (
+        <StarIcon
+          key={i}
+          className={`w-4 h-4 ${
+            i < rating ? "text-yellow-400" : "text-gray-300"
+          }`}
+        />
+      ))}
+    </div>
+    <span className="text-xs lg:text-sm text-gray-500">
+      ({reviewCount} reviews)
+    </span>
+  </div>
+);
+
+const ProductInfo = ({ product }: { product: Product }) => (
+  <div className="space-y-2 text-sm lg:text-base">
+    <p>
+      <span className="font-semibold">Brand:</span> {product.brand}
+    </p>
+    <p>
+      <span className="font-semibold">Category:</span> {product.category}
+    </p>
+    <p className="text-2xl lg:text-3xl font-bold">
+      {formatPrice(product.price)}
+    </p>
+    <Badge
+      variant="outline"
+      className={
+        product.stock > 0
+          ? "bg-green-100 text-green-800"
+          : "bg-red-100 text-red-800"
+      }
+    >
+      {product.stock > 0 ? "In Stock" : "Out of Stock"}
+    </Badge>
+  </div>
+);
+
+const ProductSpecifications = ({
+  specifications,
+}: {
+  specifications: Specification[];
+}) => (
+  <div>
+    <h2 className="text-lg lg:text-xl font-semibold mb-4">
+      Product Specifications
+    </h2>
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead className="text-sm lg:text-base">Specification</TableHead>
+          <TableHead className="text-sm lg:text-base">Value</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {specifications.map((spec, index) => (
+          <TableRow key={index}>
+            <TableCell className="font-medium text-sm lg:text-base">
+              {spec.name}
+            </TableCell>
+            <TableCell className="text-sm lg:text-base">{spec.value}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  </div>
+);
+
+const ProductReviews = ({ reviews }: { reviews: Review[] }) => (
+  <div>
+    <h2 className="text-2xl font-bold mb-4">Customer Reviews</h2>
+    <div className="space-y-6">
+      {reviews.map((review) => (
+        <div key={review.id} className="flex space-x-4">
+          <Avatar>
+            <AvatarFallback>{review.author[0]}</AvatarFallback>
+          </Avatar>
+          <div className="flex-1">
+            <div className="flex items-center justify-between">
+              <h3 className="font-semibold">{review.author}</h3>
+              <span className="text-sm text-gray-500">{review.date}</span>
+            </div>
+            <div className="flex items-center mt-1">
+              {[...Array(5)].map((_, i) => (
+                <StarIcon
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < review.rating ? "text-yellow-400" : "text-gray-300"
+                  }`}
+                />
+              ))}
+            </div>
+            <p className="mt-2 text-gray-600">{review.comment}</p>
+          </div>
+        </div>
+      ))}
+    </div>
+  </div>
+);
+
+const ProductSkeleton = () => (
+  <div className="container mx-auto px-4 py-8">
+    <div className="grid md:grid-cols-2 gap-8">
+      <div className="space-y-4">
+        <Skeleton className="w-full aspect-square rounded-lg" />
+        <div className="flex space-x-4">
+          {[...Array(4)].map((_, index) => (
+            <Skeleton key={index} className="w-16 h-16 rounded-lg" />
+          ))}
+        </div>
+      </div>
+      <div className="space-y-4">
+        <Skeleton className="h-8 w-3/4" />
+        <Skeleton className="h-5 w-1/2" />
+        <div className="space-y-2">
+          {[...Array(4)].map((_, index) => (
+            <Skeleton key={index} className="h-5 w-full" />
+          ))}
+        </div>
+        <Skeleton className="h-16 w-full" />
+        <Skeleton className="h-10 w-full" />
+        <Separator />
+        <Skeleton className="h-6 w-1/2" />
+        <Skeleton className="h-32 w-full" />
+      </div>
+    </div>
+  </div>
+);
 
 function StarIcon(props: React.SVGProps<SVGSVGElement>) {
   return (

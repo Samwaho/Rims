@@ -17,13 +17,14 @@ import { IoMdClose } from "react-icons/io";
 import { Input } from "../ui/input";
 import Link from "next/link";
 import { getAuthUser } from "@/lib/actions";
+import CartCount from "../CartCount";
 
 const Navbar = async () => {
   const user = await getAuthUser();
   const loggedIn = !!user;
 
   return (
-    <nav className="flex items-center justify-between py-4 px-4 md:px-6 lg:px-8">
+    <nav className="flex items-center justify-between py-4 px-4 md:px-6 lg:px-12 xl:px-20">
       <Link href="/">
         <Image
           src={logo}
@@ -49,24 +50,14 @@ const Navbar = async () => {
           >
             Products
           </Link>
-          <Link
-            href="/categories"
-            className="text-lg xl:text-xl hover:text-gray-600"
-          >
-            Categories
-          </Link>
-          <Link
-            href="/contact"
-            className="text-lg xl:text-xl hover:text-gray-600"
-          >
-            Contact
-          </Link>
+
           {loggedIn ? (
-            <Link href="/cart">
+            <Link href="/cart" className="relative">
               <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base flex items-center gap-2">
                 <span>Cart</span>
                 <IoCartOutline size={20} />
               </Button>
+              <CartCount />
             </Link>
           ) : (
             <Link href="/sign-in">
@@ -106,12 +97,6 @@ const Navbar = async () => {
               <Link href="/products" className="text-xl hover:text-gray-600">
                 Products
               </Link>
-              <Link href="/categories" className="text-xl hover:text-gray-600">
-                Categories
-              </Link>
-              <Link href="/contact" className="text-xl hover:text-gray-600">
-                Contact
-              </Link>
             </div>
             <DrawerFooter>
               {!loggedIn ? (
@@ -119,11 +104,12 @@ const Navbar = async () => {
                   <Button className="w-full">Sign In</Button>
                 </Link>
               ) : (
-                <Link href="/cart">
+                <Link href="/cart" className="relative w-full">
                   <Button className="w-full mt-4 flex items-center justify-center gap-2">
                     <span>Cart</span>
                     <IoCartOutline size={20} />
                   </Button>
+                  <CartCount />
                 </Link>
               )}
             </DrawerFooter>

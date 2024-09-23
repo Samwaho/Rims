@@ -14,19 +14,19 @@ const Categories = () => {
             src={TiresCat}
             width={250}
             height={250}
-            alt="Tires"
+            alt="Tyres"
             className="mx-auto"
           />
           <div className="p-4">
-            <h2 className="text-lg font-bold tracking-tight mb-2">Tires</h2>
+            <h2 className="text-lg font-bold tracking-tight mb-2">Tyres</h2>
             <p className="text-sm text-muted-foreground mb-3">
-              High-performance tires for exceptional grip and comfort.
+              High-performance tyres for exceptional grip and comfort.
             </p>
             <Link
               href="/products?category=wheel"
               className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-4 text-xs font-medium text-primary-foreground shadow transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
             >
-              Shop Tires
+              Shop Tyres
             </Link>
           </div>
         </div>
@@ -35,19 +35,19 @@ const Categories = () => {
             src={WheelsCat}
             width={250}
             height={250}
-            alt="Rims"
+            alt="Wheels"
             className="mx-auto"
           />
           <div className="p-4">
-            <h2 className="text-lg font-bold tracking-tight mb-2">Rims</h2>
+            <h2 className="text-lg font-bold tracking-tight mb-2">Wheels</h2>
             <p className="text-sm text-muted-foreground mb-3">
-              Stylish and durable rims to complement your luxury vehicle.
+              Stylish and durable wheels to complement your luxury vehicle.
             </p>
             <Link
               href="/products?category=rim"
               className="inline-flex h-8 items-center justify-center rounded-md bg-primary px-4 text-xs font-medium text-primary-foreground shadow transition-colors hover:opacity-80 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50"
             >
-              Shop Rims
+              Shop Wheels
             </Link>
           </div>
         </div>

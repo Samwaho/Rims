@@ -69,6 +69,10 @@
   }
   .bgImg {
     background-image: url("../public/CTAImg.png");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
   }
   .test {
     color: #801415;

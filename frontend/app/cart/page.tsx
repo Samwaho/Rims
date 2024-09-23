@@ -11,6 +11,7 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { axiosHeaders } from "@/lib/actions";
 import { toast } from "sonner";
+import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
 
 interface CartItem {
   _id: string;
@@ -116,14 +117,14 @@ const CartPage = () => {
           {[...Array(3)].map((_, index) => (
             <div
               key={index}
-              className="flex items-center space-x-6 bg-white p-4 rounded-lg shadow"
+              className="flex items-center space-x-6 bg-white p-6 rounded-lg shadow-md"
             >
               <Skeleton className="h-24 w-24 rounded-md" />
               <div className="flex-1 space-y-2">
-                <Skeleton className="h-5 w-2/3" />
-                <Skeleton className="h-4 w-1/3" />
+                <Skeleton className="h-6 w-2/3" />
+                <Skeleton className="h-5 w-1/3" />
               </div>
-              <Skeleton className="h-10 w-24" />
+              <Skeleton className="h-10 w-32" />
             </div>
           ))}
         </div>
@@ -140,7 +141,7 @@ const CartPage = () => {
         </p>
         <Button
           onClick={() => refetch()}
-          className="bg-blue-500 hover:bg-blue-600 text-white"
+          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-300"
         >
           Try Again
         </Button>
@@ -150,27 +151,40 @@ const CartPage = () => {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
+      <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
       {cartItems.length === 0 ? (
-        <p className="text-lg text-gray-600">Your cart is empty.</p>
+        <div className="text-center py-16 bg-white rounded-lg shadow-md">
+          <ShoppingBag className="mx-auto h-20 w-20 text-gray-400 mb-6" />
+          <p className="text-2xl text-gray-600 mb-6">Your cart is empty.</p>
+          <Link
+            href="/products"
+            className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-full transition duration-300"
+          >
+            Start Shopping
+          </Link>
+        </div>
       ) : (
         <>
           <div className="space-y-6">
             {cartItems.map((item) => (
               <div
                 key={item._id}
-                className="flex items-center space-x-6 bg-white p-4 rounded-lg shadow"
+                className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300"
               >
-                <Image
-                  src={item.product.images[0]}
-                  alt={item.product.name}
-                  width={96}
-                  height={96}
-                  className="rounded-md object-cover"
-                />
-                <div className="flex-1">
-                  <h3 className="font-semibold text-lg">{item.product.name}</h3>
-                  <p className="text-gray-600">
+                <div className="relative w-32 h-32 flex-shrink-0">
+                  <Image
+                    src={item.product.images[0]}
+                    alt={item.product.name}
+                    layout="fill"
+                    objectFit="cover"
+                    className="rounded-md"
+                  />
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <h3 className="font-semibold text-xl mb-2">
+                    {item.product.name}
+                  </h3>
+                  <p className="text-gray-600 text-lg font-medium">
                     {formatPrice(item.product.price)}
                   </p>
                 </div>
@@ -181,9 +195,9 @@ const CartPage = () => {
                     onClick={() =>
                       handleQuantityChange(item._id, quantities[item._id] - 1)
                     }
-                    className="w-8 h-8"
+                    className="w-10 h-10 rounded-full"
                   >
-                    -
+                    <Minus className="h-4 w-4" />
                   </Button>
                   <Input
                     type="number"
@@ -200,26 +214,30 @@ const CartPage = () => {
                     onClick={() =>
                       handleQuantityChange(item._id, quantities[item._id] + 1)
                     }
-                    className="w-8 h-8"
+                    className="w-10 h-10 rounded-full"
                   >
-                    +
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
                 <Button
-                  variant="destructive"
+                  variant="ghost"
                   onClick={() => handleRemoveItem(item._id)}
-                  className="bg-red-500 hover:bg-red-600 text-white"
+                  className="text-red-500 hover:text-red-700 hover:bg-red-100 p-2 rounded-full"
                 >
-                  Remove
+                  <Trash2 className="h-6 w-6" />
                 </Button>
               </div>
             ))}
           </div>
-          <div className="mt-8 bg-gray-100 p-6 rounded-lg">
-            <p className="text-2xl font-semibold mb-4">
-              Total: {formatPrice(totalPrice)}
+          <div className="mt-10 bg-gray-100 p-8 rounded-lg shadow-inner">
+            <p className="text-2xl font-bold mb-6">
+              Total:{" "}
+              <span className="text-green-600">{formatPrice(totalPrice)}</span>
             </p>
-            <Button className="w-full bg-green-500 hover:bg-green-600 text-white text-lg py-3">
+            <Button
+              className="w-full bg-green-500 hover:bg-green-600 text-white text-lg py-4 rounded-full transition duration-300"
+              onClick={() => (window.location.href = "/checkout")}
+            >
               Proceed to Checkout
             </Button>
           </div>
@@ -227,9 +245,9 @@ const CartPage = () => {
       )}
       <Link
         href="/products"
-        className="mt-8 inline-block text-blue-600 hover:text-blue-800 hover:underline"
+        className="mt-10 inline-block text-blue-600 hover:text-blue-800 hover:underline transition duration-300"
       >
-        Continue Shopping
+        ← Continue Shopping
       </Link>
     </div>
   );

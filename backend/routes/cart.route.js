@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getCart,
+  getCartCount,
   addToCart,
   updateCartItem,
   removeFromCart,
@@ -12,6 +13,7 @@ const router = express.Router();
 router.use(ensureAuthenticated);
 
 router.get("/", getCart);
+router.get("/count", getCartCount);
 router.post("/", addToCart);
 router.put("/:itemId", updateCartItem);
 router.delete("/:itemId", removeFromCart);

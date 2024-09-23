@@ -73,7 +73,7 @@ export const productSchema = z.object({
   price: z.number().min(0, "Price must be a positive number"),
   stock: z.number().int().min(0, "Stock must be a non-negative integer"),
   images: z.array(z.string()).min(1, "At least one image is required"),
-  category: z.enum(["general", "wheel", "rim"]),
+  category: z.enum(["general", "wheels", "tyres"]),
   brand: z.string().min(1, "Brand is required"),
   specifications: z.array(
     z.object({

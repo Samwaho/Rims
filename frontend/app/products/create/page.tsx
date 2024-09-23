@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import axios from "axios";
 import { axiosHeaders } from "@/lib/actions";
@@ -37,13 +37,14 @@ import { toast } from "sonner";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useUploadThing } from "@/lib/uploadthing";
 import { useDropzone } from "react-dropzone";
+import { useDebounce } from "@/hooks/useDebounce";
 
 const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(1, "Description is required"),
   price: z.number().min(0, "Price must be a positive number"),
   stock: z.number().int().min(0, "Stock must be a non-negative integer"),
-  category: z.enum(["general", "wheel", "rim"]),
+  category: z.enum(["general", "wheels", "tyres"]),
   brand: z.string().min(1, "Brand is required"),
   specifications: z.array(
     z.object({
@@ -79,6 +80,10 @@ export default function CreateProduct() {
 
   const { startUpload, isUploading } = useUploadThing("productImage");
 
+  const debouncedSetValue = useDebounce((value: any) => {
+    form.setValue("images", value);
+  }, 300);
+
   const onDrop = useCallback(
     async (acceptedFiles: File[]) => {
       setUploadingImages(true);
@@ -86,7 +91,7 @@ export default function CreateProduct() {
         const uploadedImages = await startUpload(acceptedFiles);
         if (uploadedImages) {
           const imageUrls = uploadedImages.map((image) => image.url);
-          form.setValue("images", [...form.getValues("images"), ...imageUrls]);
+          debouncedSetValue([...form.getValues("images"), ...imageUrls]);
         }
       } catch (error) {
         console.error("Error uploading images:", error);
@@ -95,7 +100,7 @@ export default function CreateProduct() {
         setUploadingImages(false);
       }
     },
-    [form, startUpload]
+    [form, startUpload, debouncedSetValue]
   );
 
   const { getRootProps, getInputProps } = useDropzone({
@@ -177,6 +182,8 @@ export default function CreateProduct() {
                     <FormControl>
                       <Input
                         type="number"
+                        step="0.01"
+                        min="0"
                         {...field}
                         onChange={(e) =>
                           field.onChange(parseFloat(e.target.value))
@@ -280,8 +287,8 @@ export default function CreateProduct() {
                       </FormControl>
                       <SelectContent>
                         <SelectItem value="general">General</SelectItem>
-                        <SelectItem value="wheel">Wheel</SelectItem>
-                        <SelectItem value="rim">Rim</SelectItem>
+                        <SelectItem value="wheels">Wheels</SelectItem>
+                        <SelectItem value="tyres">Tyres</SelectItem>
                       </SelectContent>
                     </Select>
                     <FormMessage />
@@ -302,68 +309,71 @@ export default function CreateProduct() {
                 )}
               />
             </div>
-            <div className="space-y-2">
-              <Label>Product Specifications</Label>
-              {form.watch("specifications").map((_, index) => (
-                <div
-                  key={index}
-                  className="grid grid-cols-[1fr_1fr_auto] gap-3"
-                >
-                  <FormField
-                    control={form.control}
-                    name={`specifications.${index}.name`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input {...field} placeholder="Specification name" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name={`specifications.${index}.value`}
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormControl>
-                          <Input {...field} placeholder="Specification value" />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    onClick={() => {
-                      const currentSpecs = form.getValues("specifications");
-                      form.setValue(
-                        "specifications",
-                        currentSpecs.filter((_, i) => i !== index)
-                      );
-                    }}
-                  >
-                    <TrashIcon className="h-4 w-4" />
-                  </Button>
-                </div>
-              ))}
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  const currentSpecs = form.getValues("specifications");
-                  form.setValue("specifications", [
-                    ...currentSpecs,
-                    { name: "", value: "" },
-                  ]);
-                }}
-                className="w-full"
-              >
-                <PlusIcon className="h-4 w-4 mr-2" />
-                Add Specification
-              </Button>
-            </div>
+            <FormField
+              control={form.control}
+              name="specifications"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Product Specifications</FormLabel>
+                  <FormControl>
+                    <div className="space-y-2">
+                      {field.value.map((spec, index) => (
+                        <div
+                          key={index}
+                          className="grid grid-cols-[1fr_1fr_auto] gap-3"
+                        >
+                          <Input
+                            placeholder="Specification name"
+                            value={spec.name}
+                            onChange={(e) => {
+                              const newSpecs = [...field.value];
+                              newSpecs[index].name = e.target.value;
+                              field.onChange(newSpecs);
+                            }}
+                          />
+                          <Input
+                            placeholder="Specification value"
+                            value={spec.value}
+                            onChange={(e) => {
+                              const newSpecs = [...field.value];
+                              newSpecs[index].value = e.target.value;
+                              field.onChange(newSpecs);
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            onClick={() => {
+                              const newSpecs = field.value.filter(
+                                (_, i) => i !== index
+                              );
+                              field.onChange(newSpecs);
+                            }}
+                          >
+                            <TrashIcon className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          field.onChange([
+                            ...field.value,
+                            { name: "", value: "" },
+                          ]);
+                        }}
+                        className="w-full"
+                      >
+                        <PlusIcon className="h-4 w-4 mr-2" />
+                        Add Specification
+                      </Button>
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
             <Button
               type="submit"
               className="w-full"
