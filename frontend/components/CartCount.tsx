@@ -7,7 +7,7 @@ import { axiosHeaders } from "@/lib/actions";
 
 const fetchCartCount = async (): Promise<number> => {
   const response = await axios.get(
-    "http://localhost:3001/api/cart/count",
+    `${process.env.BACKEND_URL}/api/cart/count`,
     await axiosHeaders()
   );
   return response.data.count;

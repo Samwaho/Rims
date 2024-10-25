@@ -73,7 +73,9 @@ const sampleReviews: Review[] = [
 ];
 
 const fetchProduct = async (id: string): Promise<Product> => {
-  const response = await axios.get(`http://localhost:3001/api/products/${id}`);
+  const response = await axios.get(
+    `${process.env.BACKEND_URL}/api/products/${id}`
+  );
   return response.data;
 };
 
@@ -116,7 +118,7 @@ export default function ProductPage({
       quantity: number;
     }) => {
       await axios.post(
-        "http://localhost:3001/api/cart",
+        `${process.env.BACKEND_URL}/api/cart`,
         { productId, quantity },
         await axiosHeaders()
       );

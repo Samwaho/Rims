@@ -23,7 +23,7 @@ export const axiosHeaders = () => {
 
 export const getAuthUser = async () => {
   try {
-    const user = await axios.get("http://localhost:3001/api/auth/user", {
+    const user = await axios.get(`${process.env.BACKEND_URL}/api/auth/user`, {
       headers: {
         Authorization: `Bearer ${cookies().get("access_token")?.value}`,
       },

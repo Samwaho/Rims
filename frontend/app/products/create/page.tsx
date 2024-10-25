@@ -114,7 +114,7 @@ export default function CreateProduct() {
   const createProductMutation = useMutation({
     mutationFn: async (data: ProductFormValues) => {
       const response = await axios.post(
-        "http://localhost:3001/api/products",
+        `${process.env.BACKEND_URL}/api/products`,
         data,
         await axiosHeaders()
       );
