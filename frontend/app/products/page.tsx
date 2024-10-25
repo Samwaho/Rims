@@ -44,7 +44,7 @@ const fetchProducts = async (
   productsPerPage: number
 ): Promise<{ products: Product[]; totalPages: number }> => {
   const response = await axios.get(
-    `${process.env.BACKEND_URL}/api/products?page=${pageParam}&limit=${productsPerPage}`
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products?page=${pageParam}&limit=${productsPerPage}`
   );
   console.log(response.data);
   return response.data;
@@ -95,7 +95,7 @@ const ProductsPage = () => {
       quantity: number;
     }) => {
       await axios.post(
-        `${process.env.BACKEND_URL}/api/cart`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
         { productId, quantity },
         await axiosHeaders()
       );

@@ -34,7 +34,7 @@ interface CartItem {
 
 const fetchCart = async (): Promise<CartItem[]> => {
   const response = await axios.get(
-    `${process.env.BACKEND_URL}/api/cart`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
     await axiosHeaders()
   );
   return response.data;
@@ -66,7 +66,7 @@ export default function CheckoutPage() {
           : { paymentMethod, totalPrice, ...bankDetails };
 
       const response = await axios.post(
-        `${process.env.BACKEND_URL}/api/checkout`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/checkout`,
         paymentDetails,
         await axiosHeaders()
       );

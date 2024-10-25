@@ -74,7 +74,7 @@ const sampleReviews: Review[] = [
 
 const fetchProduct = async (id: string): Promise<Product> => {
   const response = await axios.get(
-    `${process.env.BACKEND_URL}/api/products/${id}`
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${id}`
   );
   return response.data;
 };
@@ -118,7 +118,7 @@ export default function ProductPage({
       quantity: number;
     }) => {
       await axios.post(
-        `${process.env.BACKEND_URL}/api/cart`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
         { productId, quantity },
         await axiosHeaders()
       );

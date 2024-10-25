@@ -26,7 +26,7 @@ interface CartItem {
 
 const fetchCart = async (): Promise<CartItem[]> => {
   const response = await axios.get(
-    `${process.env.BACKEND_URL}/api/cart`,
+    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
     await axiosHeaders()
   );
   return response.data;
@@ -55,7 +55,7 @@ const CartPage = () => {
       quantity: number;
     }) => {
       await axios.put(
-        `${process.env.BACKEND_URL}/api/cart/${itemId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/${itemId}`,
         { quantity },
         await axiosHeaders()
       );
@@ -72,7 +72,7 @@ const CartPage = () => {
   const removeItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
       await axios.delete(
-        `${process.env.BACKEND_URL}/api/cart/${itemId}`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/${itemId}`,
         await axiosHeaders()
       );
     },

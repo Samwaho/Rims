@@ -57,7 +57,7 @@ export default function SignUpForm() {
   const signUpMutation = useMutation({
     mutationFn: async (data: SignUpFormValues) =>
       await axios.post(
-        `${process.env.BACKEND_URL}/api/auth/signup`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signup`,
         data,
         await axiosHeaders()
       ),

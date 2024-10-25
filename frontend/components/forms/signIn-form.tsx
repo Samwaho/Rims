@@ -38,7 +38,7 @@ export default function SignInForm() {
   const signInMutation = useMutation({
     mutationFn: async (data: SignInFormValues) =>
       await axios.post(
-        `${process.env.BACKEND_URL}/api/auth/signin`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin`,
         data,
         await axiosHeaders()
       ),
