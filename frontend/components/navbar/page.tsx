@@ -128,8 +128,8 @@ const Navbar = ({ initialLoggedIn }: NavbarProps) => {
               <IoMenu size={24} className="text-gray-800" />
             </Button>
           </DrawerTrigger>
-          <DrawerContent className="bg-gradient-to-tl from-gray-300 to-white h-screen w-80">
-            <DrawerHeader>
+          <DrawerContent className="bg-gradient-to-tl from-gray-300 to-white h-screen w-80 pt-safe-top">
+            <DrawerHeader className="mt-4">
               <DrawerTitle className="flex justify-between items-center">
                 <Image
                   src={logo}
