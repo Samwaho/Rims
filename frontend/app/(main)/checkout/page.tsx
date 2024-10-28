@@ -41,6 +41,8 @@ const fetchCart = async (): Promise<CartItem[]> => {
   return response.data;
 };
 
+export const dynamic = "force-dynamic";
+
 export default function CheckoutPage() {
   const { data: cartItems = [], isLoading } = useQuery<CartItem[]>({
     queryKey: ["cart"],

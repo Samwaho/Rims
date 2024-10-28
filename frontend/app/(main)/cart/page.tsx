@@ -13,6 +13,7 @@ import { axiosHeaders } from "@/lib/actions";
 import { toast } from "sonner";
 import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { Suspense } from "react";
 
 interface CartItem {
   _id: string;
@@ -32,6 +33,8 @@ const fetchCart = async (): Promise<CartItem[]> => {
   );
   return response.data;
 };
+
+export const dynamic = "force-dynamic";
 
 const CartPage = () => {
   const router = useRouter();
@@ -154,127 +157,129 @@ const CartPage = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8 max-w-5xl">
-      <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
-      {cartItems.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
-          <ShoppingBag className="mx-auto h-20 w-20 text-gray-400 mb-6" />
-          <p className="text-2xl text-gray-600 mb-6">Your cart is empty</p>
-          <Link
-            href="/products"
-            className="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-full transition duration-300"
-          >
-            Start Shopping
-          </Link>
-        </div>
-      ) : (
-        <div className="grid lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 space-y-4">
-            {cartItems.map((item) => (
-              <div
-                key={item._id}
-                className="flex flex-col sm:flex-row items-center gap-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary/20 transition duration-300"
-              >
-                <Link
-                  href={`/products/${item.product._id}`}
-                  className="relative w-32 h-32 flex-shrink-0 overflow-hidden rounded-md hover:opacity-80 transition-opacity"
+    <Suspense fallback={<div>Loading...</div>}>
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
+        <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
+        {cartItems.length === 0 ? (
+          <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
+            <ShoppingBag className="mx-auto h-20 w-20 text-gray-400 mb-6" />
+            <p className="text-2xl text-gray-600 mb-6">Your cart is empty</p>
+            <Link
+              href="/products"
+              className="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-full transition duration-300"
+            >
+              Start Shopping
+            </Link>
+          </div>
+        ) : (
+          <div className="grid lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-4">
+              {cartItems.map((item) => (
+                <div
+                  key={item._id}
+                  className="flex flex-col sm:flex-row items-center gap-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary/20 transition duration-300"
                 >
-                  <Image
-                    src={item.product.images[0]}
-                    alt={item.product.name}
-                    layout="fill"
-                    objectFit="cover"
-                    className="rounded-md"
-                  />
-                </Link>
-                <div className="flex-1 text-center sm:text-left">
                   <Link
                     href={`/products/${item.product._id}`}
-                    className="font-semibold text-lg hover:text-primary transition-colors"
+                    className="relative w-32 h-32 flex-shrink-0 overflow-hidden rounded-md hover:opacity-80 transition-opacity"
                   >
-                    {item.product.name}
+                    <Image
+                      src={item.product.images[0]}
+                      alt={item.product.name}
+                      layout="fill"
+                      objectFit="cover"
+                      className="rounded-md"
+                    />
                   </Link>
-                  <p className="text-primary font-medium mt-1">
-                    {formatPrice(item.product.price)}
-                  </p>
+                  <div className="flex-1 text-center sm:text-left">
+                    <Link
+                      href={`/products/${item.product._id}`}
+                      className="font-semibold text-lg hover:text-primary transition-colors"
+                    >
+                      {item.product.name}
+                    </Link>
+                    <p className="text-primary font-medium mt-1">
+                      {formatPrice(item.product.price)}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        handleQuantityChange(item._id, quantities[item._id] - 1)
+                      }
+                      className="w-8 h-8 rounded-full p-0"
+                    >
+                      <Minus className="h-3 w-3" />
+                    </Button>
+                    <Input
+                      type="number"
+                      min="1"
+                      value={quantities[item._id] || item.quantity}
+                      onChange={(e) =>
+                        handleQuantityChange(item._id, parseInt(e.target.value))
+                      }
+                      className="w-14 text-center"
+                    />
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() =>
+                        handleQuantityChange(item._id, quantities[item._id] + 1)
+                      }
+                      className="w-8 h-8 rounded-full p-0"
+                    >
+                      <Plus className="h-3 w-3" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      onClick={() => handleRemoveItem(item._id)}
+                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full ml-2"
+                    >
+                      <Trash2 className="h-5 w-5" />
+                    </Button>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      handleQuantityChange(item._id, quantities[item._id] - 1)
-                    }
-                    className="w-8 h-8 rounded-full p-0"
-                  >
-                    <Minus className="h-3 w-3" />
-                  </Button>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={quantities[item._id] || item.quantity}
-                    onChange={(e) =>
-                      handleQuantityChange(item._id, parseInt(e.target.value))
-                    }
-                    className="w-14 text-center"
-                  />
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      handleQuantityChange(item._id, quantities[item._id] + 1)
-                    }
-                    className="w-8 h-8 rounded-full p-0"
-                  >
-                    <Plus className="h-3 w-3" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleRemoveItem(item._id)}
-                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full ml-2"
-                  >
-                    <Trash2 className="h-5 w-5" />
-                  </Button>
+              ))}
+            </div>
+            <div className="lg:col-span-1">
+              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 sticky top-4">
+                <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+                <div className="space-y-3 mb-6">
+                  <div className="flex justify-between text-gray-600">
+                    <span>Subtotal</span>
+                    <span>{formatPrice(totalPrice)}</span>
+                  </div>
+                  <div className="flex justify-between text-gray-600">
+                    <span>Shipping</span>
+                    <span>Free</span>
+                  </div>
+                  <div className="border-t pt-3 flex justify-between font-semibold text-lg">
+                    <span>Total</span>
+                    <span className="text-primary">
+                      {formatPrice(totalPrice)}
+                    </span>
+                  </div>
                 </div>
+                <Button
+                  className="w-full bg-primary hover:opacity-90 text-white text-lg py-6 rounded-full transition duration-300"
+                  onClick={() => router.push("/checkout")}
+                >
+                  Proceed to Checkout
+                </Button>
+                <Link
+                  href="/products"
+                  className="mt-4 text-center block text-primary hover:text-primary/80 font-medium transition duration-300"
+                >
+                  Continue Shopping
+                </Link>
               </div>
-            ))}
-          </div>
-          <div className="lg:col-span-1">
-            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 sticky top-4">
-              <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-              <div className="space-y-3 mb-6">
-                <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>{formatPrice(totalPrice)}</span>
-                </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span>Free</span>
-                </div>
-                <div className="border-t pt-3 flex justify-between font-semibold text-lg">
-                  <span>Total</span>
-                  <span className="text-primary">
-                    {formatPrice(totalPrice)}
-                  </span>
-                </div>
-              </div>
-              <Button
-                className="w-full bg-primary hover:opacity-90 text-white text-lg py-6 rounded-full transition duration-300"
-                onClick={() => router.push("/checkout")}
-              >
-                Proceed to Checkout
-              </Button>
-              <Link
-                href="/products"
-                className="mt-4 text-center block text-primary hover:text-primary/80 font-medium transition duration-300"
-              >
-                Continue Shopping
-              </Link>
             </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </Suspense>
   );
 };
 

@@ -15,6 +15,8 @@ import { useSearchParams } from "next/navigation";
 
 const PRODUCTS_PER_PAGE = 12;
 
+export const dynamic = "force-dynamic";
+
 const ProductsPage = () => {
   const { ref, inView } = useInView({
     threshold: 0.1,
