@@ -1,7 +1,8 @@
+"use client";
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import logo from "@/public/Logo.png";
-import { IoCartOutline, IoMenu } from "react-icons/io5";
+import { IoCartOutline, IoMenu, IoSearchOutline } from "react-icons/io5";
 import { Button } from "../ui/button";
 import {
   Drawer,
@@ -18,42 +19,92 @@ import { Input } from "../ui/input";
 import Link from "next/link";
 import { getAuthUser } from "@/lib/actions";
 import CartCount from "../CartCount";
+import { useRouter, useSearchParams } from "next/navigation";
 
-const Navbar = async () => {
-  const user = await getAuthUser();
-  const loggedIn = !!user;
+interface NavbarProps {
+  initialLoggedIn: boolean;
+}
+
+const Navbar = ({ initialLoggedIn }: NavbarProps) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [searchTerm, setSearchTerm] = useState(
+    searchParams.get("search") || ""
+  );
+  const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
+    } else {
+      router.push("/products");
+    }
+  };
+
+  const handleMobileSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+      router.push(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
+      const closeButton = document.querySelector(
+        ".drawer-close"
+      ) as HTMLButtonElement;
+      if (closeButton) {
+        closeButton.click();
+      }
+    }
+  };
 
   return (
-    <nav className="flex items-center justify-between py-4 px-4 md:px-6 lg:px-12 xl:px-20">
-      <Link href="/">
+    <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-between py-4 px-4 md:px-6 lg:px-12 xl:px-20">
+      <Link href="/" className="transition-transform hover:scale-105">
         <Image
           src={logo}
           alt="Logo"
           width={120}
           height={80}
           className="w-24 md:w-28 lg:w-32"
+          priority
         />
       </Link>
-      <Input
-        type="text"
-        placeholder="Search"
-        className="hidden lg:flex items-center gap-4 max-w-xl"
-      />
+      <div className="hidden lg:flex items-center gap-2 max-w-xl relative">
+        <form onSubmit={handleSearch} className="relative">
+          <Input
+            type="text"
+            placeholder="Search products..."
+            className="pl-10 pr-4 w-[400px] focus:w-[500px] transition-all duration-300"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+          <IoSearchOutline
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            size={20}
+          />
+          <button type="submit" className="sr-only">
+            Search
+          </button>
+        </form>
+      </div>
       <div className="flex items-center gap-4">
         <div className="hidden lg:flex items-center gap-6">
-          <Link href="/" className="text-lg xl:text-xl hover:text-gray-600">
+          <Link
+            href="/"
+            className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
+          >
             Home
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
           </Link>
           <Link
             href="/products"
-            className="text-lg xl:text-xl hover:text-gray-600"
+            className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
           >
             Products
+            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
           </Link>
 
           {loggedIn ? (
             <Link href="/cart" className="relative">
-              <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base flex items-center gap-2">
+              <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base flex items-center gap-2 hover:scale-105 transition-transform">
                 <span>Cart</span>
                 <IoCartOutline size={20} />
               </Button>
@@ -61,7 +112,7 @@ const Navbar = async () => {
             </Link>
           ) : (
             <Link href="/sign-in">
-              <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base">
+              <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base hover:scale-105 transition-transform">
                 Sign In
               </Button>
             </Link>
@@ -69,7 +120,11 @@ const Navbar = async () => {
         </div>
         <Drawer direction="left">
           <DrawerTrigger asChild>
-            <Button variant="outline" size="icon" className="lg:hidden">
+            <Button
+              variant="outline"
+              size="icon"
+              className="lg:hidden hover:bg-gray-100 transition-colors"
+            >
               <IoMenu size={24} className="text-gray-800" />
             </Button>
           </DrawerTrigger>
@@ -82,30 +137,59 @@ const Navbar = async () => {
                   width={120}
                   height={80}
                   className="w-24 md:w-28"
+                  priority
                 />
                 <DrawerClose asChild>
-                  <Button variant="outline" size="icon">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="hover:bg-gray-100 transition-colors"
+                  >
                     <IoMdClose size={24} className="text-gray-800" />
                   </Button>
                 </DrawerClose>
               </DrawerTitle>
             </DrawerHeader>
-            <div className="flex flex-col gap-6 mt-8 px-6">
-              <Link href="/" className="text-xl hover:text-gray-600">
+            <div className="px-6 py-4">
+              <form onSubmit={handleMobileSearch}>
+                <Input
+                  type="text"
+                  placeholder="Search products..."
+                  className="w-full mb-6"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+                <button type="submit" className="sr-only">
+                  Search
+                </button>
+              </form>
+            </div>
+            <div className="flex flex-col gap-6 px-6">
+              <Link
+                href="/"
+                className="text-xl hover:text-gray-600 transition-colors relative group"
+              >
                 Home
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
               </Link>
-              <Link href="/products" className="text-xl hover:text-gray-600">
+              <Link
+                href="/products"
+                className="text-xl hover:text-gray-600 transition-colors relative group"
+              >
                 Products
+                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
               </Link>
             </div>
             <DrawerFooter>
               {!loggedIn ? (
-                <Link href="/sign-in">
-                  <Button className="w-full">Sign In</Button>
+                <Link href="/sign-in" className="w-full">
+                  <Button className="w-full hover:scale-105 transition-transform">
+                    Sign In
+                  </Button>
                 </Link>
               ) : (
                 <Link href="/cart" className="relative w-full">
-                  <Button className="w-full mt-4 flex items-center justify-center gap-2">
+                  <Button className="w-full mt-4 flex items-center justify-center gap-2 hover:scale-105 transition-transform">
                     <span>Cart</span>
                     <IoCartOutline size={20} />
                   </Button>

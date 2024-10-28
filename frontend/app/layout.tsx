@@ -23,17 +23,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full">
-      <body className={`${poppins.className} flex flex-col min-h-screen`}>
+    <html lang="en" className="">
+      <body className={`${poppins.className}`}>
         <TanstackProvider>
-          <Navbar />
-          <main className="flex-grow bg-gradient-to-tl from-gray-300 to-white">
-            <div className="max-w-[100rem] mx-auto px-4 sm:px-6 md:px-8 lg:px-12 xl:px-20 py-8">
-              {children}
-            </div>
-          </main>
-          <Footer />
-          <Toaster />
+          {children}
+          <Toaster
+            toastOptions={{
+              classNames: {
+                error:
+                  "text-rose-600 bg-card_light dark:bg-card_dark border-none",
+                success:
+                  "text-green-600 bg-card_light dark:bg-card_dark border-none",
+                warning: "text-yellow-400 bg-card_light dark:bg-card_dark",
+                info: "text-sky-600 bg-card_light dark:bg-card_dark",
+              },
+            }}
+          />
         </TanstackProvider>
       </body>
     </html>

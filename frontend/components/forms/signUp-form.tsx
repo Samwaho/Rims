@@ -30,10 +30,14 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { signUpSchema } from "@/lib/utils";
 import { axiosHeaders } from "@/lib/actions";
+import { Eye, EyeOff } from "lucide-react";
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
 export default function SignUpForm() {
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
   const form = useForm<SignUpFormValues>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
@@ -62,11 +66,15 @@ export default function SignUpForm() {
         await axiosHeaders()
       ),
     onSuccess: () => {
-      toast.success("Sign-up successful");
+      toast.success("Sign-up successful! Redirecting to login...");
       router.push("/sign-in");
     },
-    onError: (error) => {
-      toast.error("Sign-up failed");
+    onError: (error: any) => {
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error("Something went wrong. Please try again.");
+      }
       console.log("Sign-up failed:", error);
     },
   });
@@ -79,7 +87,7 @@ export default function SignUpForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6 max-w-2xl mx-auto p-6 bg-card rounded-lg shadow-md"
+        className="space-y-6 max-w-2xl mx-auto py-4 px-4 bg-white rounded-xl shadow-lg border border-gray-100"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
@@ -87,11 +95,15 @@ export default function SignUpForm() {
             name="firstName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>First Name</FormLabel>
+                <FormLabel className="text-gray-700">First Name</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input
+                    {...field}
+                    placeholder="John"
+                    className="h-11 focus:ring-2 focus:ring-primary/20"
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
@@ -100,11 +112,15 @@ export default function SignUpForm() {
             name="lastName"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Last Name</FormLabel>
+                <FormLabel className="text-gray-700">Last Name</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input
+                    {...field}
+                    placeholder="Doe"
+                    className="h-11 focus:ring-2 focus:ring-primary/20"
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
@@ -115,11 +131,16 @@ export default function SignUpForm() {
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel className="text-gray-700">Email</FormLabel>
               <FormControl>
-                <Input {...field} type="email" />
+                <Input
+                  {...field}
+                  type="email"
+                  placeholder="john.doe@example.com"
+                  className="h-11 focus:ring-2 focus:ring-primary/20"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />
@@ -129,11 +150,25 @@ export default function SignUpForm() {
             name="password"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Password</FormLabel>
+                <FormLabel className="text-gray-700">Password</FormLabel>
                 <FormControl>
-                  <Input {...field} type="password" />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      type={showPassword ? "text" : "password"}
+                      placeholder="Enter password"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                    </button>
+                  </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
@@ -142,11 +177,33 @@ export default function SignUpForm() {
             name="confirmPassword"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Confirm Password</FormLabel>
+                <FormLabel className="text-gray-700">
+                  Confirm Password
+                </FormLabel>
                 <FormControl>
-                  <Input {...field} type="password" />
+                  <div className="relative">
+                    <Input
+                      {...field}
+                      type={showConfirmPassword ? "text" : "password"}
+                      placeholder="Confirm password"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setShowConfirmPassword(!showConfirmPassword)
+                      }
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                    >
+                      {showConfirmPassword ? (
+                        <EyeOff size={20} />
+                      ) : (
+                        <Eye size={20} />
+                      )}
+                    </button>
+                  </div>
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
@@ -157,27 +214,40 @@ export default function SignUpForm() {
           name="phoneNumber"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone Number (Optional)</FormLabel>
+              <FormLabel className="text-gray-700">
+                Phone Number (Optional)
+              </FormLabel>
               <FormControl>
-                <Input {...field} type="tel" />
+                <Input
+                  {...field}
+                  type="tel"
+                  placeholder="+44 1234 567890"
+                  className="h-11 focus:ring-2 focus:ring-primary/20"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />
 
-        <fieldset className="space-y-4 border p-4 rounded-md">
-          <legend className="text-lg font-semibold">Address (Optional)</legend>
+        <fieldset className="space-y-4 border border-gray-200 p-6 rounded-xl bg-gray-50/50">
+          <legend className="text-lg font-semibold px-2 text-gray-700">
+            Address (Optional)
+          </legend>
           <FormField
             control={form.control}
             name="address.street"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Street</FormLabel>
+                <FormLabel className="text-gray-700">Street</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input
+                    {...field}
+                    placeholder="123 Main St"
+                    className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
@@ -188,11 +258,15 @@ export default function SignUpForm() {
               name="address.city"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>City</FormLabel>
+                  <FormLabel className="text-gray-700">City</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input
+                      {...field}
+                      placeholder="London"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-500" />
                 </FormItem>
               )}
             />
@@ -201,11 +275,15 @@ export default function SignUpForm() {
               name="address.county"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>County</FormLabel>
+                  <FormLabel className="text-gray-700">County</FormLabel>
                   <FormControl>
-                    <Input {...field} />
+                    <Input
+                      {...field}
+                      placeholder="Greater London"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                    />
                   </FormControl>
-                  <FormMessage />
+                  <FormMessage className="text-red-500" />
                 </FormItem>
               )}
             />
@@ -216,11 +294,15 @@ export default function SignUpForm() {
             name="address.postalCode"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Postal Code</FormLabel>
+                <FormLabel className="text-gray-700">Postal Code</FormLabel>
                 <FormControl>
-                  <Input {...field} />
+                  <Input
+                    {...field}
+                    placeholder="SW1A 1AA"
+                    className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                  />
                 </FormControl>
-                <FormMessage />
+                <FormMessage className="text-red-500" />
               </FormItem>
             )}
           />
@@ -228,16 +310,26 @@ export default function SignUpForm() {
 
         <Button
           type="submit"
-          className="w-full"
+          className="w-full h-11 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200"
           disabled={signUpMutation.isPending}
         >
-          {signUpMutation.isPending ? "Signing up..." : "Sign Up"}
+          {signUpMutation.isPending ? (
+            <div className="flex items-center gap-2">
+              <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin" />
+              Creating Account...
+            </div>
+          ) : (
+            "Create Account"
+          )}
         </Button>
 
-        <p className="text-center text-sm">
+        <p className="text-center text-gray-600">
           Already have an account?{" "}
-          <Link href="/sign-in" className="text-primary hover:underline">
-            Log in
+          <Link
+            href="/sign-in"
+            className="text-primary font-medium hover:underline transition-colors"
+          >
+            Sign in
           </Link>
         </p>
       </form>

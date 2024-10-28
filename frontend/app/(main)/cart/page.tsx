@@ -12,6 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { axiosHeaders } from "@/lib/actions";
 import { toast } from "sonner";
 import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface CartItem {
   _id: string;
@@ -33,6 +34,7 @@ const fetchCart = async (): Promise<CartItem[]> => {
 };
 
 const CartPage = () => {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const {
     data: cartItems = [],
@@ -111,13 +113,13 @@ const CartPage = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
         <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
-        <div className="space-y-6">
+        <div className="space-y-4">
           {[...Array(3)].map((_, index) => (
             <div
               key={index}
-              className="flex items-center space-x-6 bg-white p-6 rounded-lg shadow-md"
+              className="flex items-center space-x-6 bg-white p-6 rounded-lg shadow-sm"
             >
               <Skeleton className="h-24 w-24 rounded-md" />
               <div className="flex-1 space-y-2">
@@ -134,44 +136,49 @@ const CartPage = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-5xl">
         <h1 className="text-3xl font-bold mb-6">Error loading cart</h1>
-        <p className="text-red-500 mb-4">
-          An error occurred while loading your cart.
-        </p>
-        <Button
-          onClick={() => refetch()}
-          className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-4 rounded transition duration-300"
-        >
-          Try Again
-        </Button>
+        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+          <p className="text-red-600 mb-4">
+            An error occurred while loading your cart.
+          </p>
+          <Button
+            onClick={() => refetch()}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+          >
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto px-4 py-8 max-w-5xl">
       <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
       {cartItems.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-lg shadow-md">
+        <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
           <ShoppingBag className="mx-auto h-20 w-20 text-gray-400 mb-6" />
-          <p className="text-2xl text-gray-600 mb-6">Your cart is empty.</p>
+          <p className="text-2xl text-gray-600 mb-6">Your cart is empty</p>
           <Link
             href="/products"
-            className="inline-block bg-blue-500 hover:bg-blue-600 text-white font-semibold py-3 px-6 rounded-full transition duration-300"
+            className="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-full transition duration-300"
           >
             Start Shopping
           </Link>
         </div>
       ) : (
-        <>
-          <div className="space-y-6">
+        <div className="grid lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-2 space-y-4">
             {cartItems.map((item) => (
               <div
                 key={item._id}
-                className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-6 bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition duration-300"
+                className="flex flex-col sm:flex-row items-center gap-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary/20 transition duration-300"
               >
-                <div className="relative w-32 h-32 flex-shrink-0">
+                <Link
+                  href={`/products/${item.product._id}`}
+                  className="relative w-32 h-32 flex-shrink-0 overflow-hidden rounded-md hover:opacity-80 transition-opacity"
+                >
                   <Image
                     src={item.product.images[0]}
                     alt={item.product.name}
@@ -179,25 +186,28 @@ const CartPage = () => {
                     objectFit="cover"
                     className="rounded-md"
                   />
-                </div>
+                </Link>
                 <div className="flex-1 text-center sm:text-left">
-                  <h3 className="font-semibold text-xl mb-2">
+                  <Link
+                    href={`/products/${item.product._id}`}
+                    className="font-semibold text-lg hover:text-primary transition-colors"
+                  >
                     {item.product.name}
-                  </h3>
-                  <p className="text-gray-600 text-lg font-medium">
+                  </Link>
+                  <p className="text-primary font-medium mt-1">
                     {formatPrice(item.product.price)}
                   </p>
                 </div>
-                <div className="flex items-center space-x-2">
+                <div className="flex items-center gap-2">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() =>
                       handleQuantityChange(item._id, quantities[item._id] - 1)
                     }
-                    className="w-10 h-10 rounded-full"
+                    className="w-8 h-8 rounded-full p-0"
                   >
-                    <Minus className="h-4 w-4" />
+                    <Minus className="h-3 w-3" />
                   </Button>
                   <Input
                     type="number"
@@ -206,7 +216,7 @@ const CartPage = () => {
                     onChange={(e) =>
                       handleQuantityChange(item._id, parseInt(e.target.value))
                     }
-                    className="w-16 text-center"
+                    className="w-14 text-center"
                   />
                   <Button
                     size="sm"
@@ -214,41 +224,56 @@ const CartPage = () => {
                     onClick={() =>
                       handleQuantityChange(item._id, quantities[item._id] + 1)
                     }
-                    className="w-10 h-10 rounded-full"
+                    className="w-8 h-8 rounded-full p-0"
                   >
-                    <Plus className="h-4 w-4" />
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleRemoveItem(item._id)}
+                    className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full ml-2"
+                  >
+                    <Trash2 className="h-5 w-5" />
                   </Button>
                 </div>
-                <Button
-                  variant="ghost"
-                  onClick={() => handleRemoveItem(item._id)}
-                  className="text-red-500 hover:text-red-700 hover:bg-red-100 p-2 rounded-full"
-                >
-                  <Trash2 className="h-6 w-6" />
-                </Button>
               </div>
             ))}
           </div>
-          <div className="mt-10 bg-gray-100 p-8 rounded-lg shadow-inner">
-            <p className="text-2xl font-bold mb-6">
-              Total:{" "}
-              <span className="text-green-600">{formatPrice(totalPrice)}</span>
-            </p>
-            <Button
-              className="w-full bg-green-500 hover:bg-green-600 text-white text-lg py-4 rounded-full transition duration-300"
-              onClick={() => (window.location.href = "/checkout")}
-            >
-              Proceed to Checkout
-            </Button>
+          <div className="lg:col-span-1">
+            <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 sticky top-4">
+              <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+              <div className="space-y-3 mb-6">
+                <div className="flex justify-between text-gray-600">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(totalPrice)}</span>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <span>Shipping</span>
+                  <span>Free</span>
+                </div>
+                <div className="border-t pt-3 flex justify-between font-semibold text-lg">
+                  <span>Total</span>
+                  <span className="text-primary">
+                    {formatPrice(totalPrice)}
+                  </span>
+                </div>
+              </div>
+              <Button
+                className="w-full bg-primary hover:opacity-90 text-white text-lg py-6 rounded-full transition duration-300"
+                onClick={() => router.push("/checkout")}
+              >
+                Proceed to Checkout
+              </Button>
+              <Link
+                href="/products"
+                className="mt-4 text-center block text-primary hover:text-primary/80 font-medium transition duration-300"
+              >
+                Continue Shopping
+              </Link>
+            </div>
           </div>
-        </>
+        </div>
       )}
-      <Link
-        href="/products"
-        className="mt-10 inline-block text-blue-600 hover:text-blue-800 hover:underline transition duration-300"
-      >
-        ← Continue Shopping
-      </Link>
     </div>
   );
 };

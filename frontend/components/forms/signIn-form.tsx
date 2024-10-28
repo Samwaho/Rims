@@ -21,10 +21,12 @@ import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { axiosHeaders, setCookies } from "@/lib/actions";
 import { signInSchema } from "@/lib/utils";
+import { Eye, EyeOff } from "lucide-react";
 
 type SignInFormValues = z.infer<typeof signInSchema>;
 
 export default function SignInForm() {
+  const [showPassword, setShowPassword] = useState(false);
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
     defaultValues: {
@@ -44,11 +46,11 @@ export default function SignInForm() {
       ),
     onSuccess: async (response) => {
       await setCookies(response.data.accessToken);
-      toast.success("Sign-in successful");
+      toast.success("Welcome back!");
       router.push("/");
     },
     onError: (error) => {
-      toast.error("Sign-in failed");
+      toast.error("Invalid email or password. Please try again.");
       console.log("Sign-in failed:", error);
     },
   });
@@ -61,18 +63,23 @@ export default function SignInForm() {
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onSubmit)}
-        className="space-y-6 max-w-md mx-auto p-6 bg-card rounded-lg shadow-md"
+        className="space-y-6 max-w-md mx-auto p-4 bg-white rounded-xl shadow-lg border border-gray-100"
       >
         <FormField
           control={form.control}
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel className="text-gray-700">Email</FormLabel>
               <FormControl>
-                <Input {...field} type="email" />
+                <Input
+                  {...field}
+                  type="email"
+                  placeholder="Enter your email"
+                  className="h-11 focus:ring-2 focus:ring-primary/20"
+                />
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />
@@ -82,29 +89,55 @@ export default function SignInForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <FormLabel className="text-gray-700">Password</FormLabel>
               <FormControl>
-                <Input {...field} type="password" />
+                <div className="relative">
+                  <Input
+                    {...field}
+                    type={showPassword ? "text" : "password"}
+                    placeholder="Enter your password"
+                    className="h-11 pr-10 focus:ring-2 focus:ring-primary/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                  >
+                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  </button>
+                </div>
               </FormControl>
-              <FormMessage />
+              <FormMessage className="text-red-500" />
             </FormItem>
           )}
         />
 
-        <Button
-          type="submit"
-          className="w-full"
-          disabled={signInMutation.isPending}
-        >
-          {signInMutation.isPending ? "Signing in..." : "Sign In"}
-        </Button>
+        <div className="space-y-4">
+          <Button
+            type="submit"
+            className="w-full h-11 text-base font-semibold shadow-sm hover:shadow-md transition-all duration-200"
+            disabled={signInMutation.isPending}
+          >
+            {signInMutation.isPending ? (
+              <div className="flex items-center gap-2">
+                <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin" />
+                Signing in...
+              </div>
+            ) : (
+              "Sign In"
+            )}
+          </Button>
 
-        <p className="text-center text-sm">
-          Don't have an account?{" "}
-          <Link href="/sign-up" className="text-primary hover:underline">
-            Sign up
-          </Link>
-        </p>
+          <p className="text-center text-gray-600">
+            Don't have an account?{" "}
+            <Link
+              href="/sign-up"
+              className="text-primary font-medium hover:underline transition-colors"
+            >
+              Sign up
+            </Link>
+          </p>
+        </div>
       </form>
     </Form>
   );
