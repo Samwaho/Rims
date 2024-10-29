@@ -29,10 +29,10 @@ const Hero = () => {
             luxury vehicle. Experience unmatched quality, style, and performance
             with every mile.
           </p>
-          <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex flex-row gap-4">
             <Link
               href="/products"
-              className="inline-flex h-12 items-center justify-center rounded-lg bg-red-600 px-8 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:bg-red-700 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-red-600 px-6 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:bg-red-700 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 disabled:pointer-events-none disabled:opacity-50"
             >
               Shop Now
               <svg
@@ -52,7 +52,7 @@ const Hero = () => {
             </Link>
             <Link
               href="/contact"
-              className="inline-flex h-12 items-center justify-center rounded-lg bg-white px-8 text-sm font-medium text-black border-2 border-black/10 shadow-lg transition-all duration-300 hover:bg-gray-50 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:pointer-events-none disabled:opacity-50"
+              className="inline-flex h-10 items-center justify-center rounded-lg bg-white px-6 text-sm font-medium text-black border-2 border-black/10 shadow-lg transition-all duration-300 hover:bg-gray-50 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:pointer-events-none disabled:opacity-50"
             >
               Contact Us
               <svg
