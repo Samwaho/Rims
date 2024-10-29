@@ -8,8 +8,8 @@ const Hero = () => {
     <section className="relative w-full py-16 md:py-24 lg:py-32 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white/20 to-transparent"></div>
-      <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
+      <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20 "></div>
+      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20"></div>
 
       <div className="container grid items-center gap-8 px-4 md:px-6 lg:grid-cols-2 lg:gap-12 relative">
         <div className="space-y-8 animate-fadeIn">
