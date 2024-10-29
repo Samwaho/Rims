@@ -35,7 +35,7 @@ export default function AuthLayout({
               </Link>
             </div>
 
-            <h2 className="text-3xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
+            <h2 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
               Welcome to{" "}
               <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text">
                 WheelsHub
