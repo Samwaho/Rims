@@ -3,76 +3,68 @@ import Link from "next/link";
 
 const Footer = () => {
   return (
-    <footer className="bg-[#303030] text-white p-6 md:py-12 w-full mt-6 ">
-      <div className="container max-w-7xl grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-8 text-sm">
-        <div className="grid gap-1">
-          <h3 className="font-semibold">Company</h3>
-          <Link href="#" prefetch={false}>
-            About Us
-          </Link>
-          <Link href="#" prefetch={false}>
-            Our Team
-          </Link>
-          <Link href="#" prefetch={false}>
-            Careers
-          </Link>
-          <Link href="#" prefetch={false}>
-            News
-          </Link>
-        </div>
-        <div className="grid gap-1">
-          <h3 className="font-semibold">Products</h3>
-          <Link href="#" prefetch={false}>
-            Tyres
-          </Link>
-          <Link href="#" prefetch={false}>
-            Wheels
-          </Link>
-          <Link href="#" prefetch={false}>
-            Accessories
-          </Link>
-        </div>
-        <div className="grid gap-1">
-          <h3 className="font-semibold">Resources</h3>
-          <Link href="#" prefetch={false}>
-            Blog
-          </Link>
-          <Link href="#" prefetch={false}>
-            Community
-          </Link>
-          <Link href="#" prefetch={false}>
-            Support
-          </Link>
-          <Link href="#" prefetch={false}>
-            FAQs
-          </Link>
-        </div>
-        <div className="grid gap-1">
-          <h3 className="font-semibold">Legal</h3>
-          <Link href="#" prefetch={false}>
-            Privacy Policy
-          </Link>
-          <Link href="#" prefetch={false}>
-            Terms of Service
-          </Link>
-          <Link href="#" prefetch={false}>
-            Cookie Policy
-          </Link>
-        </div>
-        <div className="grid gap-1">
-          <h3 className="font-semibold">Contact</h3>
-          <Link href="#" prefetch={false}>
-            Support
-          </Link>
-          <Link href="#" prefetch={false}>
-            Sales
-          </Link>
-          <Link href="#" prefetch={false}>
-            Press
-          </Link>
-          <Link href="#" prefetch={false}>
-            Partnerships
-          </Link>
+    <footer className="bg-[#303030] text-white p-6 md:py-12 w-full mt-6">
+      <div className="container mx-auto px-4">
+        <div className="max-w-7xl mx-auto">
+          {/* Main footer content */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-8 text-sm mb-12">
+            <div className="grid gap-2">
+              <h3 className="font-bold text-lg mb-2">Company</h3>
+              <Link
+                href="#"
+                prefetch={false}
+                className="hover:text-red-400 transition-colors duration-200"
+              >
+                About Us
+              </Link>
+              <Link
+                href="#"
+                prefetch={false}
+                className="hover:text-red-400 transition-colors duration-200"
+              >
+                Contact
+              </Link>
+            </div>
+            <div className="grid gap-2">
+              <h3 className="font-bold text-lg mb-2">Products</h3>
+              <Link
+                href="#"
+                prefetch={false}
+                className="hover:text-red-400 transition-colors duration-200"
+              >
+                Tyres
+              </Link>
+              <Link
+                href="#"
+                prefetch={false}
+                className="hover:text-red-400 transition-colors duration-200"
+              >
+                Wheels
+              </Link>
+            </div>
+            <div className="grid gap-2">
+              <h3 className="font-bold text-lg mb-2">Legal</h3>
+              <Link
+                href="#"
+                prefetch={false}
+                className="hover:text-red-400 transition-colors duration-200"
+              >
+                Privacy Policy
+              </Link>
+              <Link
+                href="#"
+                prefetch={false}
+                className="hover:text-red-400 transition-colors duration-200"
+              >
+                Terms of Service
+              </Link>
+            </div>
+          </div>
+
+          {/* Bottom bar with copyright */}
+          <div className="pt-8 border-t border-gray-600 text-center text-sm text-gray-400">
+            <p>© {new Date().getFullYear()} WheelsHub. All rights reserved.</p>
+          </div>
         </div>
       </div>
     </footer>

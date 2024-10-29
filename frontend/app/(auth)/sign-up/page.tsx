@@ -3,9 +3,9 @@ import React from "react";
 
 const SignUp = () => {
   return (
-    <div className="w-full max-w-xl mx-auto px-2 py-8 sm:px-2 lg:px-8">
-      <div className="space-y-6">
-        <div className="space-y-4">
+    <div className="w-full max-w-xl mx-auto px-2 py-2 sm:px-2 lg:px-8">
+      <div className="space-y-4">
+        <div className="space-y-2">
           <h1 className="text-2xl md:text-4xl font-bold text-center text-gray-900">
             Create Your Account
           </h1>
