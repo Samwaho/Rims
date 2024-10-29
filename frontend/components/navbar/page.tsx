@@ -32,6 +32,7 @@ const Navbar = ({ initialLoggedIn }: NavbarProps) => {
     searchParams.get("search") || ""
   );
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
+  const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -46,13 +47,17 @@ const Navbar = ({ initialLoggedIn }: NavbarProps) => {
     e.preventDefault();
     if (searchTerm.trim()) {
       router.push(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
-      const closeButton = document.querySelector(
-        ".drawer-close"
-      ) as HTMLButtonElement;
-      if (closeButton) {
-        closeButton.click();
-      }
+      setIsDrawerOpen(false);
     }
+  };
+
+  const closeDrawer = () => {
+    setIsDrawerOpen(false);
+  };
+
+  const handleDrawerLinkClick = (href: string) => {
+    router.push(href);
+    setIsDrawerOpen(false);
   };
 
   return (
@@ -118,12 +123,17 @@ const Navbar = ({ initialLoggedIn }: NavbarProps) => {
             </Link>
           )}
         </div>
-        <Drawer direction="left">
+        <Drawer
+          direction="left"
+          open={isDrawerOpen}
+          onOpenChange={setIsDrawerOpen}
+        >
           <DrawerTrigger asChild>
             <Button
               variant="outline"
               size="icon"
               className="lg:hidden hover:bg-gray-100 transition-colors"
+              onClick={() => setIsDrawerOpen(true)}
             >
               <IoMenu size={24} className="text-gray-800" />
             </Button>
@@ -144,6 +154,7 @@ const Navbar = ({ initialLoggedIn }: NavbarProps) => {
                     variant="outline"
                     size="icon"
                     className="hover:bg-gray-100 transition-colors"
+                    onClick={closeDrawer}
                   >
                     <IoMdClose size={24} className="text-gray-800" />
                   </Button>
@@ -165,36 +176,42 @@ const Navbar = ({ initialLoggedIn }: NavbarProps) => {
               </form>
             </div>
             <div className="flex flex-col gap-6 px-6">
-              <Link
-                href="/"
-                className="text-xl hover:text-gray-600 transition-colors relative group"
+              <button
+                onClick={() => handleDrawerLinkClick("/")}
+                className="text-xl text-left hover:text-gray-600 transition-colors relative group"
               >
                 Home
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-              </Link>
-              <Link
-                href="/products"
-                className="text-xl hover:text-gray-600 transition-colors relative group"
+              </button>
+              <button
+                onClick={() => handleDrawerLinkClick("/products")}
+                className="text-xl text-left hover:text-gray-600 transition-colors relative group"
               >
                 Products
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-              </Link>
+              </button>
             </div>
             <DrawerFooter>
               {!loggedIn ? (
-                <Link href="/sign-in" className="w-full">
+                <button
+                  onClick={() => handleDrawerLinkClick("/sign-in")}
+                  className="w-full"
+                >
                   <Button className="w-full hover:scale-105 transition-transform">
                     Sign In
                   </Button>
-                </Link>
+                </button>
               ) : (
-                <Link href="/cart" className="relative w-full">
+                <button
+                  onClick={() => handleDrawerLinkClick("/cart")}
+                  className="relative w-full"
+                >
                   <Button className="w-full mt-4 flex items-center justify-center gap-2 hover:scale-105 transition-transform">
                     <span>Cart</span>
                     <IoCartOutline size={20} />
                   </Button>
                   <CartCount />
-                </Link>
+                </button>
               )}
             </DrawerFooter>
           </DrawerContent>

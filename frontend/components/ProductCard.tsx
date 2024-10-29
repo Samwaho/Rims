@@ -10,6 +10,7 @@ interface Product {
   _id: string;
   name: string;
   brand: string;
+  madeIn: string;
   category: string;
   price: number;
   images: string[];
@@ -44,10 +45,8 @@ export const ProductCard: React.FC<ProductCardProps> & {
             </h3>
             {/* Adjust brand and category text size */}
             <p className="text-xs sm:text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">
-                {product.brand}
-              </span>{" "}
-              • {product.category}
+              <span className="font-medium text-foreground">Made in</span> •{" "}
+              {product.madeIn}
             </p>
           </div>
           {/* Adjust price text size and margin */}

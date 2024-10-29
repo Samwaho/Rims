@@ -49,7 +49,7 @@ export default function ProductDetails({
             <span className="font-semibold">Brand:</span> {product.brand}
           </div>
           <div>
-            <span className="font-semibold">Category:</span> {product.category}
+            <span className="font-semibold">Made in:</span> {product.madeIn}
           </div>
         </div>
         <p className="text-3xl lg:text-4xl font-bold text-primary">

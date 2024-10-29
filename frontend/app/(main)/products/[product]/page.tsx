@@ -133,7 +133,9 @@ export default function ProductPage({
           isAuthenticated={isAuthenticated}
           user={user}
         />
-        <ProductDetails product={product} handleAddToCart={handleAddToCart} />
+        <div>
+          <ProductDetails product={product} handleAddToCart={handleAddToCart} />
+        </div>
       </div>
       <Separator className="my-8" />
       <div className="lg:hidden">

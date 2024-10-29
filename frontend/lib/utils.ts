@@ -75,6 +75,7 @@ export const productSchema = z.object({
   images: z.array(z.string()).min(1, "At least one image is required"),
   category: z.enum(["general", "wheels", "tyres"]),
   brand: z.string().min(1, "Brand is required"),
+  madeIn: z.string().min(1, "Made in is required"),
   specifications: z.array(
     z.object({
       name: z.string().min(1, "Specification name is required"),

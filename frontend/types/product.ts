@@ -12,6 +12,7 @@ export interface Product {
   images: string[];
   category: "general" | "wheel" | "rim";
   brand: string;
+  madeIn: string;
   specifications: Specification[];
   createdAt: string;
   updatedAt: string;

@@ -9,7 +9,7 @@ export const setCookies = async (token: string) => {
       httpOnly: true,
     });
   } catch (error) {
-    console.log("🚀 ~ setCookies ~ error:", error);
+    console.error("🚀 ~ setCookies ~ error:", error);
   }
 };
 
@@ -32,7 +32,8 @@ export const getAuthUser = async () => {
       }
     );
     return user.data;
-  } catch (error) {
-    console.log("🚀 ~ getAuthUser ~ error:", error);
+  } catch (error: any) {
+    console.error("🚀 ~ getAuthUser ~ error:", error.response.data);
+    return null;
   }
 };
