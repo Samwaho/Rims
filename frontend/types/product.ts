@@ -8,7 +8,7 @@ export interface Product {
   images: string[];
   brand: string;
   madeIn: string;
-  specifications: Array<{ name: string; value: string }>;
+  specifications: Array<Specification>;
   averageRating: number;
   reviewCount: number;
   createdAt: string;
@@ -21,4 +21,9 @@ export interface FilterState {
   brand: string[];
   category: string[];
   priceRange?: [number, number];
+}
+
+export interface Specification {
+  name: string;
+  value: string;
 }
