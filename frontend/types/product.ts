@@ -1,33 +1,20 @@
-export interface Specification {
-  name: string;
-  value: string;
-}
-
 export interface Product {
   _id: string;
   name: string;
-  description: string;
   price: number;
+  description: string;
+  category: string;
   stock: number;
   images: string[];
-  category: "general" | "wheel" | "rim";
   brand: string;
   madeIn: string;
-  specifications: Specification[];
+  specifications: Array<{ name: string; value: string }>;
+  averageRating: number;
+  reviewCount: number;
   createdAt: string;
   updatedAt: string;
-  reviews: Review[];
+  reviews: any[];
   numReviews: number;
-  averageRating: number;
-}
-
-export interface Review {
-  _id: string;
-  user: string;
-  userName: string;
-  rating: number;
-  comment: string;
-  createdAt: string;
 }
 
 export interface FilterState {

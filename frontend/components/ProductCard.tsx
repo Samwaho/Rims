@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import Link from "next/link";
 import Image from "next/image";
@@ -5,6 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/utils";
 import { ShoppingCart, CreditCard } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { getAuthUser } from "@/lib/actions";
+import { toast } from "sonner";
 
 interface Product {
   _id: string;
@@ -24,6 +28,28 @@ interface ProductCardProps {
 export const ProductCard: React.FC<ProductCardProps> & {
   Skeleton: React.FC;
 } = ({ product, onAddToCart }) => {
+  const router = useRouter();
+
+  const handleAuthAction = async (action: () => void) => {
+    const user = await getAuthUser();
+    if (!user) {
+      toast.error("Please sign in to continue");
+      router.push("/sign-in");
+      return;
+    }
+    action();
+  };
+
+  const handleBuyNow = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleAuthAction(() => router.push(`/checkout?productId=${product._id}`));
+  };
+
+  const handleAddToCart = (e: React.MouseEvent) => {
+    e.preventDefault();
+    handleAuthAction(() => onAddToCart());
+  };
+
   return (
     <div className="group bg-background rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
       <Link href={`/products/${product._id}`} className="block relative">
@@ -63,23 +89,19 @@ export const ProductCard: React.FC<ProductCardProps> & {
           size="sm"
           variant="outline"
           className="w-full transition-all duration-300 hover:bg-primary hover:text-primary-foreground group"
-          onClick={(e) => {
-            e.preventDefault();
-            onAddToCart();
-          }}
+          onClick={handleAddToCart}
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
           Add to Cart
         </Button>
-        <Link href={`/checkout?productId=${product._id}`} className="block">
-          <Button
-            size="sm"
-            className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110"
-          >
-            <CreditCard className="w-4 h-4 mr-2" />
-            Buy Now
-          </Button>
-        </Link>
+        <Button
+          size="sm"
+          className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110"
+          onClick={handleBuyNow}
+        >
+          <CreditCard className="w-4 h-4 mr-2" />
+          Buy Now
+        </Button>
       </div>
     </div>
   );

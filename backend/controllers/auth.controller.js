@@ -3,11 +3,9 @@ import User from "../models/user.model.js";
 import bcryptjs from "bcryptjs";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import { generateVerificationCode } from "../utils/generateVerificationCode.js";
 import {
   sendPasswordResetSuccessEmail,
   sendResetEmail,
-  sendVerificationEmail,
 } from "../utils/sendVerificationEmail.js";
 
 dotenv.config();
@@ -43,12 +41,6 @@ export const signUpController = async (req, res, next) => {
     }
 
     const hashedPassword = bcryptjs.hashSync(password, 10);
-    const verificationCode = generateVerificationCode();
-    const emailSent = await sendVerificationEmail(email, verificationCode);
-
-    if (!emailSent) {
-      return errorHandler(res, 500, "Error sending verification email");
-    }
 
     const newUser = await new User({
       firstName,

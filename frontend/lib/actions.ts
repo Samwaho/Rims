@@ -1,6 +1,7 @@
 "use server";
 import axios from "axios";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
 export const setCookies = async (token: string) => {
   try {
@@ -33,7 +34,15 @@ export const getAuthUser = async () => {
     );
     return user.data;
   } catch (error: any) {
-    console.error("🚀 ~ getAuthUser ~ error:", error.response.data);
+    console.error("getAuthUser error:", error?.message || error);
     return null;
   }
+};
+
+export const requireAuth = async () => {
+  const user = await getAuthUser();
+  if (!user) {
+    redirect("/sign-in");
+  }
+  return user;
 };

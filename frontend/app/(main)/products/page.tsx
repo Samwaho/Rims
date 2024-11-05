@@ -5,13 +5,14 @@ import { useInView } from "react-intersection-observer";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ProductCard } from "@/components/ProductCard";
 import { FilterAccordion } from "@/components/FilterAccordion";
-import { Loader2 } from "lucide-react";
+import { Loader2, AlertCircle, PackageSearch } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ProductsHeader } from "@/components/products/ProductsHeader";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { Product, FilterState } from "@/types/product";
 import { useSearchParams } from "next/navigation";
+import { Button } from "@/components/ui/button";
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -44,6 +45,7 @@ const ProductsPage = () => {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    refetch,
   } = useProducts(debouncedSearchTerm);
 
   useEffect(() => {
@@ -58,7 +60,7 @@ const ProductsPage = () => {
 
   const filteredProducts = useMemo(() => {
     return products
-      .filter((product: Product) => {
+      .filter((product) => {
         const { brand, category, price, name } = product;
         const {
           brand: brandFilters,
@@ -81,7 +83,7 @@ const ProductsPage = () => {
   }, [products, filters, debouncedSearchTerm]);
 
   const maxPrice = useMemo(
-    () => Math.max(...products.map((product: Product) => product.price)),
+    () => Math.max(...products.map((product) => product.price)),
     [products]
   );
 
@@ -89,14 +91,38 @@ const ProductsPage = () => {
     setSearchTerm(searchParams.get("search") || "");
   }, [searchParams]);
 
+  const handleClearFilters = () => {
+    setFilters({
+      brand: [],
+      category: [],
+      priceRange: undefined,
+    });
+    setSearchTerm("");
+  };
+
   if (error) {
     return (
-      <Alert variant="destructive" className="m-4">
-        <AlertDescription>
-          An error occurred while loading products. Please refresh the page or
-          try again later.
-        </AlertDescription>
-      </Alert>
+      <div className="container mx-auto px-4 py-8">
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4 mr-2" />
+          <AlertDescription>
+            {error instanceof Error
+              ? error.message
+              : "An error occurred while loading products"}
+          </AlertDescription>
+        </Alert>
+        <div className="flex justify-center gap-4">
+          <Button
+            onClick={() => refetch()}
+            className="bg-primary hover:bg-primary/90"
+          >
+            Try Again
+          </Button>
+          <Button variant="outline" onClick={handleClearFilters}>
+            Clear Filters
+          </Button>
+        </div>
+      </div>
     );
   }
 
@@ -134,7 +160,7 @@ const ProductsPage = () => {
                   ? Array(PRODUCTS_PER_PAGE)
                       .fill(0)
                       .map((_, index) => <ProductCard.Skeleton key={index} />)
-                  : filteredProducts.map((product: Product) => (
+                  : filteredProducts.map((product) => (
                       <ProductCard
                         key={product._id}
                         product={product}
@@ -155,10 +181,23 @@ const ProductsPage = () => {
               )}
 
               {!isLoading && filteredProducts.length === 0 && (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 text-lg">
-                    No products found matching your criteria
+                <div className="text-center py-12 bg-white rounded-lg shadow-sm">
+                  <PackageSearch className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+                  <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    No Products Found
+                  </h3>
+                  <p className="text-gray-500 mb-6">
+                    {searchTerm
+                      ? `No products match "${searchTerm}"`
+                      : "No products match the selected filters"}
                   </p>
+                  <Button
+                    variant="outline"
+                    onClick={handleClearFilters}
+                    className="hover:bg-primary hover:text-white transition-colors"
+                  >
+                    Clear All Filters
+                  </Button>
                 </div>
               )}
 

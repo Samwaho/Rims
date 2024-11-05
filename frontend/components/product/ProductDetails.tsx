@@ -1,3 +1,4 @@
+"use client";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
@@ -5,6 +6,9 @@ import { Product } from "@/types/product";
 import { formatPrice } from "@/lib/utils";
 import { ProductRating } from "./ProductRating";
 import { ProductSpecifications } from "./ProductSpecifications";
+import { useRouter } from "next/navigation";
+import { getAuthUser } from "@/lib/actions";
+import { toast } from "sonner";
 
 interface ProductDetailsProps {
   product: Product;
@@ -15,6 +19,18 @@ export default function ProductDetails({
   product,
   handleAddToCart,
 }: ProductDetailsProps) {
+  const router = useRouter();
+
+  const handleAuthAction = async (action: () => void) => {
+    const user = await getAuthUser();
+    if (!user) {
+      toast.error("Please sign in to continue");
+      router.push("/sign-in");
+      return;
+    }
+    action();
+  };
+
   // Calculate average rating here to ensure consistency
   const averageRating = product.reviews?.length
     ? Number(
@@ -69,7 +85,7 @@ export default function ProductDetails({
       <Button
         size="lg"
         className="w-full bg-primary hover:opacity-90 text-primary-foreground transition-all duration-300 text-lg py-6"
-        onClick={handleAddToCart}
+        onClick={() => handleAuthAction(handleAddToCart)}
         disabled={product.stock === 0}
       >
         {product.stock > 0 ? "Add to Cart" : "Out of Stock"}

@@ -11,9 +11,10 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { axiosHeaders } from "@/lib/actions";
 import { toast } from "sonner";
-import { Trash2, Minus, Plus, ShoppingBag } from "lucide-react";
+import { Trash2, Minus, Plus, ShoppingBag, AlertCircle } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface CartItem {
   _id: string;
@@ -27,11 +28,18 @@ interface CartItem {
 }
 
 const fetchCart = async (): Promise<CartItem[]> => {
-  const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
-    await axiosHeaders()
-  );
-  return response.data;
+  try {
+    const response = await axios.get(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
+      await axiosHeaders()
+    );
+    return response.data;
+  } catch (error: any) {
+    if (error.response?.status === 401) {
+      throw new Error("Please sign in to view your cart");
+    }
+    throw new Error("Failed to fetch cart items. Please try again later.");
+  }
 };
 
 export const dynamic = "force-dynamic";
@@ -47,7 +55,11 @@ const CartPage = () => {
   } = useQuery<CartItem[]>({
     queryKey: ["cart"],
     queryFn: fetchCart,
-    retry: 3,
+    retry: (failureCount, error: any) => {
+      // Don't retry on auth errors
+      if (error.message === "Please sign in to view your cart") return false;
+      return failureCount < 3;
+    },
     retryDelay: 1000,
   });
 
@@ -59,34 +71,45 @@ const CartPage = () => {
       itemId: string;
       quantity: number;
     }) => {
-      await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/${itemId}`,
-        { quantity },
-        await axiosHeaders()
-      );
+      try {
+        await axios.put(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/${itemId}`,
+          { quantity },
+          await axiosHeaders()
+        );
+      } catch (error: any) {
+        if (error.response?.status === 400) {
+          throw new Error("Invalid quantity specified");
+        }
+        throw new Error("Failed to update cart");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success("Cart updated successfully");
     },
-    onError: () => {
-      toast.error("Failed to update cart");
+    onError: (error: Error) => {
+      toast.error(error.message);
     },
   });
 
   const removeItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      await axios.delete(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/${itemId}`,
-        await axiosHeaders()
-      );
+      try {
+        await axios.delete(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/${itemId}`,
+          await axiosHeaders()
+        );
+      } catch (error) {
+        throw new Error("Failed to remove item from cart");
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success("Item removed from cart");
     },
-    onError: () => {
-      toast.error("Failed to remove item from cart");
+    onError: (error: Error) => {
+      toast.error(error.message);
     },
   });
 
@@ -101,13 +124,22 @@ const CartPage = () => {
   }, [cartItems]);
 
   const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) return;
+    if (newQuantity < 1) {
+      toast.error("Quantity cannot be less than 1");
+      return;
+    }
+    if (newQuantity > 99) {
+      toast.error("Maximum quantity allowed is 99");
+      return;
+    }
     setQuantities((prev) => ({ ...prev, [itemId]: newQuantity }));
     updateCartMutation.mutate({ itemId, quantity: newQuantity });
   };
 
   const handleRemoveItem = (itemId: string) => {
-    removeItemMutation.mutate(itemId);
+    if (window.confirm("Are you sure you want to remove this item?")) {
+      removeItemMutation.mutate(itemId);
+    }
   };
 
   const totalPrice = cartItems.reduce((total, item) => {
@@ -140,16 +172,24 @@ const CartPage = () => {
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <h1 className="text-3xl font-bold mb-6">Error loading cart</h1>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
-          <p className="text-red-600 mb-4">
-            An error occurred while loading your cart.
-          </p>
+        <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
+        <Alert variant="destructive" className="mb-6">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {error instanceof Error
+              ? error.message
+              : "An unexpected error occurred"}
+          </AlertDescription>
+        </Alert>
+        <div className="flex justify-center gap-4">
           <Button
             onClick={() => refetch()}
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold"
+            className="bg-primary hover:bg-primary/90"
           >
             Try Again
+          </Button>
+          <Button variant="outline" onClick={() => router.push("/products")}>
+            Browse Products
           </Button>
         </div>
       </div>
@@ -157,16 +197,25 @@ const CartPage = () => {
   }
 
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense
+      fallback={
+        <div className="container mx-auto px-4 py-8 flex justify-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      }
+    >
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
         {cartItems.length === 0 ? (
           <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
             <ShoppingBag className="mx-auto h-20 w-20 text-gray-400 mb-6" />
-            <p className="text-2xl text-gray-600 mb-6">Your cart is empty</p>
+            <p className="text-2xl text-gray-600 mb-4">Your cart is empty</p>
+            <p className="text-gray-500 mb-8">
+              Looks like you haven't added any items to your cart yet.
+            </p>
             <Link
               href="/products"
-              className="inline-block bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-8 rounded-full transition duration-300"
+              className="inline-block bg-primary hover:opacity-90 text-white font-semibold py-3 px-8 rounded-full transition duration-300"
             >
               Start Shopping
             </Link>
@@ -216,6 +265,7 @@ const CartPage = () => {
                     <Input
                       type="number"
                       min="1"
+                      max="99"
                       value={quantities[item._id] || item.quantity}
                       onChange={(e) =>
                         handleQuantityChange(item._id, parseInt(e.target.value))
@@ -270,7 +320,7 @@ const CartPage = () => {
                 </Button>
                 <Link
                   href="/products"
-                  className="mt-4 text-center block text-primary hover:text-primary/80 font-medium transition duration-300"
+                  className="mt-4 text-center block text-primary hover:opacity-80 font-medium transition duration-300"
                 >
                   Continue Shopping
                 </Link>

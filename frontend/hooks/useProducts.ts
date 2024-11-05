@@ -1,33 +1,47 @@
 import { useInfiniteQuery } from "@tanstack/react-query";
 import axios from "axios";
-import { Product } from "@/types/product";
 
-const PRODUCTS_PER_PAGE = 12;
+interface Product {
+  _id: string;
+  name: string;
+  price: number;
+  description: string;
+  category: string;
+  stock: number;
+  images: string[];
+  brand: string;
+  madeIn: string;
+  specifications: Array<{ name: string; value: string }>;
+  averageRating: number;
+  reviewCount: number;
+  createdAt: string;
+}
 
-export const useProducts = (debouncedSearchTerm: string) => {
-  return useInfiniteQuery({
-    queryKey: ["products", debouncedSearchTerm],
+interface ProductsResponse {
+  products: Product[];
+  totalPages: number;
+  currentPage: number;
+}
+
+export const useProducts = (search: string) => {
+  return useInfiniteQuery<ProductsResponse>({
+    queryKey: ["products", search],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products`,
         {
           params: {
             page: pageParam,
-            limit: PRODUCTS_PER_PAGE,
-            search: debouncedSearchTerm,
+            search,
           },
         }
       );
       return response.data;
     },
-    getNextPageParam: (lastPage, allPages) => {
-      return lastPage.products.length === PRODUCTS_PER_PAGE &&
-        allPages.length < lastPage.totalPages
-        ? allPages.length + 1
-        : undefined;
-    },
     initialPageParam: 1,
-    staleTime: 60000,
-    retry: 2,
+    getNextPageParam: (lastPage) =>
+      lastPage.currentPage < lastPage.totalPages
+        ? lastPage.currentPage + 1
+        : undefined,
   });
 };

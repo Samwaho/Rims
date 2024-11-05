@@ -23,9 +23,10 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 interface NavbarProps {
   initialLoggedIn: boolean;
+  isAdmin?: boolean;
 }
 
-const Navbar = ({ initialLoggedIn }: NavbarProps) => {
+const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [searchTerm, setSearchTerm] = useState(
@@ -106,6 +107,16 @@ const Navbar = ({ initialLoggedIn }: NavbarProps) => {
             Products
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
           </Link>
+
+          {isAdmin && (
+            <Link
+              href="/admin"
+              className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
+            >
+              Admin
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
+            </Link>
+          )}
 
           {loggedIn ? (
             <Link href="/cart" className="relative">
@@ -190,6 +201,16 @@ const Navbar = ({ initialLoggedIn }: NavbarProps) => {
                 Products
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
               </button>
+
+              {isAdmin && (
+                <button
+                  onClick={() => handleDrawerLinkClick("/admin")}
+                  className="text-xl text-left hover:text-gray-600 transition-colors relative group"
+                >
+                  Admin
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
+                </button>
+              )}
             </div>
             <DrawerFooter>
               {!loggedIn ? (

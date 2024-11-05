@@ -70,9 +70,9 @@ export const signInSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(1, "Description is required"),
-  price: z.number().min(0, "Price must be a positive number"),
-  stock: z.number().int().min(0, "Stock must be a non-negative integer"),
-  images: z.array(z.string()).min(1, "At least one image is required"),
+  price: z.coerce.number().min(0, "Price must be a positive number"),
+  stock: z.coerce.number().int().min(0, "Stock must be a non-negative integer"),
+  images: z.array(z.instanceof(File)).min(1, "At least one image is required"),
   category: z.enum(["general", "wheels", "tyres"]),
   brand: z.string().min(1, "Brand is required"),
   madeIn: z.string().min(1, "Made in is required"),

@@ -87,26 +87,166 @@ export const getProductById = async (req, res, next) => {
 
 export const createProduct = async (req, res, next) => {
   try {
-    const product = new Product(req.body);
+    const { productData, imageUrls } = req.body;
+
+    // Validate that productData exists
+    if (!productData) {
+      return res.status(400).json({
+        message: "Product data is required",
+        receivedData: req.body,
+      });
+    }
+
+    // Validate required fields
+    const requiredFields = [
+      "name",
+      "description",
+      "price",
+      "stock",
+      "category",
+      "brand",
+      "madeIn",
+    ];
+
+    const missingFields = requiredFields.filter(
+      (field) => !productData[field] && productData[field] !== 0
+    );
+
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Missing required fields: ${missingFields.join(", ")}`,
+        receivedData: productData,
+      });
+    }
+
+    // Create new product with validated data
+    const product = new Product({
+      ...productData,
+      price: Number(productData.price),
+      stock: Number(productData.stock),
+      images: imageUrls || [], // Add image URLs from UploadThing
+      specifications: productData.specifications || [],
+      reviews: [],
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
+
+    // Save the product
     const newProduct = await product.save();
-    res.status(201).json(newProduct);
+
+    // Return formatted product response
+    const formattedProduct = {
+      ...newProduct.toObject(),
+      averageRating: 0,
+      reviewCount: 0,
+      reviews: [],
+    };
+
+    res.status(201).json({
+      message: "Product created successfully",
+      product: formattedProduct,
+    });
   } catch (error) {
+    console.error("Error creating product:", error);
+
+    // Improved error handling
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: Object.values(error.errors).map((err) => err.message),
+      });
+    }
+
+    if (error.code === 11000) {
+      // Duplicate key error
+      return res.status(400).json({
+        message: "A product with this name already exists",
+      });
+    }
+
     next(error);
   }
 };
 
 export const updateProduct = async (req, res, next) => {
   try {
-    const updatedProduct = await Product.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true, runValidators: true }
-    );
-    if (!updatedProduct) {
+    const { productData, imageUrls } = req.body;
+    const productId = req.params.id;
+
+    // Validate the product exists
+    const existingProduct = await Product.findById(productId);
+    if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
-    res.status(200).json(updatedProduct);
+
+    // Ensure all required fields are present
+    const requiredFields = [
+      "name",
+      "description",
+      "price",
+      "stock",
+      "category",
+      "brand",
+      "madeIn",
+    ];
+
+    const missingFields = requiredFields.filter((field) => !productData[field]);
+    if (missingFields.length > 0) {
+      return res.status(400).json({
+        message: `Missing required fields: ${missingFields.join(", ")}`,
+      });
+    }
+
+    // Format the data for update
+    const updateData = {
+      ...productData,
+      price: Number(productData.price),
+      stock: Number(productData.stock),
+      images: imageUrls,
+      specifications:
+        productData.specifications?.filter(
+          (spec) => spec.name.trim() && spec.value.trim()
+        ) || [],
+      updatedAt: new Date(),
+    };
+
+    // Update the product with new data
+    const updatedProduct = await Product.findByIdAndUpdate(
+      productId,
+      updateData,
+      { new: true, runValidators: true }
+    ).lean();
+
+    // Calculate stats for response
+    const averageRating = updatedProduct.reviews?.length
+      ? Number(
+          (
+            updatedProduct.reviews.reduce(
+              (acc, review) => acc + review.rating,
+              0
+            ) / updatedProduct.reviews.length
+          ).toFixed(1)
+        )
+      : 0;
+
+    const productWithStats = {
+      ...updatedProduct,
+      averageRating,
+      reviewCount: updatedProduct.reviews?.length || 0,
+    };
+
+    res.status(200).json({
+      message: "Product updated successfully",
+      product: productWithStats,
+    });
   } catch (error) {
+    console.error("Error updating product:", error);
+    if (error.name === "ValidationError") {
+      return res.status(400).json({
+        message: "Validation error",
+        errors: Object.values(error.errors).map((err) => err.message),
+      });
+    }
     next(error);
   }
 };
@@ -277,6 +417,50 @@ export const getProductReviews = async (req, res, next) => {
       averageRating: product.averageRating,
     });
   } catch (error) {
+    next(error);
+  }
+};
+
+export const searchProducts = async (req, res, next) => {
+  try {
+    const {
+      query = "",
+      category = "",
+      sortBy = "createdAt",
+      order = "desc",
+      page = 1,
+      limit = 10,
+    } = req.query;
+
+    const searchQuery = {
+      $or: [
+        { name: { $regex: query, $options: "i" } },
+        { description: { $regex: query, $options: "i" } },
+      ],
+    };
+
+    if (category) {
+      searchQuery.category = category;
+    }
+
+    const skip = (page - 1) * limit;
+    const sortOptions = { [sortBy]: order === "desc" ? -1 : 1 };
+
+    const products = await Product.find(searchQuery)
+      .sort(sortOptions)
+      .skip(skip)
+      .limit(limit);
+
+    const total = await Product.countDocuments(searchQuery);
+
+    res.status(200).json({
+      products,
+      currentPage: parseInt(page),
+      totalPages: Math.ceil(total / limit),
+      totalProducts: total,
+    });
+  } catch (error) {
+    console.error("Error searching products:", error);
     next(error);
   }
 };
