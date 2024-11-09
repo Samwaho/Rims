@@ -23,9 +23,9 @@ interface ProductsResponse {
   currentPage: number;
 }
 
-export const useProducts = (search: string) => {
+export const useProducts = (search: string, category?: string) => {
   return useInfiniteQuery<ProductsResponse>({
-    queryKey: ["products", search],
+    queryKey: ["products", search, category],
     queryFn: async ({ pageParam = 1 }) => {
       const response = await axios.get(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products`,
@@ -33,6 +33,7 @@ export const useProducts = (search: string) => {
           params: {
             page: pageParam,
             search,
+            category,
           },
         }
       );

@@ -4,7 +4,7 @@ import mongoose from "mongoose";
 import authRouter from "./routes/auth.route.js";
 import productRouter from "./routes/product.route.js";
 import cartRouter from "./routes/cart.route.js";
-
+import orderRouter from "./routes/order.route.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 
@@ -31,6 +31,7 @@ app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/cart", cartRouter);
+app.use("/api/orders", orderRouter);
 
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;

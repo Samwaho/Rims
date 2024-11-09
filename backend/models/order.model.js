@@ -16,6 +16,7 @@ const orderSchema = new mongoose.Schema({
       quantity: {
         type: Number,
         required: true,
+        min: 1,
       },
     },
   ],
@@ -28,9 +29,29 @@ const orderSchema = new mongoose.Schema({
     enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
     default: "pending",
   },
+  paymentMethod: {
+    type: String,
+    enum: ["mpesa", "bank"],
+    required: true,
+  },
+  paymentDetails: {
+    type: mongoose.Schema.Types.Mixed,
+    required: true,
+  },
+  paymentStatus: {
+    type: String,
+    enum: ["pending", "completed", "failed"],
+    default: "pending",
+  },
   orderDate: {
     type: Date,
     default: Date.now,
+  },
+  shippingInfo: {
+    trackingNumber: String,
+    carrier: String,
+    estimatedDelivery: Date,
+    updatedAt: Date,
   },
 });
 

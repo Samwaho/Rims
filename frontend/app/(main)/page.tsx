@@ -6,7 +6,12 @@ import Footer from "@/components/footer/page";
 import Hero from "@/components/hero/page";
 import Navbar from "@/components/navbar/page";
 
-export const dynamic = "force-dynamic";
+export const metadata = {
+  title: "Home | Your Store Name",
+  description: "Welcome to our store",
+};
+
+export const revalidate = 3600; // Revalidate every hour
 
 export default function Home() {
   return (

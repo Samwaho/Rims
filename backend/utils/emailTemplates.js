@@ -1,28 +1,30 @@
 export const VERIFICATION_EMAIL_TEMPLATE = `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Verify Your Email</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #ffffff; max-width: 600px; margin: 0 auto; padding: 20px; border-radius: 20px">
-  <div style="background: linear-gradient(to right, #e23235, #801415); padding: 20px; text-align: center;">
-    <h1 style="color: white; margin: 0;">Verify Your Email</h1>
-  </div>
-  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello,</p>
-    <p>Thank you for signing up! Your verification code is:</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #e23235;">{verificationCode}</span>
+<body style="margin: 0; padding: 20px; background: #f5f5f5; font-family: Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+    <div style="background: #e23235; padding: 24px; text-align: center;">
+      <h1 style="color: white; margin: 0; font-size: 24px;">Verify Your Email</h1>
     </div>
-    <p>Enter this code on the verification page to complete your registration.</p>
-    <p>This code will expire in 15 minutes for security reasons.</p>
-    <p>If you didn't create an account with us, please ignore this email.</p>
-    <p>Best regards,<br>Your App Team</p>
-  </div>
-  <div style="text-align: center; margin-top: 20px; color: #888; font-size: 0.8em;">
-    <p>This is an automated message, please do not reply to this email.</p>
+    
+    <div style="padding: 24px;">
+      <p style="color: #444; margin: 0 0 20px;">Hello,</p>
+      <p style="color: #444; margin: 0 0 20px;">Thank you for signing up! Your verification code is:</p>
+      
+      <div style="text-align: center; margin: 24px 0; padding: 16px; background: #f8f8f8; border-radius: 4px;">
+        <span style="font-size: 32px; letter-spacing: 4px; color: #e23235;">{verificationCode}</span>
+      </div>
+
+      <p style="color: #666; margin: 0 0 8px; font-size: 14px;">Enter this code to complete your registration.</p>
+      <p style="color: #666; margin: 0 0 8px; font-size: 14px;">Code expires in 15 minutes.</p>
+      
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+      <p style="color: #444; margin: 0;">Best regards,<br>Wheels Hub Team</p>
+    </div>
   </div>
 </body>
 </html>
@@ -30,36 +32,27 @@ export const VERIFICATION_EMAIL_TEMPLATE = `
 
 export const PASSWORD_RESET_SUCCESS_TEMPLATE = `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Password Reset Successful</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(to right, #4CAF50, #45a049); padding: 20px; text-align: center;">
-    <h1 style="color: white; margin: 0;">Password Reset Successful</h1>
-  </div>
-  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello,</p>
-    <p>We're writing to confirm that your password has been successfully reset.</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <div style="background-color: #4CAF50; color: white; width: 50px; height: 50px; line-height: 50px; border-radius: 50%; display: inline-block; font-size: 30px;">
-        ✓
-      </div>
+<body style="margin: 0; padding: 20px; background: #f5f5f5; font-family: Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+    <div style="background: #e23235; padding: 24px; text-align: center;">
+      <h1 style="color: white; margin: 0; font-size: 24px;">Password Reset Successful</h1>
     </div>
-    <p>If you did not initiate this password reset, please contact our support team immediately.</p>
-    <p>For security reasons, we recommend that you:</p>
-    <ul>
-      <li>Use a strong, unique password</li>
-      <li>Enable two-factor authentication if available</li>
-      <li>Avoid using the same password across multiple sites</li>
-    </ul>
-    <p>Thank you for helping us keep your account secure.</p>
-    <p>Best regards,<br>Your App Team</p>
-  </div>
-  <div style="text-align: center; margin-top: 20px; color: #888; font-size: 0.8em;">
-    <p>This is an automated message, please do not reply to this email.</p>
+
+    <div style="padding: 24px;">
+      <p style="color: #444; margin: 0 0 20px;">Your password has been successfully reset.</p>
+      
+      <div style="background: #fff3f3; padding: 16px; border-radius: 4px; margin: 24px 0;">
+        <p style="color: #e23235; margin: 0; font-size: 14px;">If you did not make this change, please contact support immediately.</p>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+      <p style="color: #444; margin: 0;">Best regards,<br>Wheels Hub Team</p>
+    </div>
   </div>
 </body>
 </html>
@@ -67,28 +60,72 @@ export const PASSWORD_RESET_SUCCESS_TEMPLATE = `
 
 export const PASSWORD_RESET_REQUEST_TEMPLATE = `
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Reset Your Password</title>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <div style="background: linear-gradient(to right, #4CAF50, #45a049); padding: 20px; text-align: center;">
-    <h1 style="color: white; margin: 0;">Password Reset</h1>
-  </div>
-  <div style="background-color: #f9f9f9; padding: 20px; border-radius: 0 0 5px 5px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-    <p>Hello,</p>
-    <p>We received a request to reset your password. If you didn't make this request, please ignore this email.</p>
-    <p>To reset your password, click the button below:</p>
-    <div style="text-align: center; margin: 30px 0;">
-      <a href="{resetToken}" style="background-color: #4CAF50; color: white; padding: 12px 20px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+<body style="margin: 0; padding: 20px; background: #f5f5f5; font-family: Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+    <div style="background: #e23235; padding: 24px; text-align: center;">
+      <h1 style="color: white; margin: 0; font-size: 24px;">Reset Your Password</h1>
     </div>
-    <p>This link will expire in 1 hour for security reasons.</p>
-    <p>Best regards,<br>Your App Team</p>
+
+    <div style="padding: 24px;">
+      <p style="color: #444; margin: 0 0 20px;">Click the button below to set a new password:</p>
+      
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="{resetLink}" style="display: inline-block; background: #e23235; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500;">Reset Password</a>
+      </div>
+
+      <p style="color: #666; margin: 0 0 8px; font-size: 14px;">This link expires in 1 hour.</p>
+      
+      <div style="background: #f8f8f8; padding: 16px; border-radius: 4px; margin: 24px 0;">
+        <p style="color: #666; margin: 0; font-size: 14px;">If you didn't request this, please ignore this email.</p>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+      <p style="color: #444; margin: 0;">Best regards,<br>Wheels Hub Team</p>
+    </div>
   </div>
-  <div style="text-align: center; margin-top: 20px; color: #888; font-size: 0.8em;">
-    <p>This is an automated message, please do not reply to this email.</p>
+</body>
+</html>
+`;
+
+export const ORDER_CONFIRMATION_TEMPLATE = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 20px; background: #f5f5f5; font-family: Arial, sans-serif;">
+  <div style="max-width: 600px; margin: 0 auto; background: white; border-radius: 8px; overflow: hidden;">
+    <div style="background: #e23235; padding: 24px; text-align: center;">
+      <h1 style="color: white; margin: 0; font-size: 24px;">Order Confirmation</h1>
+    </div>
+
+    <div style="padding: 24px;">
+      <p style="color: #444; margin: 0 0 20px;">Thank you for your order!</p>
+
+      <div style="background: #f8f8f8; padding: 16px; border-radius: 4px; margin-bottom: 24px;">
+        <p style="margin: 0 0 8px;"><strong>Order ID:</strong> {orderId}</p>
+        <p style="margin: 0 0 8px;"><strong>Total:</strong> {totalAmount}</p>
+        <p style="margin: 0;"><strong>Payment:</strong> {paymentMethod}</p>
+      </div>
+
+      <div style="margin-bottom: 24px;">
+        <h2 style="color: #444; font-size: 18px; margin: 0 0 16px;">Order Details</h2>
+        {orderItems}
+      </div>
+
+      <div style="text-align: center; margin: 24px 0;">
+        <a href="{orderLink}" style="display: inline-block; background: #e23235; color: white; padding: 12px 24px; text-decoration: none; border-radius: 4px; font-weight: 500;">Track Order</a>
+      </div>
+
+      <hr style="border: none; border-top: 1px solid #eee; margin: 24px 0;">
+      <p style="color: #444; margin: 0;">Best regards,<br>Wheels Hub Team</p>
+    </div>
   </div>
 </body>
 </html>

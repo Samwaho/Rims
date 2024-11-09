@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useMemo, useEffect, useCallback } from "react";
 import { useInView } from "react-intersection-observer";
 import { useDebounce } from "@/hooks/useDebounce";
 import { ProductCard } from "@/components/ProductCard";
@@ -16,8 +16,6 @@ import { Button } from "@/components/ui/button";
 
 const PRODUCTS_PER_PAGE = 12;
 
-export const dynamic = "force-dynamic";
-
 const ProductsPage = () => {
   const { ref, inView } = useInView({
     threshold: 0.1,
@@ -25,14 +23,14 @@ const ProductsPage = () => {
   });
 
   const searchParams = useSearchParams();
-  const [searchTerm, setSearchTerm] = useState(
-    searchParams.get("search") || ""
-  );
+  const initialSearchTerm = searchParams.get("search") || "";
+  const initialCategory = searchParams.get("category");
 
+  const [searchTerm, setSearchTerm] = useState(initialSearchTerm);
   const [filters, setFilters] = useState<FilterState>({
-    brand: [],
-    category: [],
-    priceRange: undefined,
+    brand: [] as string[],
+    category: initialCategory ? [initialCategory] : ([] as string[]),
+    priceRange: undefined as [number, number] | undefined,
   });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -46,7 +44,7 @@ const ProductsPage = () => {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useProducts(debouncedSearchTerm);
+  } = useProducts(debouncedSearchTerm, filters.category[0]);
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -54,9 +52,10 @@ const ProductsPage = () => {
     }
   }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const products = useMemo(() => {
-    return productsData?.pages.flatMap((page) => page.products) ?? [];
-  }, [productsData]);
+  const products = useMemo(
+    () => productsData?.pages.flatMap((page) => page.products) ?? [],
+    [productsData]
+  );
 
   const filteredProducts = useMemo(() => {
     return products
@@ -68,10 +67,15 @@ const ProductsPage = () => {
           priceRange,
         } = filters;
 
+        const categoryMatch =
+          !categoryFilters.length ||
+          categoryFilters.some(
+            (filter) => category.toLowerCase() === filter.toLowerCase()
+          );
+
         return (
-          (brandFilters.length === 0 || brandFilters.includes(brand)) &&
-          (categoryFilters.length === 0 ||
-            categoryFilters.includes(category)) &&
+          (!brandFilters.length || brandFilters.includes(brand)) &&
+          categoryMatch &&
           (!priceRange || (price >= priceRange[0] && price <= priceRange[1])) &&
           name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
         );
@@ -91,14 +95,46 @@ const ProductsPage = () => {
     setSearchTerm(searchParams.get("search") || "");
   }, [searchParams]);
 
-  const handleClearFilters = () => {
+  useEffect(() => {
+    const categoryParam = searchParams.get("category");
+    if (categoryParam) {
+      setFilters((prev) => ({
+        ...prev,
+        category: [categoryParam],
+      }));
+    }
+  }, [searchParams]);
+
+  const handleClearFilters = useCallback(() => {
     setFilters({
-      brand: [],
-      category: [],
+      brand: [] as string[],
+      category: [] as string[],
       priceRange: undefined,
     });
     setSearchTerm("");
-  };
+  }, []);
+
+  const handleFilterChange = useCallback(
+    (type: keyof FilterState, value: string) => {
+      setFilters((prev) => {
+        const currentArray = prev[type] as string[];
+        return {
+          ...prev,
+          [type]: currentArray.includes(value)
+            ? currentArray.filter((item) => item !== value)
+            : [...currentArray, value],
+        };
+      });
+    },
+    []
+  );
+
+  const handlePriceRangeChange = useCallback((value: number[]) => {
+    setFilters((prev) => ({
+      ...prev,
+      priceRange: value as [number, number],
+    }));
+  }, []);
 
   if (error) {
     return (
@@ -131,27 +167,25 @@ const ProductsPage = () => {
       <ProductsHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
       <section className="py-8 md:py-12">
-        <div className=" mx-auto px-2">
+        <div className="mx-auto px-2">
+          <div className="mb-6 px-4">
+            <h1 className="text-2xl font-bold text-gray-900">
+              {filters.category[0]
+                ? `${filters.category[0]
+                    .charAt(0)
+                    .toUpperCase()}${filters.category[0].slice(1)}s`
+                : "All Products"}
+            </h1>
+          </div>
+
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
             <FilterAccordion
               isLoading={isLoading}
               filters={filters}
               products={products}
               maxPrice={maxPrice}
-              onFilterChange={(type, value) => {
-                setFilters((prev) => ({
-                  ...prev,
-                  [type]: prev[type].includes(value)
-                    ? prev[type].filter((item) => item !== value)
-                    : [...prev[type], value],
-                }));
-              }}
-              onPriceRangeChange={(value) => {
-                setFilters((prev) => ({
-                  ...prev,
-                  priceRange: [value[0], value[1]],
-                }));
-              }}
+              onFilterChange={handleFilterChange}
+              onPriceRangeChange={handlePriceRangeChange}
             />
 
             <div>

@@ -22,16 +22,12 @@ export const useCart = () => {
       return response.data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["cartCount"] });
-      toast.success("Added to cart successfully", {
-        duration: 2000,
-      });
+      queryClient.invalidateQueries({ queryKey: ["cart"] });
+      toast.success("Product added to cart");
     },
     onError: (error) => {
-      toast.error("Failed to add to cart. Please try again.", {
-        duration: 3000,
-      });
-      console.error("Cart error:", error);
+      console.error("Error adding to cart:", error);
+      toast.error("Failed to add product to cart. Please try again.");
     },
   });
 };

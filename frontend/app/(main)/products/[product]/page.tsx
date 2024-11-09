@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
 import { toast } from "sonner";
@@ -44,22 +44,23 @@ export default function ProductPage({
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await getAuthUser();
-        setIsAuthenticated(response !== null);
-        if (response) {
-          setUser(response);
-        }
-      } catch (error) {
-        console.error("Error checking auth:", error);
-        setIsAuthenticated(false);
-        setUser(null);
+  const checkAuth = useCallback(async () => {
+    try {
+      const response = await getAuthUser();
+      setIsAuthenticated(response !== null);
+      if (response) {
+        setUser(response);
       }
-    };
-    checkAuth();
+    } catch (error) {
+      console.error("Error checking auth:", error);
+      setIsAuthenticated(false);
+      setUser(null);
+    }
   }, []);
+
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
 
   const {
     data: product,
@@ -96,7 +97,7 @@ export default function ProductPage({
     },
   });
 
-  const handleAddToCart = () => {
+  const handleAddToCart = useCallback(() => {
     if (!isAuthenticated) {
       router.push("/sign-in");
       return;
@@ -113,7 +114,7 @@ export default function ProductPage({
     }
 
     addToCartMutation.mutate({ productId: product._id, quantity: 1 });
-  };
+  }, [isAuthenticated, product, router, addToCartMutation]);
 
   if (isLoading) return <ProductSkeleton />;
   if (error || !product)

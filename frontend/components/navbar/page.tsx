@@ -108,6 +108,16 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
             <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
           </Link>
 
+          {loggedIn && (
+            <Link
+              href="/orders"
+              className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
+            >
+              Orders
+              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
+            </Link>
+          )}
+
           {isAdmin && (
             <Link
               href="/admin"
@@ -201,6 +211,16 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
                 Products
                 <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
               </button>
+
+              {loggedIn && (
+                <button
+                  onClick={() => handleDrawerLinkClick("/orders")}
+                  className="text-xl text-left hover:text-gray-600 transition-colors relative group"
+                >
+                  Orders
+                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
+                </button>
+              )}
 
               {isAdmin && (
                 <button

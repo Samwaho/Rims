@@ -144,29 +144,43 @@ export const forgotPasswordController = async (req, res, next) => {
     const { email } = req.body;
 
     if (!email) {
-      return errorHandler(res, 422, "Please fill in all required fields");
+      return errorHandler(res, 422, "Email is required");
     }
 
     const user = await User.findOne({ email });
 
     if (!user) {
-      return errorHandler(res, 404, "User not found");
+      return res.status(200).json({
+        message:
+          "If an account exists, you will receive a password reset email",
+      });
     }
 
-    const resetToken = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
-    });
-
-    const emailSent = await sendResetEmail(
-      email,
-      `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`
+    const resetToken = jwt.sign(
+      {
+        userId: user._id,
+        email: user.email,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" }
     );
+
+    const hashedToken = bcryptjs.hashSync(resetToken, 10);
+    user.resetPasswordToken = hashedToken;
+    user.resetPasswordExpires = Date.now() + 3600000; // 1 hour
+    await user.save();
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${resetToken}`;
+
+    const emailSent = await sendResetEmail(email, resetLink);
 
     if (!emailSent) {
       return errorHandler(res, 500, "Error sending reset email");
     }
 
-    return res.status(200).json({ message: "Reset email sent successfully" });
+    return res.status(200).json({
+      message: "If an account exists, you will receive a password reset email",
+    });
   } catch (error) {
     next(error);
   }
@@ -174,23 +188,40 @@ export const forgotPasswordController = async (req, res, next) => {
 
 export const resetPasswordController = async (req, res, next) => {
   try {
-    const { token } = req.params;
     const { newPassword } = req.body;
+    const token = req.params.token;
 
     if (!token || !newPassword) {
-      return errorHandler(res, 422, "Please fill in all required fields");
+      return errorHandler(res, 422, "Missing required fields");
     }
 
-    const decodedToken = jwt.verify(token, process.env.JWT_SECRET);
-    const userId = decodedToken.userId;
-    const user = await User.findById(userId);
+    let decodedToken;
+    try {
+      decodedToken = jwt.verify(token, process.env.JWT_SECRET);
+    } catch (error) {
+      return errorHandler(res, 401, "Invalid or expired reset token");
+    }
+
+    const user = await User.findOne({
+      _id: decodedToken.userId,
+      resetPasswordExpires: { $gt: Date.now() },
+    });
 
     if (!user) {
-      return errorHandler(res, 404, "User not found");
+      return errorHandler(res, 401, "Invalid or expired reset token");
+    }
+
+    const isValidToken = bcryptjs.compareSync(token, user.resetPasswordToken);
+    if (!isValidToken) {
+      return errorHandler(res, 401, "Invalid reset token");
     }
 
     const hashedPassword = bcryptjs.hashSync(newPassword, 10);
-    await User.findByIdAndUpdate(userId, { password: hashedPassword });
+    user.password = hashedPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    await user.save();
+
     await sendPasswordResetSuccessEmail(user.email);
 
     return res.status(200).json({ message: "Password reset successfully" });

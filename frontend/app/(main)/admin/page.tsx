@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Pencil, Trash2, Search, Loader2 } from "lucide-react";
+import { Plus, Search, Loader2, ShoppingBag } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -11,35 +11,35 @@ import { useProducts } from "@/hooks/useProducts";
 import { getAuthUser, axiosHeaders } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import axios from "axios";
-
-interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  description: string;
-  category: string;
-  stock: number;
-  images: string[];
-  brand: string;
-  madeIn: string;
-  specifications: Array<{ name: string; value: string }>;
-  averageRating: number;
-  reviewCount: number;
-  createdAt: string;
-}
-
-interface ProductsResponse {
-  products: Product[];
-  totalPages: number;
-  currentPage: number;
-}
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  getPaginationRowModel,
+  getSortedRowModel,
+  SortingState,
+  getFilteredRowModel,
+  ColumnFiltersState,
+} from "@tanstack/react-table";
+import { createColumns } from "./columns";
+import { DataTablePagination } from "@/components/ui/data-table/pagination";
+import { DataTableViewOptions } from "@/components/ui/data-table/view-options";
 
 export default function AdminPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
+  const [sorting, setSorting] = useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const debouncedSearch = useDebounce(searchTerm, 500);
 
-  // Use the custom hook for products
   const {
     data: productsData,
     isLoading,
@@ -67,153 +67,147 @@ export default function AdminPage() {
       );
 
       toast.success("Product deleted successfully");
-      refetch(); // Refresh the products list after deletion
+      refetch();
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Error deleting product");
       console.error("Delete error:", error);
     }
   };
 
+  const columns = createColumns({ handleDelete });
+
+  const table = useReactTable({
+    data: productsData?.pages?.[0]?.products || [],
+    columns,
+    getCoreRowModel: getCoreRowModel(),
+    getPaginationRowModel: getPaginationRowModel(),
+    getSortedRowModel: getSortedRowModel(),
+    getFilteredRowModel: getFilteredRowModel(),
+    onSortingChange: setSorting,
+    onColumnFiltersChange: setColumnFilters,
+    state: {
+      sorting,
+      columnFilters,
+    },
+  });
+
   if (isError) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <p className="text-red-500">
-          Error loading products. Please try again.
-        </p>
+      <div className="flex justify-center items-center min-h-[calc(100vh-4rem)]">
+        <div className="bg-red-50 p-4 rounded-lg border border-red-200">
+          <p className="text-red-600 font-medium">
+            Error loading products. Please try again.
+          </p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-6">
+    <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
       <div className="flex flex-col gap-6">
-        <div className="flex justify-between items-center">
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
             Product Management
           </h1>
-          <Link href="/admin/create">
-            <Button className="flex items-center gap-2">
-              <Plus size={20} />
-              Add New Product
-            </Button>
-          </Link>
-        </div>
-
-        <div className="relative">
-          <Search
-            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-            size={20}
-          />
-          <Input
-            placeholder="Search products..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-10 h-11"
-          />
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
+            <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
+              <Search
+                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                size={20}
+              />
+              <Input
+                placeholder="Search products..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10 h-11 w-full"
+              />
+            </div>
+            <div className="flex items-center gap-3 sm:gap-4">
+              <DataTableViewOptions table={table} />
+              <Link href="/admin/orders" className="flex-shrink-0">
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 h-11 whitespace-nowrap"
+                >
+                  <ShoppingBag size={20} />
+                  <span className="hidden sm:inline">Manage Orders</span>
+                  <span className="sm:hidden">Orders</span>
+                </Button>
+              </Link>
+              <Link href="/admin/create" className="flex-shrink-0">
+                <Button className="flex items-center gap-2 h-11 whitespace-nowrap">
+                  <Plus size={20} />
+                  <span className="hidden sm:inline">Add New Product</span>
+                  <span className="sm:hidden">Add</span>
+                </Button>
+              </Link>
+            </div>
+          </div>
         </div>
 
         <div className="bg-white rounded-lg shadow-md border border-gray-100">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left">
-              <thead className="text-xs uppercase bg-gray-50">
-                <tr>
-                  <th className="px-6 py-4">Image</th>
-                  <th className="px-6 py-4">Product Details</th>
-                  <th className="px-6 py-4">Stock & Price</th>
-                  <th className="px-6 py-4">Stats</th>
-                  <th className="px-6 py-4">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-200">
+            <Table>
+              <TableHeader>
+                {table.getHeaderGroups().map((headerGroup) => (
+                  <TableRow key={headerGroup.id}>
+                    {headerGroup.headers.map((header) => (
+                      <TableHead key={header.id} className="whitespace-nowrap">
+                        {header.isPlaceholder
+                          ? null
+                          : flexRender(
+                              header.column.columnDef.header,
+                              header.getContext()
+                            )}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                ))}
+              </TableHeader>
+              <TableBody>
                 {isLoading ? (
-                  <tr>
-                    <td colSpan={5} className="px-6 py-8 text-center">
-                      <div className="flex justify-center items-center gap-2">
-                        <Loader2 className="w-5 h-5 animate-spin" />
-                        Loading products...
+                  <TableRow>
+                    <TableCell colSpan={5} className="text-center py-12">
+                      <div className="flex justify-center items-center gap-3">
+                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                        <span className="text-gray-600 font-medium">
+                          Loading products...
+                        </span>
                       </div>
-                    </td>
-                  </tr>
-                ) : productsData?.pages?.[0]?.products.length === 0 ? (
-                  <tr>
-                    <td
-                      colSpan={5}
-                      className="px-6 py-8 text-center text-gray-500"
+                    </TableCell>
+                  </TableRow>
+                ) : table.getRowModel().rows?.length ? (
+                  table.getRowModel().rows.map((row) => (
+                    <TableRow
+                      key={row.id}
+                      data-state={row.getIsSelected() && "selected"}
+                      className="hover:bg-gray-50 transition-colors"
                     >
-                      No products found
-                    </td>
-                  </tr>
-                ) : (
-                  productsData?.pages?.[0]?.products.map((product: Product) => (
-                    <tr key={product._id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4">
-                        <img
-                          src={product.images[0] || "/placeholder.png"}
-                          alt={product.name}
-                          className="w-20 h-20 object-cover rounded-lg"
-                        />
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <p className="font-medium text-gray-900">
-                            {product.name}
-                          </p>
-                          <p className="text-sm text-gray-500">
-                            {product.brand}
-                          </p>
-                          <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                            {product.category}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <p className="font-medium">
-                            KES {product.price.toLocaleString()}
-                          </p>
-                          <p
-                            className={`text-sm ${
-                              product.stock < 10
-                                ? "text-red-500"
-                                : "text-gray-500"
-                            }`}
-                          >
-                            {product.stock} in stock
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="space-y-1">
-                          <div className="flex items-center gap-1">
-                            <span className="text-yellow-400">★</span>
-                            <span>{product.averageRating.toFixed(1)}</span>
-                          </div>
-                          <p className="text-sm text-gray-500">
-                            {product.reviewCount} reviews
-                          </p>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <Link href={`/admin/edit/${product._id}`}>
-                            <Button variant="outline" size="sm">
-                              <Pencil size={16} />
-                            </Button>
-                          </Link>
-                          <Button
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => handleDelete(product._id)}
-                          >
-                            <Trash2 size={16} />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
+                      {row.getVisibleCells().map((cell) => (
+                        <TableCell key={cell.id} className="py-4">
+                          {flexRender(
+                            cell.column.columnDef.cell,
+                            cell.getContext()
+                          )}
+                        </TableCell>
+                      ))}
+                    </TableRow>
                   ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={5} className="h-32 text-center">
+                      <p className="text-gray-500 font-medium">
+                        No products found.
+                      </p>
+                    </TableCell>
+                  </TableRow>
                 )}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
+          </div>
+          <div className="border-t border-gray-100">
+            <DataTablePagination table={table} />
           </div>
         </div>
       </div>

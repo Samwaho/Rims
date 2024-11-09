@@ -11,6 +11,30 @@ const Categories = () => {
         <h2 className="text-3xl md:text-4xl font-bold text-center mb-8 bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
           Browse Categories
         </h2>
+
+        {/* All Categories Card */}
+        <div className="mb-8 text-center">
+          <Link
+            href="/products"
+            className="inline-flex h-10 items-center justify-center rounded-lg bg-red-600 px-6 text-sm font-medium text-white shadow transition-all duration-300 hover:bg-red-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+          >
+            View All Products
+            <svg
+              className="ml-2 w-4 h-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M9 5l7 7-7 7"
+              />
+            </svg>
+          </Link>
+        </div>
+
         <div className="grid grid-cols-2 gap-4 md:gap-8 max-w-5xl mx-auto">
           <div className="group bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1">
             <div className="relative overflow-hidden">
@@ -33,7 +57,7 @@ const Categories = () => {
                 and driving comfort.
               </p>
               <Link
-                href="/products?category=wheel"
+                href="/products?category=tyre"
                 className="inline-flex h-8 md:h-10 items-center justify-center rounded-lg bg-red-600 px-4 md:px-6 text-xs md:text-sm font-medium text-white shadow transition-all duration-300 hover:bg-red-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
                 Shop Tyres
@@ -75,7 +99,7 @@ const Categories = () => {
                 performance.
               </p>
               <Link
-                href="/products?category=rim"
+                href="/products?category=wheel"
                 className="inline-flex h-8 md:h-10 items-center justify-center rounded-lg bg-red-600 px-4 md:px-6 text-xs md:text-sm font-medium text-white shadow transition-all duration-300 hover:bg-red-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               >
                 Shop Wheels

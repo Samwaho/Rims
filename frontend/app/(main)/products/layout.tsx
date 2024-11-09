@@ -1,10 +1,14 @@
-import { requireAuth } from "@/lib/actions";
+import { Metadata } from "next";
 
-export default async function ProductsLayout({
+export const metadata: Metadata = {
+  title: "Products | Your Store Name",
+  description: "Browse our collection of products",
+};
+
+export default function ProductsLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  await requireAuth(); // This will redirect if not authenticated
-  return <>{children}</>;
+  return children;
 }

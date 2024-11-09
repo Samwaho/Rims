@@ -278,7 +278,7 @@ export default function ProductReviews({
                 className="flex space-x-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
               >
                 <Avatar className="w-12 h-12">
-                  <AvatarFallback className="bg-primary/10 text-primary">
+                  <AvatarFallback className="bg-gray-200 text-primary">
                     {review.userName?.[0]?.toUpperCase() || "U"}
                   </AvatarFallback>
                 </Avatar>
