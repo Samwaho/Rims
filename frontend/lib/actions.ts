@@ -3,38 +3,53 @@ import axios from "axios";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
+// Constants
+const AUTH_COOKIE_NAME = "access_token";
+const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+const AUTH_USER_ENDPOINT = `${API_BASE_URL}/api/auth/user`;
+
+// Helper function to get auth token
+const getAuthToken = (): string | undefined => {
+  return cookies().get(AUTH_COOKIE_NAME)?.value;
+};
+
+// Helper function to create auth headers
+const createAuthHeaders = (token: string | undefined) => ({
+  headers: {
+    Authorization: token ? `Bearer ${token}` : "",
+  },
+});
+
 export const setCookies = async (token: string) => {
   try {
-    cookies().set("access_token", token, {
+    cookies().set(AUTH_COOKIE_NAME, token, {
       path: "/",
       httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
     });
   } catch (error) {
-    console.error("🚀 ~ setCookies ~ error:", error);
+    console.error("[Cookie Error]:", error);
+    throw new Error("Failed to set authentication cookie");
   }
 };
 
 export const axiosHeaders = () => {
-  return {
-    headers: {
-      Authorization: `Bearer ${cookies().get("access_token")?.value}`,
-    },
-  };
+  const token = getAuthToken();
+  return createAuthHeaders(token);
 };
 
 export const getAuthUser = async () => {
   try {
-    const user = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/user`,
-      {
-        headers: {
-          Authorization: `Bearer ${cookies().get("access_token")?.value}`,
-        },
-      }
+    const token = getAuthToken();
+    const headers = createAuthHeaders(token);
+    const { data } = await axios.get(AUTH_USER_ENDPOINT, headers);
+    return data;
+  } catch (error) {
+    console.error(
+      "[Auth Error]:",
+      error instanceof Error ? error.message : error
     );
-    return user.data;
-  } catch (error: any) {
-    console.error("getAuthUser error:", error?.message || error);
     return null;
   }
 };

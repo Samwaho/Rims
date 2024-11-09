@@ -1,14 +1,52 @@
 import Image from "next/image";
 import Link from "next/link";
-import React from "react";
+import { memo } from "react";
 import HeroCar from "@/public/hero.jpg";
 
-const Hero = () => {
+const CustomerAvatars = memo(() => (
+  <div className="flex -space-x-2">
+    {[1, 2, 3, 4].map((i) => (
+      <div
+        key={i}
+        className="w-8 h-8 rounded-full border-2 border-white bg-gray-200"
+      ></div>
+    ))}
+  </div>
+));
+
+CustomerAvatars.displayName = "CustomerAvatars";
+
+const HeroButton = memo(
+  ({
+    href,
+    children,
+    variant = "primary",
+  }: {
+    href: string;
+    children: React.ReactNode;
+    variant?: "primary" | "secondary";
+  }) => (
+    <Link
+      href={href}
+      className={`inline-flex h-10 items-center justify-center rounded-lg px-6 text-sm font-medium shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 ${
+        variant === "primary"
+          ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600"
+          : "bg-white text-black border-2 border-black/10 hover:bg-gray-50 focus-visible:ring-black"
+      }`}
+    >
+      {children}
+    </Link>
+  )
+);
+
+HeroButton.displayName = "HeroButton";
+
+const Hero = memo(() => {
   return (
     <section className="relative w-full py-16 md:py-24 lg:py-32 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white/20 to-transparent"></div>
-      <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20 "></div>
+      <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20"></div>
       <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20"></div>
 
       <div className="container grid items-center gap-8 px-4 md:px-6 lg:grid-cols-2 lg:gap-12 relative">
@@ -30,10 +68,7 @@ const Hero = () => {
             with every mile.
           </p>
           <div className="flex flex-row gap-4">
-            <Link
-              href="/products"
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-red-600 px-6 text-sm font-medium text-white shadow-lg transition-all duration-300 hover:bg-red-700 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-600 disabled:pointer-events-none disabled:opacity-50"
-            >
+            <HeroButton href="/products">
               Shop Now
               <svg
                 className="ml-2 w-4 h-4"
@@ -49,11 +84,8 @@ const Hero = () => {
                   d="M14 5l7 7m0 0l-7 7m7-7H3"
                 />
               </svg>
-            </Link>
-            <Link
-              href="/contact"
-              className="inline-flex h-10 items-center justify-center rounded-lg bg-white px-6 text-sm font-medium text-black border-2 border-black/10 shadow-lg transition-all duration-300 hover:bg-gray-50 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black disabled:pointer-events-none disabled:opacity-50"
-            >
+            </HeroButton>
+            <HeroButton href="/contact" variant="secondary">
               Contact Us
               <svg
                 className="ml-2 w-4 h-4"
@@ -69,17 +101,10 @@ const Hero = () => {
                   d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                 />
               </svg>
-            </Link>
+            </HeroButton>
           </div>
           <div className="flex items-center gap-4 text-sm text-gray-600">
-            <div className="flex -space-x-2">
-              {[1, 2, 3, 4].map((i) => (
-                <div
-                  key={i}
-                  className="w-8 h-8 rounded-full border-2 border-white bg-gray-200"
-                ></div>
-              ))}
-            </div>
+            <CustomerAvatars />
             <p>
               Join <span className="font-semibold">2,000+</span> satisfied
               customers
@@ -102,6 +127,8 @@ const Hero = () => {
       </div>
     </section>
   );
-};
+});
+
+Hero.displayName = "Hero";
 
 export default Hero;

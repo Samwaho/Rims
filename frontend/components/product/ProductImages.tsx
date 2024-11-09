@@ -1,7 +1,8 @@
 import Image from "next/image";
+import { memo } from "react";
 import { Product } from "@/types/product";
 import ProductReviews from "./ProductReviews";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 
 interface ProductImagesProps {
@@ -12,7 +13,50 @@ interface ProductImagesProps {
   user?: any;
 }
 
-export default function ProductImages({
+const ThumbnailImage = memo(
+  ({
+    image,
+    index,
+    isSelected,
+    productName,
+    onClick,
+  }: {
+    image: string;
+    index: number;
+    isSelected: boolean;
+    productName: string;
+    onClick: () => void;
+  }) => (
+    <div
+      role="button"
+      tabIndex={0}
+      className={`rounded-lg overflow-hidden transition-all transform hover:scale-105 cursor-pointer ${
+        isSelected
+          ? "ring-2 ring-primary shadow-lg"
+          : "hover:ring-2 hover:ring-primary/50 hover:shadow-md"
+      }`}
+      onClick={onClick}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          onClick();
+        }
+      }}
+      aria-label={`View Image ${index + 1}`}
+    >
+      <Image
+        src={image}
+        alt={`${productName} - Image ${index + 1}`}
+        width={80}
+        height={80}
+        className="w-16 h-16 object-cover"
+      />
+    </div>
+  )
+);
+
+ThumbnailImage.displayName = "ThumbnailImage";
+
+const ProductImages = memo(function ProductImages({
   product,
   selectedImageIndex,
   setSelectedImageIndex,
@@ -21,11 +65,22 @@ export default function ProductImages({
 }: ProductImagesProps) {
   const [isZoomed, setIsZoomed] = useState(false);
 
+  const handleZoomToggle = useCallback(() => {
+    setIsZoomed((prev) => !prev);
+  }, []);
+
+  const handleThumbnailClick = useCallback(
+    (index: number) => {
+      setSelectedImageIndex(index);
+    },
+    [setSelectedImageIndex]
+  );
+
   return (
     <div className="space-y-4">
       <div
         className="aspect-square w-full max-w-[500px] relative group cursor-zoom-in"
-        onClick={() => setIsZoomed(true)}
+        onClick={handleZoomToggle}
       >
         <Image
           src={product.images[selectedImageIndex]}
@@ -40,24 +95,14 @@ export default function ProductImages({
 
       <div className="flex flex-wrap gap-4">
         {product.images.map((image, index) => (
-          <button
+          <ThumbnailImage
             key={index}
-            className={`rounded-lg overflow-hidden transition-all transform hover:scale-105 ${
-              index === selectedImageIndex
-                ? "ring-2 ring-primary shadow-lg"
-                : "hover:ring-2 hover:ring-primary/50 hover:shadow-md"
-            }`}
-            onClick={() => setSelectedImageIndex(index)}
-          >
-            <Image
-              src={image}
-              alt={`${product.name} - Image ${index + 1}`}
-              width={80}
-              height={80}
-              className="w-16 h-16 object-cover"
-            />
-            <span className="sr-only">View Image {index + 1}</span>
-          </button>
+            image={image}
+            index={index}
+            isSelected={index === selectedImageIndex}
+            productName={product.name}
+            onClick={() => handleThumbnailClick(index)}
+          />
         ))}
       </div>
 
@@ -82,4 +127,8 @@ export default function ProductImages({
       </div>
     </div>
   );
-}
+});
+
+ProductImages.displayName = "ProductImages";
+
+export default ProductImages;

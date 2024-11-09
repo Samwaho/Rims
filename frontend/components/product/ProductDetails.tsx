@@ -9,7 +9,6 @@ import { ProductSpecifications } from "./ProductSpecifications";
 import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
-import { ShoppingCart, CreditCard } from "lucide-react";
 
 interface ProductDetailsProps {
   product: Product;
@@ -30,10 +29,6 @@ export default function ProductDetails({
       return;
     }
     action();
-  };
-
-  const handleBuyNow = () => {
-    handleAuthAction(() => router.push(`/checkout?productId=${product._id}`));
   };
 
   // Calculate average rating here to ensure consistency
@@ -87,27 +82,14 @@ export default function ProductDetails({
           reviewCount={product.reviews?.length || 0}
         />
       </div>
-      <div className="space-y-3">
-        <Button
-          size="lg"
-          variant="outline"
-          className="w-full transition-all duration-300 hover:bg-primary hover:text-primary-foreground text-lg py-6"
-          onClick={() => handleAuthAction(handleAddToCart)}
-          disabled={product.stock === 0}
-        >
-          <ShoppingCart className="w-5 h-5 mr-2" />
-          {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
-        </Button>
-        <Button
-          size="lg"
-          className="w-full bg-primary hover:opacity-90 text-primary-foreground transition-all duration-300 text-lg py-6"
-          onClick={handleBuyNow}
-          disabled={product.stock === 0}
-        >
-          <CreditCard className="w-5 h-5 mr-2" />
-          Buy Now
-        </Button>
-      </div>
+      <Button
+        size="lg"
+        className="w-full bg-primary hover:opacity-90 text-primary-foreground transition-all duration-300 text-lg py-6"
+        onClick={() => handleAuthAction(handleAddToCart)}
+        disabled={product.stock === 0}
+      >
+        {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
+      </Button>
 
       <Separator className="my-2" />
 

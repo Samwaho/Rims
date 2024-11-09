@@ -1,25 +1,35 @@
 "use client";
-import React, { useState } from "react";
+import { memo, useState, useCallback } from "react";
 import { Input } from "../ui/input";
 import { Button } from "../ui/button";
 
-const CTA = () => {
+const CTA = memo(() => {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+  const handleSubmit = useCallback(
+    async (e: React.FormEvent<HTMLFormElement>) => {
+      e.preventDefault();
+      setLoading(true);
+      try {
+        // Simulate API call
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        setEmail("");
+      } catch (error) {
+        console.error("Newsletter subscription failed:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    []
+  );
 
-      setEmail("");
-    } catch (error) {
-      console.log(error);
-    }
-    setLoading(false);
-  };
+  const handleEmailChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => {
+      setEmail(e.target.value);
+    },
+    []
+  );
 
   return (
     <section className="bgImg p-8 md:p-12 mt-10 min-h-[350px] flex flex-col justify-center items-center">
@@ -36,18 +46,20 @@ const CTA = () => {
           className="flex flex-col sm:flex-row gap-3 max-w-xl mx-auto"
         >
           <Input
-            className="flex-grow rounded-lg "
+            className="flex-grow rounded-lg"
             type="email"
             placeholder="Enter your email address"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={handleEmailChange}
             required
             disabled={loading}
+            aria-label="Email address"
           />
           <Button
             type="submit"
             className="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-70"
             disabled={loading}
+            aria-label={loading ? "Subscribing..." : "Subscribe to newsletter"}
           >
             {loading ? "Subscribing..." : "Subscribe Now"}
           </Button>
@@ -59,6 +71,8 @@ const CTA = () => {
       </div>
     </section>
   );
-};
+});
+
+CTA.displayName = "CTA";
 
 export default CTA;

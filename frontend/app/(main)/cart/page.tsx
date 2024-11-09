@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { formatPrice } from "@/lib/utils";
@@ -27,10 +27,12 @@ interface CartItem {
   quantity: number;
 }
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 const fetchCart = async (): Promise<CartItem[]> => {
   try {
     const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
+      `${BACKEND_URL}/api/cart`,
       await axiosHeaders()
     );
     return response.data;
@@ -44,9 +46,166 @@ const fetchCart = async (): Promise<CartItem[]> => {
 
 export const dynamic = "force-dynamic";
 
+const CartSkeleton = memo(() => (
+  <div className="space-y-4">
+    {[...Array(3)].map((_, index) => (
+      <div
+        key={index}
+        className="flex items-center space-x-6 bg-white p-6 rounded-lg shadow-sm"
+      >
+        <Skeleton className="h-24 w-24 rounded-md" />
+        <div className="flex-1 space-y-2">
+          <Skeleton className="h-6 w-2/3" />
+          <Skeleton className="h-5 w-1/3" />
+        </div>
+        <Skeleton className="h-10 w-32" />
+      </div>
+    ))}
+  </div>
+));
+
+CartSkeleton.displayName = "CartSkeleton";
+
+const EmptyCart = memo(() => (
+  <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
+    <ShoppingBag className="mx-auto h-20 w-20 text-gray-400 mb-6" />
+    <p className="text-2xl text-gray-600 mb-4">Your cart is empty</p>
+    <p className="text-gray-500 mb-8">
+      Looks like you haven't added any items to your cart yet.
+    </p>
+    <Link
+      href="/products"
+      className="inline-block bg-primary hover:opacity-90 text-white font-semibold py-3 px-8 rounded-full transition duration-300"
+    >
+      Start Shopping
+    </Link>
+  </div>
+));
+
+EmptyCart.displayName = "EmptyCart";
+
+const CartItem = memo(
+  ({
+    item,
+    quantity,
+    onQuantityChange,
+    onRemove,
+  }: {
+    item: CartItem;
+    quantity: number;
+    onQuantityChange: (id: string, quantity: number) => void;
+    onRemove: (id: string) => void;
+  }) => (
+    <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary/20 transition duration-300">
+      <Link
+        href={`/products/${item.product._id}`}
+        className="relative w-32 h-32 flex-shrink-0 overflow-hidden rounded-md hover:opacity-80 transition-opacity"
+      >
+        <Image
+          src={item.product.images[0]}
+          alt={item.product.name}
+          layout="fill"
+          objectFit="cover"
+          className="rounded-md"
+        />
+      </Link>
+      <div className="flex-1 text-center sm:text-left">
+        <Link
+          href={`/products/${item.product._id}`}
+          className="font-semibold text-lg hover:text-primary transition-colors"
+        >
+          {item.product.name}
+        </Link>
+        <p className="text-primary font-medium mt-1">
+          {formatPrice(item.product.price)}
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onQuantityChange(item._id, quantity - 1)}
+          className="w-8 h-8 rounded-full p-0"
+        >
+          <Minus className="h-3 w-3" />
+        </Button>
+        <Input
+          type="number"
+          min="1"
+          max="99"
+          value={quantity}
+          onChange={(e) => onQuantityChange(item._id, parseInt(e.target.value))}
+          className="w-14 text-center"
+        />
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => onQuantityChange(item._id, quantity + 1)}
+          className="w-8 h-8 rounded-full p-0"
+        >
+          <Plus className="h-3 w-3" />
+        </Button>
+        <Button
+          variant="ghost"
+          onClick={() => onRemove(item._id)}
+          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full ml-2"
+        >
+          <Trash2 className="h-5 w-5" />
+        </Button>
+      </div>
+    </div>
+  )
+);
+
+CartItem.displayName = "CartItem";
+
+const OrderSummary = memo(
+  ({
+    totalPrice,
+    onCheckout,
+  }: {
+    totalPrice: number;
+    onCheckout: () => void;
+  }) => (
+    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 sticky top-4">
+      <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
+      <div className="space-y-3 mb-6">
+        <div className="flex justify-between text-gray-600">
+          <span>Subtotal</span>
+          <span>{formatPrice(totalPrice)}</span>
+        </div>
+        <div className="flex justify-between text-gray-600">
+          <span>Shipping</span>
+          <span>Free</span>
+        </div>
+        <div className="border-t pt-3 flex justify-between font-semibold text-lg">
+          <span>Total</span>
+          <span className="text-primary">{formatPrice(totalPrice)}</span>
+        </div>
+      </div>
+      <Button
+        className="w-full bg-primary hover:opacity-90 text-white text-lg py-6 rounded-full transition duration-300"
+        onClick={onCheckout}
+      >
+        Proceed to Checkout
+      </Button>
+      <Link
+        href="/products"
+        className="mt-4 text-center block text-primary hover:opacity-80 font-medium transition duration-300"
+      >
+        Continue Shopping
+      </Link>
+    </div>
+  )
+);
+
+OrderSummary.displayName = "OrderSummary";
+
 const CartPage = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
+  const [quantities, setQuantities] = useState<Record<string, number>>({});
+
   const {
     data: cartItems = [],
     isLoading,
@@ -56,9 +215,9 @@ const CartPage = () => {
     queryKey: ["cart"],
     queryFn: fetchCart,
     retry: (failureCount, error: any) => {
-      // Don't retry on auth errors
-      if (error.message === "Please sign in to view your cart") return false;
-      return failureCount < 3;
+      return (
+        error.message !== "Please sign in to view your cart" && failureCount < 3
+      );
     },
     retryDelay: 1000,
   });
@@ -71,18 +230,12 @@ const CartPage = () => {
       itemId: string;
       quantity: number;
     }) => {
-      try {
-        await axios.put(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/${itemId}`,
-          { quantity },
-          await axiosHeaders()
-        );
-      } catch (error: any) {
-        if (error.response?.status === 400) {
-          throw new Error("Invalid quantity specified");
-        }
-        throw new Error("Failed to update cart");
-      }
+      const response = await axios.put(
+        `${BACKEND_URL}/api/cart/${itemId}`,
+        { quantity },
+        await axiosHeaders()
+      );
+      return response.data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
@@ -95,76 +248,67 @@ const CartPage = () => {
 
   const removeItemMutation = useMutation({
     mutationFn: async (itemId: string) => {
-      try {
-        await axios.delete(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/${itemId}`,
-          await axiosHeaders()
-        );
-      } catch (error) {
-        throw new Error("Failed to remove item from cart");
-      }
+      await axios.delete(
+        `${BACKEND_URL}/api/cart/${itemId}`,
+        await axiosHeaders()
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success("Item removed from cart");
     },
-    onError: (error: Error) => {
-      toast.error(error.message);
+    onError: () => {
+      toast.error("Failed to remove item from cart");
     },
   });
 
-  const [quantities, setQuantities] = useState<Record<string, number>>({});
-
   useEffect(() => {
-    const initialQuantities = cartItems.reduce((acc, item) => {
-      acc[item._id] = item.quantity;
-      return acc;
-    }, {} as Record<string, number>);
+    const initialQuantities = cartItems.reduce(
+      (acc, item) => ({
+        ...acc,
+        [item._id]: item.quantity,
+      }),
+      {}
+    );
     setQuantities(initialQuantities);
   }, [cartItems]);
 
-  const handleQuantityChange = (itemId: string, newQuantity: number) => {
-    if (newQuantity < 1) {
-      toast.error("Quantity cannot be less than 1");
-      return;
-    }
-    if (newQuantity > 99) {
-      toast.error("Maximum quantity allowed is 99");
-      return;
-    }
-    setQuantities((prev) => ({ ...prev, [itemId]: newQuantity }));
-    updateCartMutation.mutate({ itemId, quantity: newQuantity });
-  };
+  const handleQuantityChange = useCallback(
+    (itemId: string, newQuantity: number) => {
+      if (newQuantity < 1) {
+        toast.error("Quantity cannot be less than 1");
+        return;
+      }
+      if (newQuantity > 99) {
+        toast.error("Maximum quantity allowed is 99");
+        return;
+      }
+      setQuantities((prev) => ({ ...prev, [itemId]: newQuantity }));
+      updateCartMutation.mutate({ itemId, quantity: newQuantity });
+    },
+    [updateCartMutation]
+  );
 
-  const handleRemoveItem = (itemId: string) => {
-    if (window.confirm("Are you sure you want to remove this item?")) {
-      removeItemMutation.mutate(itemId);
-    }
-  };
+  const handleRemoveItem = useCallback(
+    (itemId: string) => {
+      if (window.confirm("Are you sure you want to remove this item?")) {
+        removeItemMutation.mutate(itemId);
+      }
+    },
+    [removeItemMutation]
+  );
 
-  const totalPrice = cartItems.reduce((total, item) => {
-    return total + item.product.price * (quantities[item._id] || item.quantity);
-  }, 0);
+  const totalPrice = cartItems.reduce(
+    (total, item) =>
+      total + item.product.price * (quantities[item._id] || item.quantity),
+    0
+  );
 
   if (isLoading) {
     return (
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
-        <div className="space-y-4">
-          {[...Array(3)].map((_, index) => (
-            <div
-              key={index}
-              className="flex items-center space-x-6 bg-white p-6 rounded-lg shadow-sm"
-            >
-              <Skeleton className="h-24 w-24 rounded-md" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-6 w-2/3" />
-                <Skeleton className="h-5 w-1/3" />
-              </div>
-              <Skeleton className="h-10 w-32" />
-            </div>
-          ))}
-        </div>
+        <CartSkeleton />
       </div>
     );
   }
@@ -207,124 +351,25 @@ const CartPage = () => {
       <div className="container mx-auto px-4 py-8 max-w-5xl">
         <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
         {cartItems.length === 0 ? (
-          <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
-            <ShoppingBag className="mx-auto h-20 w-20 text-gray-400 mb-6" />
-            <p className="text-2xl text-gray-600 mb-4">Your cart is empty</p>
-            <p className="text-gray-500 mb-8">
-              Looks like you haven't added any items to your cart yet.
-            </p>
-            <Link
-              href="/products"
-              className="inline-block bg-primary hover:opacity-90 text-white font-semibold py-3 px-8 rounded-full transition duration-300"
-            >
-              Start Shopping
-            </Link>
-          </div>
+          <EmptyCart />
         ) : (
           <div className="grid lg:grid-cols-3 gap-8">
             <div className="lg:col-span-2 space-y-4">
               {cartItems.map((item) => (
-                <div
+                <CartItem
                   key={item._id}
-                  className="flex flex-col sm:flex-row items-center gap-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary/20 transition duration-300"
-                >
-                  <Link
-                    href={`/products/${item.product._id}`}
-                    className="relative w-32 h-32 flex-shrink-0 overflow-hidden rounded-md hover:opacity-80 transition-opacity"
-                  >
-                    <Image
-                      src={item.product.images[0]}
-                      alt={item.product.name}
-                      layout="fill"
-                      objectFit="cover"
-                      className="rounded-md"
-                    />
-                  </Link>
-                  <div className="flex-1 text-center sm:text-left">
-                    <Link
-                      href={`/products/${item.product._id}`}
-                      className="font-semibold text-lg hover:text-primary transition-colors"
-                    >
-                      {item.product.name}
-                    </Link>
-                    <p className="text-primary font-medium mt-1">
-                      {formatPrice(item.product.price)}
-                    </p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        handleQuantityChange(item._id, quantities[item._id] - 1)
-                      }
-                      className="w-8 h-8 rounded-full p-0"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <Input
-                      type="number"
-                      min="1"
-                      max="99"
-                      value={quantities[item._id] || item.quantity}
-                      onChange={(e) =>
-                        handleQuantityChange(item._id, parseInt(e.target.value))
-                      }
-                      className="w-14 text-center"
-                    />
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() =>
-                        handleQuantityChange(item._id, quantities[item._id] + 1)
-                      }
-                      className="w-8 h-8 rounded-full p-0"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      onClick={() => handleRemoveItem(item._id)}
-                      className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full ml-2"
-                    >
-                      <Trash2 className="h-5 w-5" />
-                    </Button>
-                  </div>
-                </div>
+                  item={item}
+                  quantity={quantities[item._id] || item.quantity}
+                  onQuantityChange={handleQuantityChange}
+                  onRemove={handleRemoveItem}
+                />
               ))}
             </div>
             <div className="lg:col-span-1">
-              <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 sticky top-4">
-                <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-                <div className="space-y-3 mb-6">
-                  <div className="flex justify-between text-gray-600">
-                    <span>Subtotal</span>
-                    <span>{formatPrice(totalPrice)}</span>
-                  </div>
-                  <div className="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span>Free</span>
-                  </div>
-                  <div className="border-t pt-3 flex justify-between font-semibold text-lg">
-                    <span>Total</span>
-                    <span className="text-primary">
-                      {formatPrice(totalPrice)}
-                    </span>
-                  </div>
-                </div>
-                <Button
-                  className="w-full bg-primary hover:opacity-90 text-white text-lg py-6 rounded-full transition duration-300"
-                  onClick={() => router.push("/checkout")}
-                >
-                  Proceed to Checkout
-                </Button>
-                <Link
-                  href="/products"
-                  className="mt-4 text-center block text-primary hover:opacity-80 font-medium transition duration-300"
-                >
-                  Continue Shopping
-                </Link>
-              </div>
+              <OrderSummary
+                totalPrice={totalPrice}
+                onCheckout={() => router.push("/checkout")}
+              />
             </div>
           </div>
         )}

@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { memo, useMemo } from "react";
 
 interface OrderProduct {
   product: {
@@ -44,25 +45,85 @@ interface Order {
   };
 }
 
-const getOrderStatus = (status: Order["status"]) => {
-  const statusMap = {
-    pending: { icon: Clock, color: "text-yellow-500", text: "Order Pending" },
-    processing: { icon: Package, color: "text-blue-500", text: "Processing" },
-    shipped: { icon: Truck, color: "text-purple-500", text: "Shipped" },
-    delivered: {
-      icon: CheckCircle,
-      color: "text-green-500",
-      text: "Delivered",
-    },
-    cancelled: {
-      icon: Clock,
-      color: "text-red-500",
-      text: "Cancelled",
-    },
-  };
+const ORDER_STATUS = {
+  pending: { icon: Clock, color: "text-yellow-500", text: "Order Pending" },
+  processing: { icon: Package, color: "text-blue-500", text: "Processing" },
+  shipped: { icon: Truck, color: "text-purple-500", text: "Shipped" },
+  delivered: { icon: CheckCircle, color: "text-green-500", text: "Delivered" },
+  cancelled: { icon: Clock, color: "text-red-500", text: "Cancelled" },
+} as const;
 
-  return statusMap[status];
-};
+const getOrderStatus = (status: Order["status"]) => ORDER_STATUS[status];
+
+const OrderTimeline = memo(({ status }: { status: Order["status"] }) => {
+  const steps = ["pending", "processing", "shipped", "delivered"];
+  const currentIndex = steps.indexOf(status);
+
+  return (
+    <div className="relative">
+      <div className="absolute left-8 top-0 h-full w-0.5 bg-gray-200" />
+      {steps.map((step, index) => {
+        const isCompleted = currentIndex >= index;
+        const StatusIcon = ORDER_STATUS[step as Order["status"]].icon;
+
+        return (
+          <div key={step} className="relative flex items-center mb-8 last:mb-0">
+            <div
+              className={`w-16 h-16 rounded-full flex items-center justify-center ${
+                isCompleted
+                  ? "bg-green-100 text-green-500"
+                  : "bg-gray-100 text-gray-400"
+              }`}
+            >
+              <StatusIcon className="w-8 h-8" />
+            </div>
+            <div className="ml-4">
+              <h3
+                className={`font-medium ${
+                  isCompleted ? "text-gray-900" : "text-gray-500"
+                }`}
+              >
+                {ORDER_STATUS[step as Order["status"]].text}
+              </h3>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+});
+
+OrderTimeline.displayName = "OrderTimeline";
+
+const OrderProduct = memo(
+  ({ item, index }: { item: OrderProduct; index: number }) => (
+    <div
+      key={item.product?._id || index}
+      className="flex justify-between items-center bg-gray-50 p-4 rounded-lg"
+    >
+      <div className="flex items-center space-x-4">
+        <div className="w-16 h-16 relative rounded-md overflow-hidden">
+          <img
+            src={item.product?.images?.[0] || "/images/placeholder-product.png"}
+            alt={item.product?.name || "Product"}
+            className="object-cover w-full h-full"
+          />
+        </div>
+        <div>
+          <p className="font-medium">
+            {item.product?.name || "Product Not Found"}
+          </p>
+          <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+        </div>
+      </div>
+      <span className="font-semibold">
+        {formatPrice((item.product?.price || 0) * item.quantity)}
+      </span>
+    </div>
+  )
+);
+
+OrderProduct.displayName = "OrderProduct";
 
 export default function OrderConfirmationPage({
   params,
@@ -83,6 +144,11 @@ export default function OrderConfirmationPage({
       return response.data.order;
     },
   });
+
+  const StatusComponent = useMemo(
+    () => (order ? getOrderStatus(order.status) : null),
+    [order?.status]
+  );
 
   if (error) {
     return (
@@ -105,17 +171,16 @@ export default function OrderConfirmationPage({
       <div className="min-h-screen bg-gray-50 py-12 px-4">
         <div className="max-w-3xl mx-auto">
           <div className="animate-pulse space-y-4">
-            <div className="h-8 bg-gray-200 rounded w-1/2"></div>
-            <div className="h-64 bg-gray-200 rounded"></div>
+            <div className="h-8 bg-gray-200 rounded w-1/2" />
+            <div className="h-64 bg-gray-200 rounded" />
           </div>
         </div>
       </div>
     );
   }
 
-  if (!order) return null;
+  if (!order || !StatusComponent) return null;
 
-  const StatusComponent = getOrderStatus(order.status);
   const orderDate = new Date(order.orderDate);
 
   return (
@@ -215,46 +280,7 @@ export default function OrderConfirmationPage({
           </CardHeader>
           <CardContent>
             <div className="space-y-6">
-              {/* Order Timeline */}
-              <div className="relative">
-                <div className="absolute left-8 top-0 h-full w-0.5 bg-gray-200"></div>
-                {["pending", "processing", "shipped", "delivered"].map(
-                  (step, index) => {
-                    const isCompleted =
-                      ["pending", "processing", "shipped", "delivered"].indexOf(
-                        order.status
-                      ) >= index;
-                    const StatusIcon = getOrderStatus(
-                      step as Order["status"]
-                    ).icon;
-                    return (
-                      <div
-                        key={step}
-                        className="relative flex items-center mb-8 last:mb-0"
-                      >
-                        <div
-                          className={`w-16 h-16 rounded-full flex items-center justify-center ${
-                            isCompleted
-                              ? "bg-green-100 text-green-500"
-                              : "bg-gray-100 text-gray-400"
-                          }`}
-                        >
-                          <StatusIcon className="w-8 h-8" />
-                        </div>
-                        <div className="ml-4">
-                          <h3
-                            className={`font-medium ${
-                              isCompleted ? "text-gray-900" : "text-gray-500"
-                            }`}
-                          >
-                            {getOrderStatus(step as Order["status"]).text}
-                          </h3>
-                        </div>
-                      </div>
-                    );
-                  }
-                )}
-              </div>
+              <OrderTimeline status={order.status} />
             </div>
           </CardContent>
         </Card>
@@ -266,34 +292,11 @@ export default function OrderConfirmationPage({
           <CardContent>
             <div className="space-y-4">
               {order.products.map((item, index) => (
-                <div
+                <OrderProduct
                   key={item.product?._id || index}
-                  className="flex justify-between items-center bg-gray-50 p-4 rounded-lg"
-                >
-                  <div className="flex items-center space-x-4">
-                    <div className="w-16 h-16 relative rounded-md overflow-hidden">
-                      <img
-                        src={
-                          item.product?.images?.[0] ||
-                          "/images/placeholder-product.png"
-                        }
-                        alt={item.product?.name || "Product"}
-                        className="object-cover w-full h-full"
-                      />
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {item.product?.name || "Product Not Found"}
-                      </p>
-                      <p className="text-sm text-gray-500">
-                        Quantity: {item.quantity}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="font-semibold">
-                    {formatPrice((item.product?.price || 0) * item.quantity)}
-                  </span>
-                </div>
+                  item={item}
+                  index={index}
+                />
               ))}
 
               <div className="border-t pt-4 mt-4">

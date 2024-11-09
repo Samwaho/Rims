@@ -14,6 +14,7 @@ import {
 import { Package, AlertCircle, Eye } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { memo } from "react";
 
 interface OrderProduct {
   product: {
@@ -42,46 +43,116 @@ interface Order {
   };
 }
 
-const OrderStatusBadge = ({ status }: { status: string }) => {
-  const statusStyles = {
-    delivered: "bg-green-100 text-green-800",
-    cancelled: "bg-red-100 text-red-800",
-    pending: "bg-yellow-100 text-yellow-800",
-    processing: "bg-blue-100 text-blue-800",
-    shipped: "bg-purple-100 text-purple-800",
-  };
+const statusStyles = {
+  delivered: "bg-green-100 text-green-800",
+  cancelled: "bg-red-100 text-red-800",
+  pending: "bg-yellow-100 text-yellow-800",
+  processing: "bg-blue-100 text-blue-800",
+  shipped: "bg-purple-100 text-purple-800",
+} as const;
 
-  return (
-    <div
-      className={`px-2 py-1 text-xs sm:px-3 sm:py-1 sm:text-sm rounded-full font-medium whitespace-nowrap ${
-        statusStyles[status as keyof typeof statusStyles] ||
-        statusStyles.processing
-      }`}
-    >
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </div>
-  );
-};
+const paymentStatusStyles = {
+  completed: "bg-green-100 text-green-800",
+  failed: "bg-red-100 text-red-800",
+  pending: "bg-yellow-100 text-yellow-800",
+} as const;
 
-const PaymentStatusBadge = ({ status }: { status: string }) => {
-  const statusStyles = {
-    completed: "bg-green-100 text-green-800",
-    failed: "bg-red-100 text-red-800",
-    pending: "bg-yellow-100 text-yellow-800",
-  };
+const OrderStatusBadge = memo(({ status }: { status: string }) => (
+  <div
+    className={`px-2 py-1 text-xs sm:px-3 sm:py-1 sm:text-sm rounded-full font-medium whitespace-nowrap ${
+      statusStyles[status as keyof typeof statusStyles] ||
+      statusStyles.processing
+    }`}
+  >
+    {status.charAt(0).toUpperCase() + status.slice(1)}
+  </div>
+));
+OrderStatusBadge.displayName = "OrderStatusBadge";
 
-  return (
-    <div
-      className={`px-2 py-1 text-xs sm:px-3 sm:py-1 sm:text-sm rounded-full font-medium whitespace-nowrap ${
-        statusStyles[status as keyof typeof statusStyles] ||
-        statusStyles.pending
-      }`}
-    >
-      <span className="hidden sm:inline">Payment: </span>
-      {status.charAt(0).toUpperCase() + status.slice(1)}
-    </div>
-  );
-};
+const PaymentStatusBadge = memo(({ status }: { status: string }) => (
+  <div
+    className={`px-2 py-1 text-xs sm:px-3 sm:py-1 sm:text-sm rounded-full font-medium whitespace-nowrap ${
+      paymentStatusStyles[status as keyof typeof paymentStatusStyles] ||
+      paymentStatusStyles.pending
+    }`}
+  >
+    <span className="hidden sm:inline">Payment: </span>
+    {status.charAt(0).toUpperCase() + status.slice(1)}
+  </div>
+));
+PaymentStatusBadge.displayName = "PaymentStatusBadge";
+
+const EmptyOrdersCard = memo(() => (
+  <Card>
+    <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 px-4">
+      <Package className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mb-3 sm:mb-4" />
+      <h3 className="text-base sm:text-lg md:text-xl font-medium text-gray-900 mb-2">
+        No orders yet
+      </h3>
+      <p className="text-sm sm:text-base text-gray-500 mb-4 text-center">
+        Your order history is empty. Start shopping to create your first order!
+      </p>
+      <Link
+        href="/products"
+        className="inline-flex items-center px-3 sm:px-4 py-2 bg-red-600 text-white text-sm sm:text-base rounded-md hover:bg-red-700 transition-colors"
+      >
+        Browse Products
+      </Link>
+    </CardContent>
+  </Card>
+));
+EmptyOrdersCard.displayName = "EmptyOrdersCard";
+
+const OrderCard = memo(({ order }: { order: Order }) => (
+  <Card className="hover:shadow-md transition-all duration-200">
+    <CardHeader className="p-3 sm:p-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between sm:items-start">
+        <div>
+          <CardTitle className="text-base sm:text-lg">
+            Order #{order._id.slice(-8)}
+          </CardTitle>
+          <CardDescription className="text-sm">
+            {formatDate(new Date(order.orderDate))}
+          </CardDescription>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <OrderStatusBadge status={order.status} />
+          {order.paymentStatus && (
+            <PaymentStatusBadge status={order.paymentStatus} />
+          )}
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent className="p-3 sm:p-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
+        <div className="text-xs sm:text-sm text-gray-600">
+          {order.products.length} items
+          {order.shippingInfo?.trackingNumber && (
+            <span className="block sm:inline sm:ml-2">
+              • Tracking: {order.shippingInfo.trackingNumber}
+            </span>
+          )}
+        </div>
+        <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-4">
+          <div className="text-sm sm:text-base font-semibold">
+            {formatPrice(order.totalAmount)}
+          </div>
+          <Link href={`/orders/${order._id}`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
+            >
+              <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
+              View Order
+            </Button>
+          </Link>
+        </div>
+      </div>
+    </CardContent>
+  </Card>
+));
+OrderCard.displayName = "OrderCard";
 
 export default function OrdersPage() {
   const {
@@ -98,7 +169,7 @@ export default function OrdersPage() {
       return response.data.orders;
     },
     retry: 1,
-    staleTime: 1000 * 60 * 5,
+    staleTime: 1000 * 60 * 5, // 5 minutes
     refetchOnWindowFocus: false,
   });
 
@@ -127,11 +198,11 @@ export default function OrdersPage() {
       <div className="min-h-screen bg-gray-50 py-4 sm:py-8 px-2 sm:px-4">
         <div className="max-w-6xl mx-auto">
           <div className="animate-pulse space-y-3 sm:space-y-4">
-            {[1, 2, 3].map((i) => (
+            {Array.from({ length: 3 }).map((_, i) => (
               <div
                 key={i}
                 className="h-24 sm:h-32 bg-gray-200 rounded shadow-sm"
-              ></div>
+              />
             ))}
           </div>
         </div>
@@ -149,78 +220,12 @@ export default function OrdersPage() {
         </div>
 
         {orders.length === 0 ? (
-          <Card>
-            <CardContent className="flex flex-col items-center justify-center py-8 sm:py-12 px-4">
-              <Package className="w-12 h-12 sm:w-16 sm:h-16 text-gray-400 mb-3 sm:mb-4" />
-              <h3 className="text-base sm:text-lg md:text-xl font-medium text-gray-900 mb-2">
-                No orders yet
-              </h3>
-              <p className="text-sm sm:text-base text-gray-500 mb-4 text-center">
-                Your order history is empty. Start shopping to create your first
-                order!
-              </p>
-              <Link
-                href="/products"
-                className="inline-flex items-center px-3 sm:px-4 py-2 bg-red-600 text-white text-sm sm:text-base rounded-md hover:bg-red-700 transition-colors"
-              >
-                Browse Products
-              </Link>
-            </CardContent>
-          </Card>
+          <EmptyOrdersCard />
         ) : (
           <div className="bg-white rounded-lg shadow-lg border border-gray-200">
             <div className="space-y-3 sm:space-y-4 p-3 sm:p-4">
               {orders.map((order) => (
-                <Card
-                  key={order._id}
-                  className="hover:shadow-md transition-all duration-200"
-                >
-                  <CardHeader className="p-3 sm:p-4">
-                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:justify-between sm:items-start">
-                      <div>
-                        <CardTitle className="text-base sm:text-lg">
-                          Order #{order._id.slice(-8)}
-                        </CardTitle>
-                        <CardDescription className="text-sm">
-                          {formatDate(new Date(order.orderDate))}
-                        </CardDescription>
-                      </div>
-                      <div className="flex flex-wrap gap-2">
-                        <OrderStatusBadge status={order.status} />
-                        {order.paymentStatus && (
-                          <PaymentStatusBadge status={order.paymentStatus} />
-                        )}
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="p-3 sm:p-4">
-                    <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
-                      <div className="text-xs sm:text-sm text-gray-600">
-                        {order.products.length} items
-                        {order.shippingInfo?.trackingNumber && (
-                          <span className="block sm:inline sm:ml-2">
-                            • Tracking: {order.shippingInfo.trackingNumber}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-4">
-                        <div className="text-sm sm:text-base font-semibold">
-                          {formatPrice(order.totalAmount)}
-                        </div>
-                        <Link href={`/orders/${order._id}`}>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm"
-                          >
-                            <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
-                            View Order
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <OrderCard key={order._id} order={order} />
               ))}
             </div>
           </div>

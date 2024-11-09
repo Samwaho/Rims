@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { memo } from "react";
 import {
   useQuery,
   QueryClient,
@@ -9,61 +9,57 @@ import {
 import axios from "axios";
 import { axiosHeaders } from "@/lib/actions";
 
-const queryClient = new QueryClient();
+// Create QueryClient instance outside component to prevent recreation
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000, // Data considered fresh for 30 seconds
+      gcTime: 3600000, // Cache persists for 1 hour
+      retry: 2, // Retry failed requests twice
+    },
+  },
+});
 
-interface CartCountResponse {
-  count: number;
-}
-
+// Memoize API call function
 const fetchCartCount = async (): Promise<number> => {
   try {
-    const response = await axios.get<CartCountResponse>(
+    const headers = await axiosHeaders();
+    const { data } = await axios.get<{ count: number }>(
       `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart/count`,
-      await axiosHeaders()
+      headers
     );
-    return response.data.count;
+    return data.count;
   } catch (error) {
     console.error("Failed to fetch cart count:", error);
     return 0;
   }
 };
 
-const CartCountInner = () => {
-  const {
-    data: count = 0,
-    error,
-    isError,
-    isLoading,
-  } = useQuery({
+// Memoize inner component to prevent unnecessary re-renders
+const CartCountInner = memo(() => {
+  const { data: count = 0 } = useQuery({
     queryKey: ["cartCount"],
     queryFn: fetchCartCount,
     refetchInterval: 5000,
-    staleTime: 30000,
-    gcTime: 1000 * 60 * 5,
-    retry: 2,
+    refetchOnWindowFocus: false, // Prevent refetch on window focus
+    refetchOnMount: true,
   });
 
-  if (isError) {
-    console.error("Error fetching cart count:", error);
-    return null;
-  }
-
-  if (isLoading) return null;
   if (count === 0) return null;
 
   return (
-    <span
-      className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center"
-      aria-label={`${count} items in cart`}
-      role="status"
-    >
+    <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
       {count}
     </span>
   );
-};
+});
 
-const CartCount = () => {
-  return <CartCountInner />;
-};
+CartCountInner.displayName = "CartCountInner";
+
+const CartCount = () => (
+  <QueryClientProvider client={queryClient}>
+    <CartCountInner />
+  </QueryClientProvider>
+);
 
 export default CartCount;

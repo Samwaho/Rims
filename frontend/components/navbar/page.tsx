@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import logo from "@/public/Logo.png";
 import { IoCartOutline, IoMenu, IoSearchOutline } from "react-icons/io5";
 import { Button } from "../ui/button";
@@ -35,31 +35,102 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const handleSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
-    } else {
-      router.push("/products");
-    }
-  };
+  const handleSearch = useCallback(
+    (e: React.FormEvent, isMobile = false) => {
+      e.preventDefault();
+      const trimmedSearch = searchTerm.trim();
+      const searchUrl = trimmedSearch
+        ? `/products?search=${encodeURIComponent(trimmedSearch)}`
+        : "/products";
 
-  const handleMobileSearch = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (searchTerm.trim()) {
-      router.push(`/products?search=${encodeURIComponent(searchTerm.trim())}`);
+      router.push(searchUrl);
+      if (isMobile) setIsDrawerOpen(false);
+    },
+    [searchTerm, router]
+  );
+
+  const closeDrawer = useCallback(() => {
+    setIsDrawerOpen(false);
+  }, []);
+
+  const handleDrawerLinkClick = useCallback(
+    (href: string) => {
+      router.push(href);
       setIsDrawerOpen(false);
-    }
-  };
+    },
+    [router]
+  );
 
-  const closeDrawer = () => {
-    setIsDrawerOpen(false);
-  };
+  const renderNavLink = useCallback(
+    ({ href, text }: { href: string; text: string }) => (
+      <Link
+        href={href}
+        className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
+      >
+        {text}
+        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
+      </Link>
+    ),
+    []
+  );
 
-  const handleDrawerLinkClick = (href: string) => {
-    router.push(href);
-    setIsDrawerOpen(false);
-  };
+  const renderDrawerLink = useCallback(
+    ({ href, text }: { href: string; text: string }) => (
+      <div
+        onClick={() => handleDrawerLinkClick(href)}
+        className="text-xl text-left hover:text-gray-600 transition-colors relative group cursor-pointer"
+      >
+        {text}
+        <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
+      </div>
+    ),
+    [handleDrawerLinkClick]
+  );
+
+  const renderAuthButton = useCallback(
+    (isMobile = false) => {
+      if (!loggedIn) {
+        return isMobile ? (
+          <div
+            onClick={() => handleDrawerLinkClick("/sign-in")}
+            className="w-full"
+          >
+            <Button className="w-full hover:scale-105 transition-transform">
+              Sign In
+            </Button>
+          </div>
+        ) : (
+          <Link href="/sign-in">
+            <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base hover:scale-105 transition-transform">
+              Sign In
+            </Button>
+          </Link>
+        );
+      }
+
+      return isMobile ? (
+        <div
+          onClick={() => handleDrawerLinkClick("/cart")}
+          className="relative w-full"
+        >
+          <Button className="w-full mt-4 flex items-center gap-2 hover:scale-105 transition-transform">
+            <span>Cart</span>
+            <IoCartOutline size={20} />
+          </Button>
+          <CartCount />
+        </div>
+      ) : (
+        <Link href="/cart" className="relative">
+          <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base flex items-center gap-2 hover:scale-105 transition-transform">
+            <span>Cart</span>
+            <IoCartOutline size={20} />
+          </Button>
+          <CartCount />
+        </Link>
+      );
+    },
+    [loggedIn, handleDrawerLinkClick]
+  );
 
   return (
     <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md shadow-sm flex items-center justify-between py-4 px-4 md:px-6 lg:px-12 xl:px-20">
@@ -73,8 +144,9 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
           priority
         />
       </Link>
+
       <div className="hidden lg:flex items-center gap-2 max-w-xl relative">
-        <form onSubmit={handleSearch} className="relative">
+        <form onSubmit={(e) => handleSearch(e)} className="relative">
           <Input
             type="text"
             placeholder="Search products..."
@@ -91,59 +163,16 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
           </button>
         </form>
       </div>
+
       <div className="flex items-center gap-4">
         <div className="hidden lg:flex items-center gap-6">
-          <Link
-            href="/"
-            className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
-          >
-            Home
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-          </Link>
-          <Link
-            href="/products"
-            className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
-          >
-            Products
-            <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-          </Link>
-
-          {loggedIn && (
-            <Link
-              href="/orders"
-              className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
-            >
-              Orders
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-            </Link>
-          )}
-
-          {isAdmin && (
-            <Link
-              href="/admin"
-              className="text-lg xl:text-xl hover:text-gray-600 transition-colors relative group"
-            >
-              Admin
-              <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-            </Link>
-          )}
-
-          {loggedIn ? (
-            <Link href="/cart" className="relative">
-              <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base flex items-center gap-2 hover:scale-105 transition-transform">
-                <span>Cart</span>
-                <IoCartOutline size={20} />
-              </Button>
-              <CartCount />
-            </Link>
-          ) : (
-            <Link href="/sign-in">
-              <Button className="px-2 w-20 h-8 text-sm xl:w-24 xl:h-10 xl:text-base hover:scale-105 transition-transform">
-                Sign In
-              </Button>
-            </Link>
-          )}
+          {renderNavLink({ href: "/", text: "Home" })}
+          {renderNavLink({ href: "/products", text: "Products" })}
+          {loggedIn && renderNavLink({ href: "/orders", text: "Orders" })}
+          {isAdmin && renderNavLink({ href: "/admin", text: "Admin" })}
+          {renderAuthButton()}
         </div>
+
         <Drawer
           direction="left"
           open={isDrawerOpen}
@@ -183,7 +212,7 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
               </DrawerTitle>
             </DrawerHeader>
             <div className="px-6 py-4">
-              <form onSubmit={handleMobileSearch}>
+              <form onSubmit={(e) => handleSearch(e, true)}>
                 <Input
                   type="text"
                   placeholder="Search products..."
@@ -197,64 +226,13 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
               </form>
             </div>
             <div className="flex flex-col gap-6 px-6">
-              <button
-                onClick={() => handleDrawerLinkClick("/")}
-                className="text-xl text-left hover:text-gray-600 transition-colors relative group"
-              >
-                Home
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-              </button>
-              <button
-                onClick={() => handleDrawerLinkClick("/products")}
-                className="text-xl text-left hover:text-gray-600 transition-colors relative group"
-              >
-                Products
-                <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-              </button>
-
-              {loggedIn && (
-                <button
-                  onClick={() => handleDrawerLinkClick("/orders")}
-                  className="text-xl text-left hover:text-gray-600 transition-colors relative group"
-                >
-                  Orders
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-                </button>
-              )}
-
-              {isAdmin && (
-                <button
-                  onClick={() => handleDrawerLinkClick("/admin")}
-                  className="text-xl text-left hover:text-gray-600 transition-colors relative group"
-                >
-                  Admin
-                  <span className="absolute bottom-0 left-0 w-0 h-0.5 bg-black transition-all group-hover:w-full"></span>
-                </button>
-              )}
+              {renderDrawerLink({ href: "/", text: "Home" })}
+              {renderDrawerLink({ href: "/products", text: "Products" })}
+              {loggedIn &&
+                renderDrawerLink({ href: "/orders", text: "Orders" })}
+              {isAdmin && renderDrawerLink({ href: "/admin", text: "Admin" })}
             </div>
-            <DrawerFooter>
-              {!loggedIn ? (
-                <button
-                  onClick={() => handleDrawerLinkClick("/sign-in")}
-                  className="w-full"
-                >
-                  <Button className="w-full hover:scale-105 transition-transform">
-                    Sign In
-                  </Button>
-                </button>
-              ) : (
-                <button
-                  onClick={() => handleDrawerLinkClick("/cart")}
-                  className="relative w-full"
-                >
-                  <Button className="w-full mt-4 flex items-center justify-center gap-2 hover:scale-105 transition-transform">
-                    <span>Cart</span>
-                    <IoCartOutline size={20} />
-                  </Button>
-                  <CartCount />
-                </button>
-              )}
-            </DrawerFooter>
+            <DrawerFooter>{renderAuthButton(true)}</DrawerFooter>
           </DrawerContent>
         </Drawer>
       </div>

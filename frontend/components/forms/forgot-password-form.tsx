@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,6 +20,8 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
 
+const INITIAL_VALUES = { email: "" };
+
 const forgotPasswordSchema = z.object({
   email: z.string().email("Please enter a valid email address"),
 });
@@ -31,12 +33,10 @@ export default function ForgotPasswordForm() {
 
   const form = useForm<ForgotPasswordValues>({
     resolver: zodResolver(forgotPasswordSchema),
-    defaultValues: {
-      email: "",
-    },
+    defaultValues: INITIAL_VALUES,
   });
 
-  const forgotPasswordMutation = useMutation({
+  const { mutate: requestPasswordReset, isPending } = useMutation({
     mutationFn: async (data: ForgotPasswordValues) =>
       await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/forgot-password`,
@@ -58,9 +58,17 @@ export default function ForgotPasswordForm() {
     },
   });
 
-  const onSubmit = (data: ForgotPasswordValues) => {
-    forgotPasswordMutation.mutate(data);
-  };
+  const handleReset = useCallback(() => {
+    setIsEmailSent(false);
+    form.reset();
+  }, [form]);
+
+  const onSubmit = useCallback(
+    (data: ForgotPasswordValues) => {
+      requestPasswordReset(data);
+    },
+    [requestPasswordReset]
+  );
 
   if (isEmailSent) {
     return (
@@ -73,10 +81,7 @@ export default function ForgotPasswordForm() {
           <p className="text-sm text-gray-500">
             Didn't receive the email? Check your spam folder or{" "}
             <button
-              onClick={() => {
-                setIsEmailSent(false);
-                form.reset();
-              }}
+              onClick={handleReset}
               className="text-primary hover:underline focus:outline-none"
             >
               try again
@@ -133,9 +138,9 @@ export default function ForgotPasswordForm() {
           <Button
             type="submit"
             className="w-full h-11 text-base font-semibold"
-            disabled={forgotPasswordMutation.isPending}
+            disabled={isPending}
           >
-            {forgotPasswordMutation.isPending ? (
+            {isPending ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin" />
                 <span>Sending...</span>

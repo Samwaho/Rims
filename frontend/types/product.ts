@@ -1,29 +1,41 @@
-export interface Product {
-  _id: string;
-  name: string;
-  price: number;
-  description: string;
-  category: string;
-  stock: number;
-  images: string[];
-  brand: string;
-  madeIn: string;
-  specifications: Array<Specification>;
-  averageRating: number;
-  reviewCount: number;
-  createdAt: string;
-  updatedAt: string;
-  reviews: any[];
-  numReviews: number;
-}
-
-export interface FilterState {
-  brand: string[];
-  category: string[];
-  priceRange?: [number, number];
-}
-
+// Base specification type used across product-related interfaces
 export interface Specification {
   name: string;
   value: string;
+}
+
+// Review type to avoid using any[]
+export interface Review {
+  id: string;
+  rating: number;
+  comment: string;
+  userId: string;
+  createdAt: string;
+}
+
+// Main product interface with strict typing
+export interface Product {
+  _id: string;
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  category: "general" | "wheels" | "tyres"; // Enum values from productSchema
+  brand: string;
+  madeIn: string;
+  images: string[];
+  specifications: Specification[];
+  averageRating: number;
+  reviewCount: number;
+  reviews: Review[];
+  numReviews: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Product filter state with precise types
+export interface FilterState {
+  brand: string[];
+  category: ("general" | "wheels" | "tyres")[]; // Match product categories
+  priceRange?: readonly [number, number]; // Readonly tuple for range
 }

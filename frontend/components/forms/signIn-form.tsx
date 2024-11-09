@@ -1,9 +1,8 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
+import type { z } from "zod";
 import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
@@ -25,44 +24,77 @@ import { Mail, Lock } from "lucide-react";
 
 type SignInFormValues = z.infer<typeof signInSchema>;
 
+const INITIAL_VALUES: SignInFormValues = {
+  email: "",
+  password: "",
+};
+
 export default function SignInForm() {
+  const router = useRouter();
   const form = useForm<SignInFormValues>({
     resolver: zodResolver(signInSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: INITIAL_VALUES,
   });
 
-  const router = useRouter();
-
-  const signInMutation = useMutation({
-    mutationFn: async (data: SignInFormValues) =>
-      await axios.post(
+  const { mutate: signIn, isPending } = useMutation({
+    mutationFn: async (data: SignInFormValues) => {
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signin`,
         data,
         await axiosHeaders()
-      ),
-    onSuccess: async (response) => {
-      await setCookies(response.data.accessToken);
+      );
+      return response.data;
+    },
+    onSuccess: async ({ accessToken }) => {
+      await setCookies(accessToken);
       toast.success("Welcome back!", {
         duration: 3000,
         position: "top-center",
       });
       router.push("/");
     },
-    onError: (error) => {
+    onError: () => {
       toast.error("Invalid email or password. Please try again.", {
         duration: 4000,
         position: "top-center",
       });
       form.setError("password", { message: "Please check your credentials" });
-      console.log("Sign-in failed:", error);
     },
   });
 
-  const onSubmit = (data: SignInFormValues) => {
-    signInMutation.mutate(data);
+  const renderFormField = (
+    name: keyof SignInFormValues,
+    label: string,
+    type: string,
+    placeholder: string,
+    Icon: typeof Mail | typeof Lock
+  ) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-gray-700 font-medium">{label}</FormLabel>
+          <FormControl>
+            <div className="relative">
+              <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
+              <Input
+                {...field}
+                type={type}
+                placeholder={placeholder}
+                className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                autoComplete={type === "email" ? "email" : "current-password"}
+              />
+            </div>
+          </FormControl>
+          <FormMessage className="text-red-500" />
+        </FormItem>
+      )}
+    />
+  );
+
+  const onSubmit = async (data: SignInFormValues) => {
+    signIn(data);
   };
 
   return (
@@ -78,61 +110,22 @@ export default function SignInForm() {
           </p>
         </div>
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-700 font-medium">Email</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                  <Input
-                    {...field}
-                    type="email"
-                    placeholder="Enter your email"
-                    className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    autoComplete="email"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-700 font-medium">
-                Password
-              </FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                  <Input
-                    {...field}
-                    type="password"
-                    placeholder="Enter your password"
-                    className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    autoComplete="current-password"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
+        {renderFormField("email", "Email", "email", "Enter your email", Mail)}
+        {renderFormField(
+          "password",
+          "Password",
+          "password",
+          "Enter your password",
+          Lock
+        )}
 
         <div className="space-y-4">
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold shadow-sm hover:shadow-md transition-all duration-300 bg-primary hover:bg-primary/90 text-white"
-            disabled={signInMutation.isPending}
+            disabled={isPending}
           >
-            {signInMutation.isPending ? (
+            {isPending ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin" />
                 <span>Signing in...</span>

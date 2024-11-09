@@ -173,40 +173,34 @@ export const updateProduct = async (req, res, next) => {
     const { productData, imageUrls } = req.body;
     const productId = req.params.id;
 
+    // Validate that productData exists
+    if (!productData) {
+      return res.status(400).json({
+        message: "Product data is required",
+        receivedData: req.body,
+      });
+    }
+
     // Validate the product exists
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Ensure all required fields are present
-    const requiredFields = [
-      "name",
-      "description",
-      "price",
-      "stock",
-      "category",
-      "brand",
-      "madeIn",
-    ];
-
-    const missingFields = requiredFields.filter((field) => !productData[field]);
-    if (missingFields.length > 0) {
-      return res.status(400).json({
-        message: `Missing required fields: ${missingFields.join(", ")}`,
-      });
-    }
+    // Ensure specifications is an array and filter out invalid entries
+    const validSpecifications = Array.isArray(productData.specifications)
+      ? productData.specifications.filter(
+          (spec) => spec && typeof spec === "object" && spec.name && spec.value
+        )
+      : [];
 
     // Format the data for update
     const updateData = {
       ...productData,
       price: Number(productData.price),
       stock: Number(productData.stock),
-      images: imageUrls,
-      specifications:
-        productData.specifications?.filter(
-          (spec) => spec.name.trim() && spec.value.trim()
-        ) || [],
+      images: imageUrls || existingProduct.images, // Fallback to existing images
+      specifications: validSpecifications,
       updatedAt: new Date(),
     };
 
@@ -216,6 +210,10 @@ export const updateProduct = async (req, res, next) => {
       updateData,
       { new: true, runValidators: true }
     ).lean();
+
+    if (!updatedProduct) {
+      return res.status(404).json({ message: "Product not found" });
+    }
 
     // Calculate stats for response
     const averageRating = updatedProduct.reviews?.length

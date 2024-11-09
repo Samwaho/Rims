@@ -23,26 +23,25 @@ interface ProductsResponse {
   currentPage: number;
 }
 
-export const useProducts = (search: string, category?: string) => {
+export function useProducts(search?: string) {
   return useInfiniteQuery<ProductsResponse>({
-    queryKey: ["products", search, category],
-    queryFn: async ({ pageParam = 1 }) => {
-      const response = await axios.get(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products`,
-        {
-          params: {
-            page: pageParam,
-            search,
-            category,
-          },
-        }
-      );
+    queryKey: ["products", search],
+    initialPageParam: 1,
+    queryFn: async ({ pageParam }) => {
+      const params = new URLSearchParams();
+      if (search) params.append("search", search);
+      params.append("page", String(pageParam));
+
+      const url = `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products${
+        params.toString() ? `?${params.toString()}` : ""
+      }`;
+      const response = await axios.get(url);
       return response.data;
     },
-    initialPageParam: 1,
     getNextPageParam: (lastPage) =>
       lastPage.currentPage < lastPage.totalPages
         ? lastPage.currentPage + 1
         : undefined,
+    staleTime: 1000 * 60 * 5,
   });
-};
+}

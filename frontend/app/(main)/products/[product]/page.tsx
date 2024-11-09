@@ -13,20 +13,20 @@ import ProductReviews from "@/components/product/ProductReviews";
 import ProductSkeleton from "@/components/product/ProductSkeleton";
 import { useRouter } from "next/navigation";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+const STALE_TIME = 1000 * 60 * 5; // 5 minutes
+
 const fetchProduct = async (id: string): Promise<Product> => {
   try {
-    const response = await axios.get(
-      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${id}`
-    );
-    const product = response.data;
-    if (product.reviews) {
-      product.reviews = product.reviews.map((review: any) => ({
+    const { data } = await axios.get(`${BACKEND_URL}/api/products/${id}`);
+    return {
+      ...data,
+      reviews: data.reviews?.map((review: any) => ({
         ...review,
         _id: review._id || review.id,
         createdAt: new Date(review.createdAt).toISOString(),
-      }));
-    }
-    return product;
+      })),
+    };
   } catch (error) {
     console.error("Error fetching product:", error);
     throw error;
@@ -34,43 +34,51 @@ const fetchProduct = async (id: string): Promise<Product> => {
 };
 
 export default function ProductPage({
-  params,
+  params: { product: productId },
 }: {
   params: { product: string };
 }) {
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<any>(null);
+  const [authState, setAuthState] = useState<{
+    isAuthenticated: boolean;
+    user: any | null;
+  }>({
+    isAuthenticated: false,
+    user: null,
+  });
+
   const queryClient = useQueryClient();
   const router = useRouter();
 
-  const checkAuth = useCallback(async () => {
-    try {
-      const response = await getAuthUser();
-      setIsAuthenticated(response !== null);
-      if (response) {
-        setUser(response);
-      }
-    } catch (error) {
-      console.error("Error checking auth:", error);
-      setIsAuthenticated(false);
-      setUser(null);
-    }
-  }, []);
-
   useEffect(() => {
+    const checkAuth = async () => {
+      try {
+        const user = await getAuthUser();
+        setAuthState({
+          isAuthenticated: Boolean(user),
+          user,
+        });
+      } catch (error) {
+        console.error("Error checking auth:", error);
+        setAuthState({
+          isAuthenticated: false,
+          user: null,
+        });
+      }
+    };
+
     checkAuth();
-  }, [checkAuth]);
+  }, []);
 
   const {
     data: product,
     isLoading,
     error,
   } = useQuery<Product>({
-    queryKey: ["product", params.product],
-    queryFn: () => fetchProduct(params.product),
+    queryKey: ["product", productId],
+    queryFn: () => fetchProduct(productId),
     retry: 2,
-    staleTime: 1000 * 60 * 5, // 5 minutes
+    staleTime: STALE_TIME,
   });
 
   const addToCartMutation = useMutation({
@@ -81,24 +89,24 @@ export default function ProductPage({
       productId: string;
       quantity: number;
     }) => {
+      const headers = await axiosHeaders();
       await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
+        `${BACKEND_URL}/api/cart`,
         { productId, quantity },
-        await axiosHeaders()
+        headers
       );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success("Product added to cart");
     },
-    onError: (error) => {
-      console.error("Error adding to cart:", error);
+    onError: () => {
       toast.error("Failed to add product to cart. Please try again.");
     },
   });
 
   const handleAddToCart = useCallback(() => {
-    if (!isAuthenticated) {
+    if (!authState.isAuthenticated) {
       router.push("/sign-in");
       return;
     }
@@ -114,15 +122,19 @@ export default function ProductPage({
     }
 
     addToCartMutation.mutate({ productId: product._id, quantity: 1 });
-  }, [isAuthenticated, product, router, addToCartMutation]);
+  }, [authState.isAuthenticated, product, router, addToCartMutation]);
 
   if (isLoading) return <ProductSkeleton />;
-  if (error || !product)
+
+  if (error || !product) {
     return (
       <div className="text-center py-8 text-red-600">
         Error loading product. Please try again later.
       </div>
     );
+  }
+
+  const { isAuthenticated, user } = authState;
 
   return (
     <div className="container mx-auto px-4 py-8">

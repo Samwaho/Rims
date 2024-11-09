@@ -1,4 +1,4 @@
-import React from "react";
+import React, { memo, useMemo } from "react";
 import {
   Accordion,
   AccordionItem,
@@ -31,105 +31,145 @@ interface FilterAccordionProps {
   onPriceRangeChange: (value: number[]) => void;
 }
 
-export const FilterAccordion: React.FC<FilterAccordionProps> = ({
-  isLoading,
-  filters,
-  products,
-  maxPrice,
-  onFilterChange,
-  onPriceRangeChange,
-}) => {
-  return (
-    <Accordion type="single" collapsible className="w-full">
-      <AccordionItem value="brand">
-        <AccordionTrigger className="text-base font-medium">
-          Brand
-        </AccordionTrigger>
-        <AccordionContent>
-          <div className="grid gap-2">
-            {isLoading
-              ? Array(5)
-                  .fill(0)
-                  .map((_, index) => (
-                    <Skeleton key={index} className="h-6 w-full" />
-                  ))
-              : Array.from(
-                  new Set(products.map((product) => product.brand))
-                ).map((brand) => (
-                  <Label
+const LoadingSkeleton = memo(({ count }: { count: number }) => (
+  <>
+    {Array(count)
+      .fill(0)
+      .map((_, index) => (
+        <Skeleton key={index} className="h-6 w-full" />
+      ))}
+  </>
+));
+
+LoadingSkeleton.displayName = "LoadingSkeleton";
+
+const FilterItem = memo(
+  ({
+    label,
+    checked,
+    onChange,
+  }: {
+    label: string;
+    checked: boolean;
+    onChange: () => void;
+  }) => (
+    <Label className="flex items-center gap-2 font-normal cursor-pointer capitalize">
+      <Checkbox checked={checked} onCheckedChange={onChange} />
+      {label}
+    </Label>
+  )
+);
+
+FilterItem.displayName = "FilterItem";
+
+const PriceRangeContent = memo(
+  ({
+    priceRange,
+    maxPrice,
+    onPriceRangeChange,
+  }: {
+    priceRange?: [number, number];
+    maxPrice: number;
+    onPriceRangeChange: (value: number[]) => void;
+  }) => (
+    <>
+      <Slider
+        min={0}
+        max={maxPrice}
+        step={100}
+        value={priceRange || [0, maxPrice]}
+        onValueChange={onPriceRangeChange}
+        className="w-full mt-2"
+      />
+      <div className="flex justify-between text-sm text-muted-foreground mt-2">
+        <span>{formatPrice(priceRange?.[0] ?? 0)}</span>
+        <span>{formatPrice(priceRange?.[1] ?? maxPrice)}</span>
+      </div>
+    </>
+  )
+);
+
+PriceRangeContent.displayName = "PriceRangeContent";
+
+export const FilterAccordion: React.FC<FilterAccordionProps> = memo(
+  ({
+    isLoading,
+    filters,
+    products,
+    maxPrice,
+    onFilterChange,
+    onPriceRangeChange,
+  }) => {
+    const uniqueBrands = useMemo(
+      () => Array.from(new Set(products.map((product) => product.brand))),
+      [products]
+    );
+
+    const categories = ["general", "wheels", "tyres"];
+
+    return (
+      <Accordion type="single" collapsible className="w-full">
+        <AccordionItem value="brand">
+          <AccordionTrigger className="text-base font-medium">
+            Brand
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="grid gap-2">
+              {isLoading ? (
+                <LoadingSkeleton count={5} />
+              ) : (
+                uniqueBrands.map((brand) => (
+                  <FilterItem
                     key={brand}
-                    className="flex items-center gap-2 font-normal cursor-pointer"
-                  >
-                    <Checkbox
-                      checked={filters.brand.includes(brand)}
-                      onCheckedChange={() => onFilterChange("brand", brand)}
-                    />
-                    {brand}
-                  </Label>
-                ))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="category">
-        <AccordionTrigger className="text-base font-medium">
-          Category
-        </AccordionTrigger>
-        <AccordionContent>
-          <div className="grid gap-2">
-            {isLoading
-              ? Array(3)
-                  .fill(0)
-                  .map((_, index) => (
-                    <Skeleton key={index} className="h-6 w-full" />
-                  ))
-              : ["general", "wheels", "tyres"].map((category) => (
-                  <Label
+                    label={brand}
+                    checked={filters.brand.includes(brand)}
+                    onChange={() => onFilterChange("brand", brand)}
+                  />
+                ))
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="category">
+          <AccordionTrigger className="text-base font-medium">
+            Category
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="grid gap-2">
+              {isLoading ? (
+                <LoadingSkeleton count={3} />
+              ) : (
+                categories.map((category) => (
+                  <FilterItem
                     key={category}
-                    className="flex items-center gap-2 font-normal cursor-pointer capitalize"
-                  >
-                    <Checkbox
-                      checked={filters.category.includes(category)}
-                      onCheckedChange={() =>
-                        onFilterChange("category", category)
-                      }
-                    />
-                    {category}
-                  </Label>
-                ))}
-          </div>
-        </AccordionContent>
-      </AccordionItem>
-      <AccordionItem value="price">
-        <AccordionTrigger className="text-base font-medium">
-          Price Range
-        </AccordionTrigger>
-        <AccordionContent>
-          {isLoading ? (
-            <Skeleton className="h-10 w-full" />
-          ) : (
-            <>
-              <Slider
-                min={0}
-                max={maxPrice}
-                step={100}
-                value={filters.priceRange ? filters.priceRange : [0, maxPrice]}
-                onValueChange={onPriceRangeChange}
-                className="w-full mt-2"
+                    label={category}
+                    checked={filters.category.includes(category)}
+                    onChange={() => onFilterChange("category", category)}
+                  />
+                ))
+              )}
+            </div>
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="price">
+          <AccordionTrigger className="text-base font-medium">
+            Price Range
+          </AccordionTrigger>
+          <AccordionContent>
+            {isLoading ? (
+              <Skeleton className="h-10 w-full" />
+            ) : (
+              <PriceRangeContent
+                priceRange={filters.priceRange}
+                maxPrice={maxPrice}
+                onPriceRangeChange={onPriceRangeChange}
               />
-              <div className="flex justify-between text-sm text-muted-foreground mt-2">
-                <span>
-                  {formatPrice(filters.priceRange ? filters.priceRange[0] : 0)}
-                </span>
-                <span>
-                  {formatPrice(
-                    filters.priceRange ? filters.priceRange[1] : maxPrice
-                  )}
-                </span>
-              </div>
-            </>
-          )}
-        </AccordionContent>
-      </AccordionItem>
-    </Accordion>
-  );
-};
+            )}
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
+    );
+  }
+);
+
+FilterAccordion.displayName = "FilterAccordion";

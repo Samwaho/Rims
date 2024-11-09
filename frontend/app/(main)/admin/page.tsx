@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Plus, Search, Loader2, ShoppingBag } from "lucide-react";
 import Link from "next/link";
@@ -33,6 +33,8 @@ import { createColumns } from "./columns";
 import { DataTablePagination } from "@/components/ui/data-table/pagination";
 import { DataTableViewOptions } from "@/components/ui/data-table/view-options";
 
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
 export default function AdminPage() {
   const router = useRouter();
   const [searchTerm, setSearchTerm] = useState("");
@@ -49,32 +51,39 @@ export default function AdminPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      const user = await getAuthUser();
-      if (!user) {
+      try {
+        const user = await getAuthUser();
+        if (!user) router.push("/sign-in");
+      } catch (error) {
         router.push("/sign-in");
       }
     };
     checkAuth();
   }, [router]);
 
-  const handleDelete = async (productId: string) => {
-    if (!confirm("Are you sure you want to delete this product?")) return;
+  const handleDelete = useCallback(
+    async (productId: string) => {
+      if (!confirm("Are you sure you want to delete this product?")) return;
 
-    try {
-      await axios.delete(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${productId}`,
-        await axiosHeaders()
-      );
+      try {
+        await axios.delete(
+          `${BACKEND_URL}/api/products/${productId}`,
+          await axiosHeaders()
+        );
+        toast.success("Product deleted successfully");
+        refetch();
+      } catch (error: any) {
+        toast.error(error.response?.data?.message || "Error deleting product");
+        console.error("Delete error:", error);
+      }
+    },
+    [refetch]
+  );
 
-      toast.success("Product deleted successfully");
-      refetch();
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || "Error deleting product");
-      console.error("Delete error:", error);
-    }
-  };
-
-  const columns = createColumns({ handleDelete });
+  const columns = useMemo(
+    () => createColumns({ handleDelete }),
+    [handleDelete]
+  );
 
   const table = useReactTable({
     data: productsData?.pages?.[0]?.products || [],
@@ -102,6 +111,47 @@ export default function AdminPage() {
       </div>
     );
   }
+
+  const renderTableBody = () => {
+    if (isLoading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={5} className="text-center py-12">
+            <div className="flex justify-center items-center gap-3">
+              <Loader2 className="w-6 h-6 animate-spin text-primary" />
+              <span className="text-gray-600 font-medium">
+                Loading products...
+              </span>
+            </div>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (!table.getRowModel().rows?.length) {
+      return (
+        <TableRow>
+          <TableCell colSpan={5} className="h-32 text-center">
+            <p className="text-gray-500 font-medium">No products found.</p>
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    return table.getRowModel().rows.map((row) => (
+      <TableRow
+        key={row.id}
+        data-state={row.getIsSelected() && "selected"}
+        className="hover:bg-gray-50 transition-colors"
+      >
+        {row.getVisibleCells().map((cell) => (
+          <TableCell key={cell.id} className="py-4">
+            {flexRender(cell.column.columnDef.cell, cell.getContext())}
+          </TableCell>
+        ))}
+      </TableRow>
+    ));
+  };
 
   return (
     <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
@@ -165,45 +215,7 @@ export default function AdminPage() {
                   </TableRow>
                 ))}
               </TableHeader>
-              <TableBody>
-                {isLoading ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="text-center py-12">
-                      <div className="flex justify-center items-center gap-3">
-                        <Loader2 className="w-6 h-6 animate-spin text-primary" />
-                        <span className="text-gray-600 font-medium">
-                          Loading products...
-                        </span>
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ) : table.getRowModel().rows?.length ? (
-                  table.getRowModel().rows.map((row) => (
-                    <TableRow
-                      key={row.id}
-                      data-state={row.getIsSelected() && "selected"}
-                      className="hover:bg-gray-50 transition-colors"
-                    >
-                      {row.getVisibleCells().map((cell) => (
-                        <TableCell key={cell.id} className="py-4">
-                          {flexRender(
-                            cell.column.columnDef.cell,
-                            cell.getContext()
-                          )}
-                        </TableCell>
-                      ))}
-                    </TableRow>
-                  ))
-                ) : (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-32 text-center">
-                      <p className="text-gray-500 font-medium">
-                        No products found.
-                      </p>
-                    </TableCell>
-                  </TableRow>
-                )}
-              </TableBody>
+              <TableBody>{renderTableBody()}</TableBody>
             </Table>
           </div>
           <div className="border-t border-gray-100">

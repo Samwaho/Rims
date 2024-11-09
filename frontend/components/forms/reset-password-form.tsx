@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -20,6 +19,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Lock } from "lucide-react";
 
+// Password validation schema
 const resetPasswordSchema = z
   .object({
     password: z
@@ -38,28 +38,29 @@ const resetPasswordSchema = z
 
 type ResetPasswordValues = z.infer<typeof resetPasswordSchema>;
 
+const INITIAL_VALUES: ResetPasswordValues = {
+  password: "",
+  confirmPassword: "",
+};
+
 export default function ResetPasswordForm() {
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const token = searchParams.get("token");
+  const token = useSearchParams().get("token");
 
   const form = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
-    defaultValues: {
-      password: "",
-      confirmPassword: "",
-    },
+    defaultValues: INITIAL_VALUES,
   });
 
-  const resetPasswordMutation = useMutation({
+  const { mutate: resetPassword, isPending } = useMutation({
     mutationFn: async (data: ResetPasswordValues) => {
-      if (!token) {
-        throw new Error("Reset token is missing");
-      }
-      return await axios.post(
+      if (!token) throw new Error("Reset token is missing");
+
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/reset-password/${token}`,
         { newPassword: data.password }
       );
+      return response.data;
     },
     onSuccess: () => {
       toast.success("Password reset successful! Please sign in.", {
@@ -80,8 +81,36 @@ export default function ResetPasswordForm() {
     },
   });
 
+  const renderPasswordField = (
+    name: "password" | "confirmPassword",
+    label: string,
+    placeholder: string
+  ) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-gray-700 font-medium">{label}</FormLabel>
+          <FormControl>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
+              <Input
+                {...field}
+                type="password"
+                placeholder={placeholder}
+                className="h-11 pl-10 focus:ring-2 focus:ring-primary/20"
+              />
+            </div>
+          </FormControl>
+          <FormMessage className="text-red-500" />
+        </FormItem>
+      )}
+    />
+  );
+
   const onSubmit = (data: ResetPasswordValues) => {
-    resetPasswordMutation.mutate(data);
+    resetPassword(data);
   };
 
   return (
@@ -95,60 +124,20 @@ export default function ResetPasswordForm() {
           <p className="text-gray-600 mt-1">Enter your new password</p>
         </div>
 
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-700 font-medium">
-                New Password
-              </FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                  <Input
-                    {...field}
-                    type="password"
-                    placeholder="Enter new password"
-                    className="h-11 pl-10 focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
+        {renderPasswordField("password", "New Password", "Enter new password")}
 
-        <FormField
-          control={form.control}
-          name="confirmPassword"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-700 font-medium">
-                Confirm Password
-              </FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                  <Input
-                    {...field}
-                    type="password"
-                    placeholder="Confirm new password"
-                    className="h-11 pl-10 focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
+        {renderPasswordField(
+          "confirmPassword",
+          "Confirm Password",
+          "Confirm new password"
+        )}
 
         <Button
           type="submit"
           className="w-full h-11 text-base font-semibold"
-          disabled={resetPasswordMutation.isPending}
+          disabled={isPending}
         >
-          {resetPasswordMutation.isPending ? (
+          {isPending ? (
             <div className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin" />
               <span>Resetting...</span>

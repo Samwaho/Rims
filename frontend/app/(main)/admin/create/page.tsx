@@ -15,6 +15,8 @@ import axios from "axios";
 import { axiosHeaders } from "@/lib/actions";
 import type { ProductFormValues } from "@/components/forms/ProductForm";
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+
 export default function CreateProductPage() {
   const router = useRouter();
   const [imagePreview, setImagePreview] = useState<string[]>([]);
@@ -24,9 +26,11 @@ export default function CreateProductPage() {
   const { startUpload, isUploading } = useUploadThing("productImage", {
     onClientUploadComplete: () => {
       toast.success("Images uploaded successfully!");
+      return;
     },
-    onUploadError: () => {
+    onUploadError: (error) => {
       toast.error("Error uploading images");
+      return;
     },
   });
 
@@ -37,11 +41,42 @@ export default function CreateProductPage() {
       description: "",
       price: 0,
       stock: 0,
-      category: "general" as const,
+      category: "general",
       brand: "",
       madeIn: "",
       images: [],
       specifications: [],
+    },
+  });
+
+  const createProductMutation = useMutation({
+    mutationFn: async (
+      data: Omit<ProductFormValues, "images"> & { images: string[] }
+    ) => {
+      const { data: responseData } = await axios.post(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products`,
+        {
+          productData: {
+            ...data,
+            price: Number(data.price),
+            stock: Number(data.stock),
+            specifications: data.specifications,
+          },
+          imageUrls: data.images,
+        },
+        await axiosHeaders()
+      );
+      return responseData;
+    },
+    onSuccess: () => {
+      toast.success("Product created successfully!");
+      router.push("/admin");
+    },
+    onError: (error: any) => {
+      toast.error(
+        error.response?.data?.message ||
+          "Failed to create product. Please try again."
+      );
     },
   });
 
@@ -69,70 +104,33 @@ export default function CreateProductPage() {
     checkAuth();
   }, [router]);
 
-  const createProductMutation = useMutation({
-    mutationFn: async (
-      data: Omit<ProductFormValues, "images"> & { images: string[] }
-    ) => {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products`,
-        {
-          productData: {
-            name: data.name,
-            description: data.description,
-            price: Number(data.price),
-            stock: Number(data.stock),
-            category: data.category,
-            brand: data.brand,
-            madeIn: data.madeIn,
-            specifications: data.specifications,
-          },
-          imageUrls: data.images,
-        },
-        await axiosHeaders()
-      );
-      return response.data;
-    },
-    onSuccess: () => {
-      toast.success("Product created successfully!");
-      router.push("/admin");
-    },
-    onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to create product. Please try again."
-      );
-    },
-  });
-
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const maxSize = 5 * 1024 * 1024; // 5MB
     const validFiles = files.filter((file) => {
       if (!file.type.startsWith("image/")) {
         toast.error(`${file.name} is not a valid image file`);
         return false;
       }
-      if (file.size > maxSize) {
+      if (file.size > MAX_FILE_SIZE) {
         toast.error(`${file.name} exceeds 5MB size limit`);
         return false;
       }
       return true;
     });
 
-    if (validFiles.length > 0) {
+    if (validFiles.length) {
       form.setValue("images", validFiles);
-      const previews = validFiles.map((file) => URL.createObjectURL(file));
-      setImagePreview(previews);
+      setImagePreview(validFiles.map((file) => URL.createObjectURL(file)));
       setIsDirty(true);
     }
   };
 
   const removeImage = (indexToRemove: number) => {
     const currentImages = form.getValues("images");
-    const newImages = currentImages.filter(
-      (_, index) => index !== indexToRemove
+    form.setValue(
+      "images",
+      currentImages.filter((_, index) => index !== indexToRemove)
     );
-    form.setValue("images", newImages);
     setImagePreview((prev) =>
       prev.filter((_, index) => index !== indexToRemove)
     );
@@ -141,14 +139,14 @@ export default function CreateProductPage() {
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
-      let imageUrls: string[] = [];
-      if (data.images?.length) {
-        const uploadedImages = await startUpload(Array.from(data.images));
-        if (!uploadedImages) {
-          toast.error("Failed to upload images");
-          return;
-        }
-        imageUrls = uploadedImages.map((image) => image.url);
+      const imageUrls = data.images?.length
+        ? (await startUpload(Array.from(data.images)))?.map((img) => img.url) ||
+          []
+        : [];
+
+      if (data.images?.length && !imageUrls.length) {
+        toast.error("Failed to upload images");
+        return;
       }
 
       const productData = {

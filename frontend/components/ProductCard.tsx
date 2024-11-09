@@ -1,5 +1,5 @@
 "use client";
-import React from "react";
+import React, { memo, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
@@ -9,46 +9,47 @@ import { ShoppingCart, CreditCard } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
-
-interface Product {
-  _id: string;
-  name: string;
-  brand: string;
-  madeIn: string;
-  category: string;
-  price: number;
-  images: string[];
-}
+import type { Product } from "@/types/product";
 
 interface ProductCardProps {
-  product: Product;
+  product: Pick<
+    Product,
+    "_id" | "name" | "brand" | "madeIn" | "category" | "price" | "images"
+  >;
   onAddToCart: () => void;
 }
 
-export const ProductCard: React.FC<ProductCardProps> & {
-  Skeleton: React.FC;
-} = ({ product, onAddToCart }) => {
+const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
   const router = useRouter();
 
-  const handleAuthAction = async (action: () => void) => {
-    const user = await getAuthUser();
-    if (!user) {
-      toast.error("Please sign in to continue");
-      router.push("/sign-in");
-      return;
-    }
-    action();
-  };
+  const handleAuthAction = useCallback(
+    async (action: () => void) => {
+      const user = await getAuthUser();
+      if (!user) {
+        toast.error("Please sign in to continue");
+        router.push("/sign-in");
+        return;
+      }
+      action();
+    },
+    [router]
+  );
 
-  const handleBuyNow = (e: React.MouseEvent) => {
-    e.preventDefault();
-    handleAuthAction(() => router.push(`/checkout?productId=${product._id}`));
-  };
+  const handleBuyNow = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      handleAuthAction(() => router.push(`/checkout?productId=${product._id}`));
+    },
+    [handleAuthAction, product._id, router]
+  );
 
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.preventDefault();
-    handleAuthAction(() => onAddToCart());
-  };
+  const handleAddToCart = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      handleAuthAction(() => onAddToCart());
+    },
+    [handleAuthAction, onAddToCart]
+  );
 
   return (
     <div className="group bg-background rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
@@ -63,19 +64,16 @@ export const ProductCard: React.FC<ProductCardProps> & {
             priority
           />
         </div>
-        {/* Adjust padding and spacing in the content area */}
         <div className="p-3 sm:p-4">
           <div className="flex flex-col gap-1">
             <h3 className="text-base sm:text-lg font-semibold line-clamp-1 group-hover:text-primary transition-colors">
               {product.name}
             </h3>
-            {/* Adjust brand and category text size */}
             <p className="text-xs sm:text-sm text-muted-foreground">
               <span className="font-medium text-foreground">Made in</span> •{" "}
               {product.madeIn}
             </p>
           </div>
-          {/* Adjust price text size and margin */}
           <div className="mt-2 sm:mt-3">
             <span className="text-lg sm:text-xl font-bold text-primary">
               {formatPrice(product.price)}
@@ -83,7 +81,6 @@ export const ProductCard: React.FC<ProductCardProps> & {
           </div>
         </div>
       </Link>
-      {/* Adjust padding in the button container */}
       <div className="px-3 pb-3 sm:px-4 sm:pb-4 space-y-2">
         <Button
           size="sm"
@@ -107,7 +104,7 @@ export const ProductCard: React.FC<ProductCardProps> & {
   );
 };
 
-ProductCard.Skeleton = () => (
+const ProductCardSkeleton = memo(() => (
   <div className="bg-background rounded-lg overflow-hidden shadow-sm border border-gray-100">
     <Skeleton className="w-full h-48" />
     <div className="p-4">
@@ -120,4 +117,16 @@ ProductCard.Skeleton = () => (
       <Skeleton className="h-9 w-full" />
     </div>
   </div>
-);
+));
+
+ProductCardSkeleton.displayName = "ProductCardSkeleton";
+
+interface ProductCardType extends React.FC<ProductCardProps> {
+  Skeleton: typeof ProductCardSkeleton;
+}
+
+const ProductCard = memo(ProductCardComponent) as unknown as ProductCardType;
+ProductCard.Skeleton = ProductCardSkeleton;
+ProductCard.displayName = "ProductCard";
+
+export { ProductCard };

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -8,23 +8,14 @@ import { useMutation } from "@tanstack/react-query";
 import axios from "axios";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import Link from "next/link";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
@@ -34,34 +25,38 @@ import { Mail, Lock, User, Phone, MapPin, Building, Home } from "lucide-react";
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
-export default function SignUpForm() {
-  const form = useForm<SignUpFormValues>({
-    resolver: zodResolver(signUpSchema),
-    defaultValues: {
-      firstName: "",
-      lastName: "",
-      email: "",
-      password: "",
-      confirmPassword: "",
-      phoneNumber: "",
-      address: {
-        street: "",
-        city: "",
-        county: "",
-        postalCode: "",
-      },
-    },
-  });
+const INITIAL_VALUES: SignUpFormValues = {
+  firstName: "",
+  lastName: "",
+  email: "",
+  password: "",
+  confirmPassword: "",
+  phoneNumber: "",
+  address: {
+    street: "",
+    city: "",
+    county: "",
+    postalCode: "",
+  },
+};
 
+export default function SignUpForm() {
   const router = useRouter();
 
-  const signUpMutation = useMutation({
-    mutationFn: async (data: SignUpFormValues) =>
-      await axios.post(
+  const form = useForm<SignUpFormValues>({
+    resolver: zodResolver(signUpSchema),
+    defaultValues: INITIAL_VALUES,
+  });
+
+  const { mutate: signUp, isPending } = useMutation({
+    mutationFn: async (data: SignUpFormValues) => {
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/signup`,
         data,
         await axiosHeaders()
-      ),
+      );
+      return response.data;
+    },
     onSuccess: () => {
       toast.success("Sign-up successful! Redirecting to login...", {
         duration: 3000,
@@ -70,24 +65,65 @@ export default function SignUpForm() {
       router.push("/sign-in");
     },
     onError: (error: any) => {
-      if (error.response?.data?.message) {
-        toast.error(error.response.data.message, {
-          duration: 4000,
-          position: "top-center",
-        });
-      } else {
-        toast.error("Something went wrong. Please try again.", {
-          duration: 4000,
-          position: "top-center",
-        });
-      }
-      console.log("Sign-up failed:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        "Something went wrong. Please try again.";
+      toast.error(errorMessage, {
+        duration: 4000,
+        position: "top-center",
+      });
+      console.error("Sign-up failed:", error);
     },
   });
 
-  const onSubmit = (data: SignUpFormValues) => {
-    signUpMutation.mutate(data);
-  };
+  const onSubmit = useCallback(
+    (data: SignUpFormValues) => {
+      signUp(data);
+    },
+    [signUp]
+  );
+
+  const renderFormField = useCallback(
+    ({
+      name,
+      label,
+      type = "text",
+      placeholder,
+      icon: Icon,
+      autoComplete,
+    }: {
+      name: any;
+      label: string;
+      type?: string;
+      placeholder: string;
+      icon: any;
+      autoComplete?: string;
+    }) => (
+      <FormField
+        control={form.control}
+        name={name}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-gray-700 font-medium">{label}</FormLabel>
+            <FormControl>
+              <div className="relative">
+                <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
+                <Input
+                  {...field}
+                  type={type}
+                  placeholder={placeholder}
+                  className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
+                  autoComplete={autoComplete}
+                />
+              </div>
+            </FormControl>
+            <FormMessage className="text-red-500" />
+          </FormItem>
+        )}
+      />
+    ),
+    [form.control]
+  );
 
   return (
     <Form {...form}>
@@ -103,259 +139,102 @@ export default function SignUpForm() {
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="firstName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gray-700 font-medium">
-                  First Name
-                </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                    <Input
-                      {...field}
-                      placeholder="John"
-                      className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage className="text-red-500" />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="lastName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gray-700 font-medium">
-                  Last Name
-                </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                    <Input
-                      {...field}
-                      placeholder="Doe"
-                      className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage className="text-red-500" />
-              </FormItem>
-            )}
-          />
+          {renderFormField({
+            name: "firstName",
+            label: "First Name",
+            placeholder: "John",
+            icon: User,
+          })}
+          {renderFormField({
+            name: "lastName",
+            label: "Last Name",
+            placeholder: "Doe",
+            icon: User,
+          })}
         </div>
 
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-700 font-medium">Email</FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                  <Input
-                    {...field}
-                    type="email"
-                    placeholder="john.doe@example.com"
-                    className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    autoComplete="email"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
+        {renderFormField({
+          name: "email",
+          label: "Email",
+          type: "email",
+          placeholder: "john.doe@example.com",
+          icon: Mail,
+          autoComplete: "email",
+        })}
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <FormField
-            control={form.control}
-            name="password"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gray-700 font-medium">
-                  Password
-                </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                    <Input
-                      {...field}
-                      type="password"
-                      placeholder="Enter password"
-                      className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage className="text-red-500" />
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="confirmPassword"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gray-700 font-medium">
-                  Confirm Password
-                </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                    <Input
-                      {...field}
-                      type="password"
-                      placeholder="Confirm password"
-                      className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                      autoComplete="new-password"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage className="text-red-500" />
-              </FormItem>
-            )}
-          />
+          {renderFormField({
+            name: "password",
+            label: "Password",
+            type: "password",
+            placeholder: "Enter password",
+            icon: Lock,
+            autoComplete: "new-password",
+          })}
+          {renderFormField({
+            name: "confirmPassword",
+            label: "Confirm Password",
+            type: "password",
+            placeholder: "Confirm password",
+            icon: Lock,
+            autoComplete: "new-password",
+          })}
         </div>
 
-        <FormField
-          control={form.control}
-          name="phoneNumber"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel className="text-gray-700 font-medium">
-                Phone Number (Optional)
-              </FormLabel>
-              <FormControl>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                  <Input
-                    {...field}
-                    type="tel"
-                    placeholder="+254 712 345678"
-                    className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 transition-all duration-200"
-                    autoComplete="tel"
-                  />
-                </div>
-              </FormControl>
-              <FormMessage className="text-red-500" />
-            </FormItem>
-          )}
-        />
+        {renderFormField({
+          name: "phoneNumber",
+          label: "Phone Number (Optional)",
+          type: "tel",
+          placeholder: "+254 712 345678",
+          icon: Phone,
+          autoComplete: "tel",
+        })}
 
         <fieldset className="space-y-4 border border-gray-200 p-6 rounded-xl bg-gray-50/50">
           <legend className="text-lg font-semibold px-2 text-gray-700">
             Address (Optional)
           </legend>
-          <FormField
-            control={form.control}
-            name="address.street"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gray-700 font-medium">
-                  Street
-                </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <Home className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                    <Input
-                      {...field}
-                      placeholder="123 Main St"
-                      className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 bg-white transition-all duration-200"
-                      autoComplete="street-address"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage className="text-red-500" />
-              </FormItem>
-            )}
-          />
+
+          {renderFormField({
+            name: "address.street",
+            label: "Street",
+            placeholder: "123 Main St",
+            icon: Home,
+            autoComplete: "street-address",
+          })}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="address.city"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">
-                    City
-                  </FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                      <Input
-                        {...field}
-                        placeholder="Nairobi"
-                        className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 bg-white transition-all duration-200"
-                        autoComplete="address-level2"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-red-500" />
-                </FormItem>
-              )}
-            />
-            <FormField
-              control={form.control}
-              name="address.county"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">
-                    County
-                  </FormLabel>
-                  <FormControl>
-                    <div className="relative">
-                      <Building className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                      <Input
-                        {...field}
-                        placeholder="Nairobi"
-                        className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 bg-white transition-all duration-200"
-                        autoComplete="address-level1"
-                      />
-                    </div>
-                  </FormControl>
-                  <FormMessage className="text-red-500" />
-                </FormItem>
-              )}
-            />
+            {renderFormField({
+              name: "address.city",
+              label: "City",
+              placeholder: "Nairobi",
+              icon: Building,
+              autoComplete: "address-level2",
+            })}
+            {renderFormField({
+              name: "address.county",
+              label: "County",
+              placeholder: "Nairobi",
+              icon: Building,
+              autoComplete: "address-level1",
+            })}
           </div>
 
-          <FormField
-            control={form.control}
-            name="address.postalCode"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel className="text-gray-700 font-medium">
-                  Postal Code
-                </FormLabel>
-                <FormControl>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
-                    <Input
-                      {...field}
-                      placeholder="00100"
-                      className="h-11 pl-10 focus:ring-2 focus:ring-primary/20 bg-white transition-all duration-200"
-                      autoComplete="postal-code"
-                    />
-                  </div>
-                </FormControl>
-                <FormMessage className="text-red-500" />
-              </FormItem>
-            )}
-          />
+          {renderFormField({
+            name: "address.postalCode",
+            label: "Postal Code",
+            placeholder: "00100",
+            icon: MapPin,
+            autoComplete: "postal-code",
+          })}
         </fieldset>
 
         <Button
           type="submit"
           className="w-full h-12 text-base font-semibold shadow-sm hover:shadow-md transition-all duration-300 bg-primary hover:bg-primary/90 text-white"
-          disabled={signUpMutation.isPending}
+          disabled={isPending}
         >
-          {signUpMutation.isPending ? (
+          {isPending ? (
             <div className="flex items-center justify-center gap-2">
               <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin" />
               <span>Creating Account...</span>

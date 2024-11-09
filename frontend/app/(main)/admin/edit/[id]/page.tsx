@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ProductForm } from "@/components/forms/ProductForm";
@@ -15,6 +15,8 @@ import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { axiosHeaders } from "@/lib/actions";
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface Specification {
   name: string;
@@ -32,13 +34,16 @@ export default function EditProductPage({
   const [newImages, setNewImages] = useState<File[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const queryClient = useQueryClient();
 
   const { startUpload, isUploading } = useUploadThing("productImage", {
     onClientUploadComplete: () => {
       toast.success("Images uploaded successfully!");
+      return;
     },
-    onUploadError: () => {
+    onUploadError: (error) => {
       toast.error("Error uploading images");
+      return;
     },
   });
 
@@ -52,8 +57,8 @@ export default function EditProductPage({
       category: "general" as const,
       brand: "",
       madeIn: "",
-      images: [] as File[],
-      specifications: [] as Specification[],
+      images: [],
+      specifications: [],
     },
   });
 
@@ -99,33 +104,32 @@ export default function EditProductPage({
 
   // Form initialization
   useEffect(() => {
-    if (product) {
-      form.reset({
-        name: product.name,
-        description: product.description,
-        price: product.price,
-        stock: product.stock,
-        category: product.category,
-        brand: product.brand,
-        madeIn: product.madeIn,
-        specifications: product.specifications || [],
-        images: [],
-      });
-      setExistingImages(product.images || []);
-      setImagePreview(product.images || []);
-      setIsDirty(false);
-    }
+    if (!product) return;
+
+    // Create dummy File objects for existing images
+    const dummyFiles = product.images.map(
+      (url: string) => new File([], url, { type: "image/jpeg" })
+    );
+
+    form.reset({
+      ...product,
+      images: dummyFiles, // Set the images field with dummy files
+      specifications: product.specifications || [],
+    });
+    setExistingImages(product.images || []);
+    setImagePreview(product.images || []);
+    setIsDirty(false);
   }, [product, form]);
 
   // Navigation protection
-  const handleNavigation = useCallback(() => {
-    if (isDirty) {
-      return window.confirm(
+  const handleNavigation = useCallback(
+    () =>
+      !isDirty ||
+      window.confirm(
         "You have unsaved changes. Are you sure you want to leave?"
-      );
-    }
-    return true;
-  }, [isDirty]);
+      ),
+    [isDirty]
+  );
 
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
@@ -140,38 +144,52 @@ export default function EditProductPage({
   }, [isDirty]);
 
   const updateProductMutation = useMutation({
-    mutationFn: async (formData: ProductFormValues) => {
-      const productData = {
-        ...formData,
-        price: Number(formData.price),
-        stock: Number(formData.stock),
-        specifications: formData.specifications.filter(
-          (spec: Specification) => spec.name.trim() && spec.value.trim()
-        ),
-      };
+    mutationFn: async (data: ProductFormValues) => {
+      try {
+        // Ensure specifications are valid
+        const validSpecifications = (data.specifications || []).filter(
+          (spec) => spec && spec.name?.trim() && spec.value?.trim()
+        );
 
-      let finalImageUrls = [...existingImages];
+        const productData = {
+          name: data.name,
+          description: data.description,
+          price: Number(data.price),
+          stock: Number(data.stock),
+          category: data.category,
+          brand: data.brand,
+          madeIn: data.madeIn,
+          specifications: validSpecifications,
+        };
 
-      if (newImages.length > 0) {
-        const uploadedImages = await startUpload(newImages);
-        if (!uploadedImages) {
-          throw new Error("Failed to upload new images");
+        // Use existingImages instead of form's images field
+        let finalImageUrls = [...existingImages];
+
+        if (newImages.length > 0) {
+          const uploadedImages = await startUpload(newImages);
+          if (!uploadedImages) throw new Error("Failed to upload new images");
+          finalImageUrls = [
+            ...finalImageUrls,
+            ...uploadedImages.map((image) => image.url),
+          ];
         }
-        const newImageUrls = uploadedImages.map((image) => image.url);
-        finalImageUrls = [...finalImageUrls, ...newImageUrls];
-      }
 
-      const response = await axios.put(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${params.id}`,
-        {
-          ...productData,
-          images: finalImageUrls,
-        },
-        await axiosHeaders()
-      );
-      return response.data;
+        const response = await axios.put(
+          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${params.id}`,
+          {
+            productData,
+            imageUrls: finalImageUrls,
+          },
+          await axiosHeaders()
+        );
+        return response.data;
+      } catch (error: any) {
+        throw error;
+      }
     },
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["product", params.id] });
       toast.success("Product updated successfully!");
       setIsDirty(false);
       router.push("/admin");
@@ -184,27 +202,36 @@ export default function EditProductPage({
     },
   });
 
+  const onSubmit = async (formData: ProductFormValues) => {
+    try {
+      await updateProductMutation.mutateAsync(formData);
+    } catch (error) {
+      // Error handled by mutation error callback
+    }
+  };
+
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    const maxSize = 5 * 1024 * 1024; // 5MB
     const validFiles = files.filter((file) => {
       if (!file.type.startsWith("image/")) {
         toast.error(`${file.name} is not a valid image file`);
         return false;
       }
-      if (file.size > maxSize) {
+      if (file.size > MAX_FILE_SIZE) {
         toast.error(`${file.name} exceeds 5MB size limit`);
         return false;
       }
       return true;
     });
 
-    if (validFiles.length > 0) {
-      setNewImages((prev) => [...prev, ...validFiles]);
-      const newPreviews = validFiles.map((file) => URL.createObjectURL(file));
-      setImagePreview((prev) => [...prev, ...newPreviews]);
-      setIsDirty(true);
-    }
+    if (!validFiles.length) return;
+
+    setNewImages((prev) => [...prev, ...validFiles]);
+    setImagePreview((prev) => [
+      ...prev,
+      ...validFiles.map((file) => URL.createObjectURL(file)),
+    ]);
+    setIsDirty(true);
   };
 
   const removeImage = (indexToRemove: number) => {
@@ -246,15 +273,11 @@ export default function EditProductPage({
     );
   }
 
-  const handleSubmit = async (data: ProductFormValues) => {
-    await updateProductMutation.mutateAsync(data);
-  };
-
   return (
     <div className="container max-w-5xl mx-auto py-8 px-4 sm:py-12">
       <ProductForm
         form={form}
-        onSubmit={handleSubmit}
+        onSubmit={onSubmit}
         imagePreview={imagePreview}
         handleImageChange={handleImageChange}
         isSubmitting={updateProductMutation.isPending}
@@ -262,11 +285,7 @@ export default function EditProductPage({
         title="Edit Product"
         description="Update the product details below"
         submitLabel="Update Product"
-        onBack={() => {
-          if (handleNavigation()) {
-            router.back();
-          }
-        }}
+        onBack={() => handleNavigation() && router.back()}
         removeImage={removeImage}
         setIsDirty={setIsDirty}
         existingImages={existingImages}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
@@ -24,17 +24,7 @@ import Link from "next/link";
 import { useSearchParams, useRouter } from "next/navigation";
 import { z } from "zod";
 
-interface CartItem {
-  _id: string;
-  product: {
-    _id: string;
-    name: string;
-    price: number;
-    images: string[];
-  };
-  quantity: number;
-}
-
+// Types
 interface Product {
   _id: string;
   name: string;
@@ -44,43 +34,11 @@ interface Product {
 
 interface CheckoutItem {
   _id: string;
-  product: {
-    _id: string;
-    name: string;
-    price: number;
-    images: string[];
-  };
-  quantity: number;
-}
-
-interface SingleProduct {
-  _id: string;
   product: Product;
   quantity: number;
 }
 
-const fetchCart = async (): Promise<CartItem[]> => {
-  const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/cart`,
-    await axiosHeaders()
-  );
-  return response.data;
-};
-
-const fetchProduct = async (productId: string): Promise<SingleProduct> => {
-  const response = await axios.get(
-    `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products/${productId}`,
-    await axiosHeaders()
-  );
-  return {
-    _id: response.data._id,
-    product: response.data,
-    quantity: 1,
-  };
-};
-
-export const dynamic = "force-dynamic";
-
+// Schemas
 const mpesaNumberSchema = z.string().regex(/^254\d{9}$/, {
   message: "Please enter a valid Mpesa number starting with 254",
 });
@@ -91,27 +49,62 @@ const bankDetailsSchema = z.object({
   accountHolder: z.string().min(1, "Account holder name is required"),
 });
 
+// API Functions
+const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
+
+const fetchCart = async (): Promise<CheckoutItem[]> => {
+  const response = await axios.get(
+    `${BACKEND_URL}/api/cart`,
+    await axiosHeaders()
+  );
+  return response.data;
+};
+
+const fetchProduct = async (productId: string): Promise<CheckoutItem> => {
+  const response = await axios.get(
+    `${BACKEND_URL}/api/products/${productId}`,
+    await axiosHeaders()
+  );
+  return {
+    _id: response.data._id,
+    product: response.data,
+    quantity: 1,
+  };
+};
+
+// Components
+const OrderItem = React.memo(({ item }: { item: CheckoutItem }) => (
+  <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors">
+    <div className="flex items-center space-x-4">
+      <div className="w-16 h-16 relative rounded-md overflow-hidden">
+        <img
+          src={item.product.images[0]}
+          alt={item.product.name}
+          className="object-cover"
+        />
+      </div>
+      <div>
+        <p className="font-medium text-gray-900">{item.product.name}</p>
+        <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+      </div>
+    </div>
+    <span className="font-semibold text-gray-900">
+      {formatPrice(item.product.price * item.quantity)}
+    </span>
+  </div>
+));
+
+OrderItem.displayName = "OrderItem";
+
+export const dynamic = "force-dynamic";
+
 export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
   const router = useRouter();
   const queryClient = useQueryClient();
 
-  const { data: items = [], isLoading } = useQuery<CheckoutItem[]>({
-    queryKey: ["checkout", productId],
-    queryFn: async () => {
-      if (productId) {
-        const product = await fetchProduct(productId);
-        return [product];
-      }
-      return fetchCart();
-    },
-  });
-
-  const totalPrice = items.reduce((total, item) => {
-    return total + item.product.price * item.quantity;
-  }, 0);
-
+  // State
   const [paymentMethod, setPaymentMethod] = useState("mpesa");
   const [mpesaNumber, setMpesaNumber] = useState("");
   const [bankDetails, setBankDetails] = useState({
@@ -121,25 +114,43 @@ export default function CheckoutPage() {
   });
   const [formErrors, setFormErrors] = useState<string[]>([]);
 
+  // Queries
+  const { data: items = [], isLoading } = useQuery<CheckoutItem[]>({
+    queryKey: ["checkout", productId],
+    queryFn: async () =>
+      productId ? [await fetchProduct(productId)] : fetchCart(),
+  });
+
+  // Memoized Values
+  const totalPrice = useMemo(
+    () =>
+      items.reduce(
+        (total, item) => total + item.product.price * item.quantity,
+        0
+      ),
+    [items]
+  );
+
+  const backLink = useMemo(
+    () => (productId ? `/products/${productId}` : "/cart"),
+    [productId]
+  );
+
+  // Mutations
   const createOrderMutation = useMutation({
     mutationFn: async () => {
-      try {
-        const orderResponse = await axios.post(
-          `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders`,
-          {
-            ...(productId ? { productId, quantity: 1 } : {}),
-            paymentMethod,
-            paymentDetails:
-              paymentMethod === "mpesa" ? { mpesaNumber } : bankDetails,
-            totalAmount: totalPrice,
-          },
-          await axiosHeaders()
-        );
-
-        return orderResponse.data.order._id;
-      } catch (error) {
-        throw error;
-      }
+      const response = await axios.post(
+        `${BACKEND_URL}/api/orders`,
+        {
+          ...(productId ? { productId, quantity: 1 } : {}),
+          paymentMethod,
+          paymentDetails:
+            paymentMethod === "mpesa" ? { mpesaNumber } : bankDetails,
+          totalAmount: totalPrice,
+        },
+        await axiosHeaders()
+      );
+      return response.data.order._id;
     },
     onSuccess: (orderId) => {
       const successMessage =
@@ -160,32 +171,19 @@ export default function CheckoutPage() {
     },
   });
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
-      </div>
-    );
-  }
-
+  // Handlers
   const validateForm = (): boolean => {
     const errors: string[] = [];
 
-    if (paymentMethod === "mpesa") {
-      try {
+    try {
+      if (paymentMethod === "mpesa") {
         mpesaNumberSchema.parse(mpesaNumber);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          errors.push(...error.errors.map((err) => err.message));
-        }
-      }
-    } else {
-      try {
+      } else {
         bankDetailsSchema.parse(bankDetails);
-      } catch (error) {
-        if (error instanceof z.ZodError) {
-          errors.push(...error.errors.map((err) => err.message));
-        }
+      }
+    } catch (error) {
+      if (error instanceof z.ZodError) {
+        errors.push(...error.errors.map((err) => err.message));
       }
     }
 
@@ -194,22 +192,23 @@ export default function CheckoutPage() {
   };
 
   const handlePayment = async () => {
-    if (!validateForm()) {
-      return;
+    if (validateForm()) {
+      createOrderMutation.mutate();
     }
-
-    createOrderMutation.mutate();
   };
 
   const formatMpesaNumber = (input: string) => {
     const numbers = input.replace(/\D/g, "");
-    if (!numbers.startsWith("254") && numbers.length > 0) {
-      return "254" + numbers;
-    }
-    return numbers;
+    return numbers.startsWith("254") ? numbers : numbers ? "254" + numbers : "";
   };
 
-  const backLink = productId ? `/products/${productId}` : "/cart";
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
@@ -237,31 +236,7 @@ export default function CheckoutPage() {
             <CardContent className="pt-6">
               <div className="space-y-4">
                 {items.map((item) => (
-                  <div
-                    key={item._id}
-                    className="flex justify-between items-center bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors"
-                  >
-                    <div className="flex items-center space-x-4">
-                      <div className="w-16 h-16 relative rounded-md overflow-hidden">
-                        <img
-                          src={item.product.images[0]}
-                          alt={item.product.name}
-                          className="object-cover"
-                        />
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900">
-                          {item.product.name}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          Quantity: {item.quantity}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="font-semibold text-gray-900">
-                      {formatPrice(item.product.price * item.quantity)}
-                    </span>
-                  </div>
+                  <OrderItem key={item._id} item={item} />
                 ))}
                 <Separator className="my-4" />
                 <div className="space-y-2">
