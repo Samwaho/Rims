@@ -73,7 +73,7 @@ const categories = [
     description:
       "Experience superior performance with our collection of high-quality tyres, engineered for exceptional grip, durability, and driving comfort.",
     image: TiresCat,
-    href: "/products?category=tyre",
+    href: "/products?category=tyres",
     buttonText: "Shop Tyres",
   },
   {
@@ -81,7 +81,7 @@ const categories = [
     description:
       "Transform your vehicle with our exclusive collection of premium wheels, designed to deliver both stunning aesthetics and optimal performance.",
     image: WheelsCat,
-    href: "/products?category=wheel",
+    href: "/products?category=wheels",
     buttonText: "Shop Wheels",
   },
 ] as const;

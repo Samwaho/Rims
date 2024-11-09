@@ -31,7 +31,9 @@ const ProductsPage = () => {
 
   const [filters, setFilters] = useState<FilterState>({
     brand: [],
-    category: [],
+    category: searchParams.get("category")
+      ? [searchParams.get("category") as "wheels" | "tyres"]
+      : [],
     priceRange: undefined,
   });
 
