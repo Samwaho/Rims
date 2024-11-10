@@ -12,6 +12,7 @@ import ProductDetails from "@/components/product/ProductDetails";
 import ProductReviews from "@/components/product/ProductReviews";
 import ProductSkeleton from "@/components/product/ProductSkeleton";
 import { useRouter } from "next/navigation";
+import { ShoppingCart, CreditCard } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -124,6 +125,25 @@ export default function ProductPage({
     addToCartMutation.mutate({ productId: product._id, quantity: 1 });
   }, [authState.isAuthenticated, product, router, addToCartMutation]);
 
+  const handleBuyNow = useCallback(() => {
+    if (!authState.isAuthenticated) {
+      router.push("/sign-in");
+      return;
+    }
+
+    if (!product) {
+      toast.error("Product information not available");
+      return;
+    }
+
+    if (!navigator.onLine) {
+      toast.error("No internet connection. Please check your network");
+      return;
+    }
+
+    router.push(`/checkout?productId=${product._id}`);
+  }, [authState.isAuthenticated, product, router]);
+
   if (isLoading) return <ProductSkeleton />;
 
   if (error || !product) {
@@ -147,7 +167,11 @@ export default function ProductPage({
           user={user}
         />
         <div>
-          <ProductDetails product={product} handleAddToCart={handleAddToCart} />
+          <ProductDetails
+            product={product}
+            handleAddToCart={handleAddToCart}
+            handleBuyNow={handleBuyNow}
+          />
         </div>
       </div>
       <Separator className="my-8" />

@@ -231,7 +231,7 @@ export default function SignUpForm() {
 
         <Button
           type="submit"
-          className="w-full h-12 text-base font-semibold shadow-sm hover:shadow-md transition-all duration-300 bg-primary hover:bg-primary/90 text-white"
+          className="w-full h-12 text-base font-semibold shadow-sm hover:shadow-md transition-all duration-300 bg-primary hover:bg-opacity-80 text-white"
           disabled={isPending}
         >
           {isPending ? (

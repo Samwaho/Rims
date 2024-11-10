@@ -9,15 +9,18 @@ import { ProductSpecifications } from "./ProductSpecifications";
 import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
+import { ShoppingCart, CreditCard } from "lucide-react";
 
 interface ProductDetailsProps {
   product: Product;
   handleAddToCart: () => void;
+  handleBuyNow: () => void;
 }
 
 export default function ProductDetails({
   product,
   handleAddToCart,
+  handleBuyNow,
 }: ProductDetailsProps) {
   const router = useRouter();
 
@@ -82,14 +85,25 @@ export default function ProductDetails({
           reviewCount={product.reviews?.length || 0}
         />
       </div>
-      <Button
-        size="lg"
-        className="w-full bg-primary hover:opacity-90 text-primary-foreground transition-all duration-300 text-lg py-6"
-        onClick={() => handleAuthAction(handleAddToCart)}
-        disabled={product.stock === 0}
-      >
-        {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
-      </Button>
+      <div className="space-y-2">
+        <Button
+          onClick={handleAddToCart}
+          variant="outline"
+          className="w-full transition-all duration-300 hover:bg-primary hover:text-primary-foreground"
+          size="lg"
+        >
+          <ShoppingCart className="w-5 h-5 mr-2" />
+          Add to Cart
+        </Button>
+        <Button
+          onClick={handleBuyNow}
+          className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110"
+          size="lg"
+        >
+          <CreditCard className="w-5 h-5 mr-2" />
+          Buy Now
+        </Button>
+      </div>
 
       <Separator className="my-2" />
 
