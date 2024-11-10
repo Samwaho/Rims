@@ -1,44 +1,73 @@
 import express from "express";
 import dotenv from "dotenv";
 import mongoose from "mongoose";
+import cookieParser from "cookie-parser";
+import cors from "cors";
+
+// Route imports
 import authRouter from "./routes/auth.route.js";
 import productRouter from "./routes/product.route.js";
 import cartRouter from "./routes/cart.route.js";
 import orderRouter from "./routes/order.route.js";
-import cookieParser from "cookie-parser";
-import cors from "cors";
 
+// Load environment variables
 dotenv.config();
 
+// Constants
 const app = express();
-const port = process.env.SERVER_PORT || 3001;
-const mongodb_uri = process.env.MONGODB_URI;
+const PORT = process.env.SERVER_PORT || 3001;
+const MONGODB_URI = process.env.MONGODB_URI;
 
-mongoose
-  .connect(mongodb_uri)
-  .then(() => {
-    console.log("Connected to MongoDB!");
-  })
-  .catch((err) => {
-    console.error("Failed to connect to MongoDB:", err);
+// Database connection
+async function connectToDatabase() {
+  try {
+    await mongoose.connect(MONGODB_URI);
+    console.log("✅ Connected to MongoDB successfully!");
+  } catch (error) {
+    console.error("❌ Failed to connect to MongoDB:", error.message);
     process.exit(1);
-  });
+  }
+}
 
+// Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors({ origin: process.env.FRONTEND_URL, credentials: true }));
+app.use(
+  cors({
+    origin: process.env.FRONTEND_URL,
+    credentials: true,
+  })
+);
 
+// API Routes
 app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", orderRouter);
 
+// Global Error Handler
 app.use((err, req, res, next) => {
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
-  res.status(statusCode).json({ success: false, statusCode, message });
+
+  console.error(`❌ Error: ${message}`);
+
+  return res.status(statusCode).json({
+    success: false,
+    statusCode,
+    message,
+  });
 });
 
-app.listen(port, () => {
-  console.log("Server running on port ", port);
+// Start server
+const startServer = async () => {
+  await connectToDatabase();
+  app.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`);
+  });
+};
+
+startServer().catch((error) => {
+  console.error("Failed to start server:", error);
+  process.exit(1);
 });

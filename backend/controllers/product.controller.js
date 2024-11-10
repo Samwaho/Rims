@@ -1,39 +1,60 @@
 import Product from "../models/product.model.js";
 
+// Helper functions
+const calculateAverageRating = (reviews) => {
+  if (!reviews?.length) return 0;
+  const total = reviews.reduce((acc, review) => acc + review.rating, 0);
+  return Number((total / reviews.length).toFixed(1));
+};
+
+const formatReview = (review) => ({
+  ...review,
+  createdAt: review.createdAt
+    ? new Date(review.createdAt).toISOString()
+    : new Date().toISOString(),
+});
+
+const formatProductResponse = (product) => {
+  const averageRating = calculateAverageRating(product.reviews);
+  return {
+    ...product,
+    averageRating,
+    reviewCount: product.reviews?.length || 0,
+    reviews: product.reviews?.map(formatReview) || [],
+  };
+};
+
+const validateProductData = (productData) => {
+  const requiredFields = [
+    "name",
+    "description",
+    "price",
+    "stock",
+    "category",
+    "brand",
+    "madeIn",
+  ];
+  const missingFields = requiredFields.filter(
+    (field) => !productData[field] && productData[field] !== 0
+  );
+  return missingFields;
+};
+
+// Controllers
 export const getProducts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
     const skip = (page - 1) * limit;
 
-    const products = await Product.find()
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(limit);
+    const [products, total] = await Promise.all([
+      Product.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Product.countDocuments(),
+    ]);
 
-    // Calculate average rating and format response for each product
-    const productsWithStats = products.map((product) => {
-      const averageRating = product.reviews.length
-        ? Number(
-            (
-              product.reviews.reduce((acc, review) => acc + review.rating, 0) /
-              product.reviews.length
-            ).toFixed(1)
-          )
-        : 0;
-
-      return {
-        ...product.toObject(),
-        averageRating,
-        reviewCount: product.reviews.length,
-        reviews: product.reviews.map((review) => ({
-          ...review,
-          createdAt: review.createdAt.toISOString(),
-        })),
-      };
-    });
-
-    const total = await Product.countDocuments();
+    const productsWithStats = products.map((product) =>
+      formatProductResponse(product.toObject())
+    );
 
     res.status(200).json({
       products: productsWithStats,
@@ -54,31 +75,7 @@ export const getProductById = async (req, res, next) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Calculate average rating
-    const averageRating = product.reviews?.length
-      ? Number(
-          (
-            product.reviews.reduce((acc, review) => acc + review.rating, 0) /
-            product.reviews.length
-          ).toFixed(1)
-        )
-      : 0;
-
-    // Format the response to match frontend expectations
-    const productWithStats = {
-      ...product,
-      averageRating,
-      reviewCount: product.reviews?.length || 0,
-      reviews:
-        product.reviews?.map((review) => ({
-          ...review,
-          createdAt: review.createdAt
-            ? new Date(review.createdAt).toISOString()
-            : new Date().toISOString(),
-        })) || [],
-    };
-
-    res.status(200).json(productWithStats);
+    res.status(200).json(formatProductResponse(product));
   } catch (error) {
     console.error("Error in getProductById:", error);
     next(error);
@@ -89,7 +86,6 @@ export const createProduct = async (req, res, next) => {
   try {
     const { productData, imageUrls } = req.body;
 
-    // Validate that productData exists
     if (!productData) {
       return res.status(400).json({
         message: "Product data is required",
@@ -97,73 +93,43 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
-    // Validate required fields
-    const requiredFields = [
-      "name",
-      "description",
-      "price",
-      "stock",
-      "category",
-      "brand",
-      "madeIn",
-    ];
-
-    const missingFields = requiredFields.filter(
-      (field) => !productData[field] && productData[field] !== 0
-    );
-
-    if (missingFields.length > 0) {
+    const missingFields = validateProductData(productData);
+    if (missingFields.length) {
       return res.status(400).json({
         message: `Missing required fields: ${missingFields.join(", ")}`,
         receivedData: productData,
       });
     }
 
-    // Create new product with validated data
     const product = new Product({
       ...productData,
       price: Number(productData.price),
       stock: Number(productData.stock),
-      images: imageUrls || [], // Add image URLs from UploadThing
+      images: imageUrls || [],
       specifications: productData.specifications || [],
       reviews: [],
       createdAt: new Date(),
       updatedAt: new Date(),
     });
 
-    // Save the product
     const newProduct = await product.save();
-
-    // Return formatted product response
-    const formattedProduct = {
-      ...newProduct.toObject(),
-      averageRating: 0,
-      reviewCount: 0,
-      reviews: [],
-    };
-
     res.status(201).json({
       message: "Product created successfully",
-      product: formattedProduct,
+      product: formatProductResponse(newProduct.toObject()),
     });
   } catch (error) {
     console.error("Error creating product:", error);
-
-    // Improved error handling
     if (error.name === "ValidationError") {
       return res.status(400).json({
         message: "Validation error",
         errors: Object.values(error.errors).map((err) => err.message),
       });
     }
-
     if (error.code === 11000) {
-      // Duplicate key error
       return res.status(400).json({
         message: "A product with this name already exists",
       });
     }
-
     next(error);
   }
 };
@@ -173,7 +139,6 @@ export const updateProduct = async (req, res, next) => {
     const { productData, imageUrls } = req.body;
     const productId = req.params.id;
 
-    // Validate that productData exists
     if (!productData) {
       return res.status(400).json({
         message: "Product data is required",
@@ -181,30 +146,26 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
-    // Validate the product exists
     const existingProduct = await Product.findById(productId);
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Ensure specifications is an array and filter out invalid entries
     const validSpecifications = Array.isArray(productData.specifications)
       ? productData.specifications.filter(
           (spec) => spec && typeof spec === "object" && spec.name && spec.value
         )
       : [];
 
-    // Format the data for update
     const updateData = {
       ...productData,
       price: Number(productData.price),
       stock: Number(productData.stock),
-      images: imageUrls || existingProduct.images, // Fallback to existing images
+      images: imageUrls || existingProduct.images,
       specifications: validSpecifications,
       updatedAt: new Date(),
     };
 
-    // Update the product with new data
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
       updateData,
@@ -215,27 +176,9 @@ export const updateProduct = async (req, res, next) => {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Calculate stats for response
-    const averageRating = updatedProduct.reviews?.length
-      ? Number(
-          (
-            updatedProduct.reviews.reduce(
-              (acc, review) => acc + review.rating,
-              0
-            ) / updatedProduct.reviews.length
-          ).toFixed(1)
-        )
-      : 0;
-
-    const productWithStats = {
-      ...updatedProduct,
-      averageRating,
-      reviewCount: updatedProduct.reviews?.length || 0,
-    };
-
     res.status(200).json({
       message: "Product updated successfully",
-      product: productWithStats,
+      product: formatProductResponse(updatedProduct),
     });
   } catch (error) {
     console.error("Error updating product:", error);
@@ -267,54 +210,30 @@ export const addReview = async (req, res, next) => {
     const productId = req.params.id;
 
     const product = await Product.findById(productId);
-
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
-    // Check if user has already reviewed
-    const hasReviewed = product.reviews.find(
-      (review) => review.user.toString() === userId
-    );
-
-    if (hasReviewed) {
+    if (product.reviews.some((review) => review.user.toString() === userId)) {
       return res
         .status(400)
         .json({ message: "You have already reviewed this product" });
     }
 
-    // Add the review with createdAt timestamp
     const review = {
       user: userId,
       rating: Number(rating),
       comment,
       userName,
-      createdAt: new Date(), // Add creation timestamp
+      createdAt: new Date(),
     };
 
     product.reviews.push(review);
-
-    // Calculate new average rating
-    const averageRating =
-      product.reviews.reduce((acc, review) => acc + review.rating, 0) /
-      product.reviews.length;
-
     await product.save();
-
-    // Return formatted response matching frontend expectations
-    const productWithStats = {
-      ...product.toObject(),
-      averageRating: Number(averageRating.toFixed(1)), // Format to match frontend display
-      reviewCount: product.reviews.length,
-      reviews: product.reviews.map((review) => ({
-        ...review.toObject(),
-        createdAt: review.createdAt.toISOString(), // Ensure ISO string format for dates
-      })),
-    };
 
     res.status(201).json({
       message: "Review added successfully",
-      product: productWithStats,
+      product: formatProductResponse(product.toObject()),
     });
   } catch (error) {
     next(error);
@@ -323,39 +242,33 @@ export const addReview = async (req, res, next) => {
 
 export const updateReview = async (req, res, next) => {
   try {
-    const { rating, comment } = req.body;
+    const { rating, comment, userId } = req.body;
     const { productId, reviewId } = req.params;
-    const userId = req.body.userId;
 
     const product = await Product.findById(productId);
-
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
     const review = product.reviews.id(reviewId);
-
     if (!review) {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    // Check if the user owns the review
     if (review.user.toString() !== userId) {
       return res
         .status(403)
         .json({ message: "Not authorized to update this review" });
     }
 
-    // Update the review
     review.rating = Number(rating);
     review.comment = comment;
-
-    // Recalculate average rating
-    product.calculateAverageRating();
-
     await product.save();
 
-    res.status(200).json({ message: "Review updated successfully", product });
+    res.status(200).json({
+      message: "Review updated successfully",
+      product: formatProductResponse(product.toObject()),
+    });
   } catch (error) {
     next(error);
   }
@@ -364,36 +277,31 @@ export const updateReview = async (req, res, next) => {
 export const deleteReview = async (req, res, next) => {
   try {
     const { productId, reviewId } = req.params;
-    const userId = req.body.userId;
+    const { userId } = req.body;
 
     const product = await Product.findById(productId);
-
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
     const review = product.reviews.id(reviewId);
-
     if (!review) {
       return res.status(404).json({ message: "Review not found" });
     }
 
-    // Check if the user owns the review
     if (review.user.toString() !== userId) {
       return res
         .status(403)
         .json({ message: "Not authorized to delete this review" });
     }
 
-    // Remove the review
     review.remove();
-
-    // Recalculate average rating
-    product.calculateAverageRating();
-
     await product.save();
 
-    res.status(200).json({ message: "Review deleted successfully", product });
+    res.status(200).json({
+      message: "Review deleted successfully",
+      product: formatProductResponse(product.toObject()),
+    });
   } catch (error) {
     next(error);
   }
@@ -402,17 +310,19 @@ export const deleteReview = async (req, res, next) => {
 export const getProductReviews = async (req, res, next) => {
   try {
     const product = await Product.findById(req.params.id)
-      .select("reviews numReviews averageRating")
-      .populate("reviews.user", "name");
+      .select("reviews")
+      .populate("reviews.user", "name")
+      .lean();
 
     if (!product) {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    const formattedProduct = formatProductResponse(product);
     res.status(200).json({
-      reviews: product.reviews,
-      numReviews: product.numReviews,
-      averageRating: product.averageRating,
+      reviews: formattedProduct.reviews,
+      numReviews: formattedProduct.reviewCount,
+      averageRating: formattedProduct.averageRating,
     });
   } catch (error) {
     next(error);
@@ -435,24 +345,23 @@ export const searchProducts = async (req, res, next) => {
         { name: { $regex: query, $options: "i" } },
         { description: { $regex: query, $options: "i" } },
       ],
+      ...(category && { category }),
     };
-
-    if (category) {
-      searchQuery.category = category;
-    }
 
     const skip = (page - 1) * limit;
     const sortOptions = { [sortBy]: order === "desc" ? -1 : 1 };
 
-    const products = await Product.find(searchQuery)
-      .sort(sortOptions)
-      .skip(skip)
-      .limit(limit);
-
-    const total = await Product.countDocuments(searchQuery);
+    const [products, total] = await Promise.all([
+      Product.find(searchQuery)
+        .sort(sortOptions)
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+      Product.countDocuments(searchQuery),
+    ]);
 
     res.status(200).json({
-      products,
+      products: products.map(formatProductResponse),
       currentPage: parseInt(page),
       totalPages: Math.ceil(total / limit),
       totalProducts: total,
