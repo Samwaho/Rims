@@ -11,7 +11,7 @@ export default function AuthLayout({
   return (
     <div className="min-h-screen flex flex-col md:flex-row bg-gradient-to-br from-gray-100 to-gray-200">
       {/* Left side - Auth Form */}
-      <div className="flex-1 flex items-center justify-center p-6 md:p-10 lg:p-16 relative overflow-hidden">
+      <div className="flex-1 flex items-center justify-center py-6 px-2 md:p-10 lg:p-16 relative overflow-hidden">
         {/* Decorative elements */}
         <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20 animate-pulse"></div>
         <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
