@@ -1,7 +1,7 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
-import Logo from "@/public/Logo.png";
+import Logo from "@/public/wheelshublogo.png";
 
 export default function AuthLayout({
   children,
@@ -13,8 +13,8 @@ export default function AuthLayout({
       {/* Left side - Auth Form */}
       <div className="flex-1 flex items-center justify-center p-6 md:p-10 lg:p-16 relative overflow-hidden">
         {/* Decorative elements */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 opacity-60" />
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
@@ -37,7 +37,7 @@ export default function AuthLayout({
 
             <h2 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
               Welcome to{" "}
-              <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text">
+              <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text">
                 WheelsHub
               </span>
             </h2>
@@ -52,8 +52,8 @@ export default function AuthLayout({
       {/* Right side - Brand/Logo Section */}
       <div className="hidden md:flex flex-1 items-center justify-center p-10 lg:p-16 relative overflow-hidden">
         {/* Decorative elements */}
-        <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20 animate-pulse"></div>
-        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20 animate-pulse"></div>
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20 animate-pulse delay-1000"></div>
         <div className="absolute inset-0">
           <div className="absolute inset-0 bg-gradient-to-br from-gray-100 to-gray-200 opacity-60" />
           <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-10" />
@@ -77,7 +77,7 @@ export default function AuthLayout({
             </span>
             <h2 className="text-4xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
               Welcome to{" "}
-              <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text">
+              <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text">
                 WheelsHub
               </span>
             </h2>

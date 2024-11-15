@@ -10,7 +10,7 @@ const SignIn = () => {
           Having trouble signing in?{" "}
           <a
             href="#"
-            className="text-red-500 hover:text-red-700 font-medium transition-colors"
+            className="text-primary hover:text-primary/80 font-medium transition-colors"
           >
             Contact Support
           </a>
