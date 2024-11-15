@@ -20,7 +20,30 @@ const orderSchema = new mongoose.Schema({
       },
     },
   ],
-  totalAmount: {
+  subtotal: {
+    type: Number,
+    required: true,
+  },
+  discount: {
+    type: Number,
+    default: 0,
+  },
+  discountCode: {
+    type: String,
+  },
+  shippingCost: {
+    type: Number,
+    default: 0,
+  },
+  tax: {
+    type: Number,
+    default: 0,
+  },
+  taxRate: {
+    type: Number,
+    default: 0,
+  },
+  total: {
     type: Number,
     required: true,
   },

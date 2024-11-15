@@ -9,6 +9,9 @@ import authRouter from "./routes/auth.route.js";
 import productRouter from "./routes/product.route.js";
 import cartRouter from "./routes/cart.route.js";
 import orderRouter from "./routes/order.route.js";
+import discountRoute from "./routes/discount.route.js";
+import shippingRoute from "./routes/shipping.route.js";
+import taxRoute from "./routes/tax.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -44,18 +47,36 @@ app.use("/api/auth", authRouter);
 app.use("/api/products", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", orderRouter);
+app.use("/api/discounts", discountRoute);
+app.use("/api/shipping", shippingRoute);
+app.use("/api/tax", taxRoute);
 
 // Global Error Handler
 app.use((err, req, res, next) => {
+  if (res.headersSent) {
+    return next(err);
+  }
+
+  console.error(err.stack);
+
   const statusCode = err.statusCode || 500;
   const message = err.message || "Internal Server Error";
 
-  console.error(`❌ Error: ${message}`);
-
-  return res.status(statusCode).json({
+  res.status(statusCode).json({
     success: false,
-    statusCode,
-    message,
+    message: message,
+    ...(process.env.NODE_ENV === "development" && { stack: err.stack }),
+  });
+});
+
+// 404 handler
+app.use((req, res, next) => {
+  if (res.headersSent) {
+    return next();
+  }
+  res.status(404).json({
+    success: false,
+    message: "Route not found",
   });
 });
 

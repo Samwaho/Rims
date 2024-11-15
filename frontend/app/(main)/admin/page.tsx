@@ -2,7 +2,14 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Loader2, ShoppingBag } from "lucide-react";
+import {
+  Plus,
+  Search,
+  Loader2,
+  ShoppingBag,
+  Settings,
+  Package,
+} from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
@@ -32,6 +39,7 @@ import {
 import { createColumns } from "./columns";
 import { DataTablePagination } from "@/components/ui/data-table/pagination";
 import { DataTableViewOptions } from "@/components/ui/data-table/view-options";
+import { Card } from "@/components/ui/card";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -154,49 +162,89 @@ export default function AdminPage() {
   };
 
   return (
-    <div className="container mx-auto px-4 sm:px-6 py-6 max-w-7xl">
+    <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex flex-col gap-6">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Product Management
+            Admin Dashboard
           </h1>
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
-            <div className="relative flex-grow sm:flex-grow-0 sm:w-64">
-              <Search
-                className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
-                size={20}
-              />
+
+          <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+            <div className="relative flex-grow sm:flex-grow-0 sm:w-[300px]">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
               <Input
                 placeholder="Search products..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 h-11 w-full"
+                className="pl-9 w-full"
               />
             </div>
-            <div className="flex items-center gap-3 sm:gap-4">
-              <DataTableViewOptions table={table} />
-              <Link href="/admin/orders" className="flex-shrink-0">
-                <Button
-                  variant="outline"
-                  className="flex items-center gap-2 h-11 whitespace-nowrap"
-                >
-                  <ShoppingBag size={20} />
-                  <span className="hidden sm:inline">Manage Orders</span>
-                  <span className="sm:hidden">Orders</span>
-                </Button>
-              </Link>
-              <Link href="/admin/create" className="flex-shrink-0">
-                <Button className="flex items-center gap-2 h-11 whitespace-nowrap">
-                  <Plus size={20} />
-                  <span className="hidden sm:inline">Add New Product</span>
-                  <span className="sm:hidden">Add</span>
-                </Button>
-              </Link>
-            </div>
+            <DataTableViewOptions table={table} />
           </div>
         </div>
 
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Link href="/admin/create">
+            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <Plus className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Add Product</h3>
+                  <p className="text-sm text-gray-500">Create new listing</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/admin/orders">
+            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <ShoppingBag className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Orders</h3>
+                  <p className="text-sm text-gray-500">Manage orders</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/admin/settings">
+            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <Settings className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Settings</h3>
+                  <p className="text-sm text-gray-500">Store configuration</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/products">
+            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <Package className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">View Store</h3>
+                  <p className="text-sm text-gray-500">See customer view</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+        </div>
+
         <div className="bg-white rounded-lg shadow-md border border-gray-100">
+          <div className="p-4 border-b border-gray-100">
+            <h2 className="text-lg font-semibold">Products</h2>
+          </div>
           <div className="overflow-x-auto">
             <Table>
               <TableHeader>

@@ -3,6 +3,12 @@ import Cart from "../models/cart.model.js";
 import Product from "../models/product.model.js";
 import { sendOrderConfirmationEmail } from "../utils/sendVerificationEmail.js";
 import { errorHandler } from "../utils/error.js";
+import Discount from "../models/discount.model.js";
+import ShippingZone from "../models/shipping.model.js";
+import TaxConfig from "../models/tax.model.js";
+import { calculateShippingCost } from "../controllers/shipping.controller.js";
+import { validateDiscountCode } from "../controllers/discount.controller.js";
+import { getTaxRate } from "../controllers/tax.controller.js";
 
 const validateUser = (req) => {
   if (!req.user?.id) {
@@ -29,7 +35,35 @@ const updateProductStock = async (productId, quantity) => {
   });
 };
 
-const processDirectPurchase = async (productId, quantity = 1) => {
+const calculateOrderTotals = async (subtotal, county, discountCode = null) => {
+  const { discount } = await validateDiscountCode({
+    code: discountCode,
+    subtotal,
+  });
+  const shippingCost = await calculateShippingCost({ county, subtotal });
+  const taxRate = await getTaxRate(county);
+
+  const taxableAmount = subtotal - discount;
+  const tax = taxableAmount * taxRate;
+
+  const total = subtotal - discount + tax + shippingCost;
+
+  return {
+    subtotal,
+    discount,
+    taxRate,
+    tax,
+    shippingCost,
+    total,
+  };
+};
+
+const processDirectPurchase = async (
+  productId,
+  quantity = 1,
+  county,
+  discountCode = null
+) => {
   const product = await Product.findById(productId);
   await validateProduct(product, quantity);
 
@@ -39,53 +73,79 @@ const processDirectPurchase = async (productId, quantity = 1) => {
   };
 
   await updateProductStock(product._id, quantity);
+
+  const subtotal = product.price * quantity;
   return {
     orderProducts: [orderProduct],
-    calculatedTotal: product.price * quantity,
+    ...(await calculateOrderTotals(subtotal, county, discountCode)),
   };
 };
 
-const processCartPurchase = async (userId) => {
+const processCartPurchase = async (userId, county, discountCode = null) => {
   const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
   if (!cart?.items?.length) {
     throw { status: 400, message: "Cart is empty" };
   }
 
-  let calculatedTotal = 0;
+  let subtotal = 0;
   const orderProducts = [];
 
   for (const item of cart.items) {
     const { product, quantity } = item;
     await validateProduct(product, quantity);
 
-    calculatedTotal += product.price * quantity;
+    subtotal += product.price * quantity;
     orderProducts.push({ product: product._id, quantity });
     await updateProductStock(product._id, quantity);
   }
 
   await Cart.findOneAndUpdate({ user: userId }, { $set: { items: [] } });
 
-  return { orderProducts, calculatedTotal };
+  return {
+    orderProducts,
+    ...(await calculateOrderTotals(subtotal, county, discountCode)),
+  };
 };
 
 export const createOrder = async (req, res, next) => {
   try {
     const userId = validateUser(req);
-    const { productId, quantity, paymentMethod, paymentDetails } = req.body;
+    const {
+      productId,
+      quantity,
+      paymentMethod,
+      paymentDetails,
+      discountCode,
+      county,
+    } = req.body;
 
-    const { orderProducts, calculatedTotal } = productId
-      ? await processDirectPurchase(productId, quantity)
-      : await processCartPurchase(userId);
+    if (!county) {
+      throw { status: 400, message: "Shipping county is required" };
+    }
+
+    const orderData = productId
+      ? await processDirectPurchase(productId, quantity, county, discountCode)
+      : await processCartPurchase(userId, county, discountCode);
 
     const order = await Order.create({
       user: userId,
-      products: orderProducts,
-      totalAmount: calculatedTotal,
+      products: orderData.orderProducts,
+      subtotal: orderData.subtotal,
+      discount: orderData.discount,
+      discountCode,
+      tax: orderData.tax,
+      taxRate: orderData.taxRate,
+      shippingCost: orderData.shippingCost,
+      total: orderData.total,
       status: "pending",
       paymentMethod,
       paymentDetails,
       paymentStatus: "pending",
+      shippingAddress: {
+        ...req.body.shippingAddress,
+        county,
+      },
     });
 
     const populatedOrder = await Order.findById(order._id)

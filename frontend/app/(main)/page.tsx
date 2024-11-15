@@ -40,11 +40,11 @@ const CTA = dynamic(() => import("@/components/CTA/page"), {
 });
 
 export const metadata = {
-  title: "Home | Your Store Name",
+  title: "Home | WheelsHub",
   description: "Welcome to our store. Find the best products at great prices.",
   keywords: "store, shopping, products, deals",
   openGraph: {
-    title: "Home | Your Store Name",
+    title: "Home | WheelsHub",
     description:
       "Welcome to our store. Find the best products at great prices.",
     type: "website",
