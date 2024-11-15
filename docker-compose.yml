@@ -23,6 +23,9 @@ services:
     environment:
       - NODE_ENV=production
       - NEXT_PUBLIC_API_URL=http://localhost:5000
+      - NEXT_PUBLIC_HOSTNAME=1tg5hq3w-80.uks1.devtunnels.ms
+      - NEXTAUTH_URL=https://1tg5hq3w-80.uks1.devtunnels.ms
+      - NEXT_PUBLIC_BASE_URL=https://1tg5hq3w-80.uks1.devtunnels.ms
     env_file:
       - ./frontend/.env
     depends_on:

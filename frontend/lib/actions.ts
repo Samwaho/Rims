@@ -5,8 +5,8 @@ import { redirect } from "next/navigation";
 
 // Constants
 const AUTH_COOKIE_NAME = "access_token";
-const API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
-const AUTH_USER_ENDPOINT = `${API_BASE_URL}/api/auth/user`;
+const API_BASE_URL = "process.env.NEXT_PUBLIC_BACKEND_URL/api";
+const AUTH_USER_ENDPOINT = `${API_BASE_URL}/auth/user`;
 
 // Helper function to get auth token
 const getAuthToken = (): string | undefined => {
