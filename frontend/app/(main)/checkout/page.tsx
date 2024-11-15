@@ -25,6 +25,7 @@ import {
   Clock,
   Mail,
   Info,
+  Loader2,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -101,8 +102,8 @@ interface DeliveryPoint {
 }
 
 // Schemas
-const mpesaNumberSchema = z.string().regex(/^254\d{9}$/, {
-  message: "Please enter a valid Mpesa number starting with 254",
+const mpesaNumberSchema = z.string().regex(/^\+254\d{9}$/, {
+  message: "Please enter a valid Mpesa number starting with +254",
 });
 
 const bankDetailsSchema = z.object({
@@ -248,7 +249,7 @@ export default function CheckoutPage() {
 
   // State
   const [paymentMethod, setPaymentMethod] = useState("mpesa");
-  const [mpesaNumber, setMpesaNumber] = useState("");
+  const [mpesaNumber, setMpesaNumber] = useState("+254");
   const [bankDetails, setBankDetails] = useState({
     accountNumber: "",
     bankName: "",
@@ -372,7 +373,11 @@ export default function CheckoutPage() {
 
   const formatMpesaNumber = (input: string) => {
     const numbers = input.replace(/\D/g, "");
-    return numbers.startsWith("254") ? numbers : numbers ? "254" + numbers : "";
+    return numbers.startsWith("254")
+      ? "+254" + numbers.slice(3)
+      : numbers
+      ? "+254" + numbers
+      : "+254";
   };
 
   const validateForm = (): boolean => {
@@ -417,7 +422,7 @@ export default function CheckoutPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900" />
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
       </div>
     );
   }
@@ -479,7 +484,7 @@ export default function CheckoutPage() {
                       <SelectContent>
                         {deliveryPoints.map((point) => (
                           <SelectItem key={point._id} value={point._id}>
-                            <div className="flex items-center justify-between w-full">
+                            <div className="flex items-center justify-between gap-2 w-full">
                               <span>{point.name}</span>
                               <span className="text-sm text-muted-foreground">
                                 {point.freeShippingThreshold &&
@@ -535,7 +540,7 @@ export default function CheckoutPage() {
                                   <div className="flex items-center gap-4">
                                     <PhoneIcon className="w-4 h-4 text-muted-foreground" />
                                     <p className="text-sm">
-                                      {point.contactInfo.phone}
+                                      +{point.contactInfo.phone}
                                     </p>
                                   </div>
                                 )}
@@ -711,13 +716,13 @@ export default function CheckoutPage() {
                       <Label htmlFor="mpesa-number">Mpesa Number</Label>
                       <Input
                         id="mpesa-number"
-                        placeholder="254712345678"
+                        placeholder="+254712345678"
                         value={mpesaNumber}
                         onChange={(e) =>
                           setMpesaNumber(formatMpesaNumber(e.target.value))
                         }
                         className="text-lg"
-                        maxLength={12}
+                        maxLength={13}
                       />
                       <p className="text-sm text-gray-500">
                         Enter your Mpesa number in international format
@@ -805,7 +810,7 @@ export default function CheckoutPage() {
               >
                 {createOrderMutation.isPending ? (
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-3"></div>
+                    <Loader2 className="h-5 w-5 animate-spin mr-3" />
                     Processing...
                   </div>
                 ) : (
