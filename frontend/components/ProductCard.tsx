@@ -65,6 +65,11 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
           />
         </div>
         <div className="p-3 sm:p-4">
+          <div className="mb-2 sm:mb-3">
+            <span className="text-lg sm:text-xl font-bold text-primary">
+              {formatPrice(product.price)}
+            </span>
+          </div>
           <div className="flex flex-col gap-1">
             <h3 className="text-base sm:text-lg font-semibold line-clamp-1 group-hover:text-primary transition-colors">
               {product.name}
@@ -74,18 +79,13 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
               {product.madeIn}
             </p>
           </div>
-          <div className="mt-2 sm:mt-3">
-            <span className="text-lg sm:text-xl font-bold text-primary">
-              {formatPrice(product.price)}
-            </span>
-          </div>
         </div>
       </Link>
       <div className="px-3 pb-3 sm:px-4 sm:pb-4 space-y-2">
         <Button
           size="sm"
           variant="outline"
-          className="w-full transition-all duration-300 hover:bg-primary hover:text-primary-foreground group"
+          className="w-full transition-all duration-300 bg-gray-100 hover:bg-primary hover:text-primary-foreground group"
           onClick={handleAddToCart}
         >
           <ShoppingCart className="w-4 h-4 mr-2" />
@@ -108,9 +108,9 @@ const ProductCardSkeleton = memo(() => (
   <div className="bg-background rounded-lg overflow-hidden shadow-sm border border-gray-100">
     <Skeleton className="w-full h-48" />
     <div className="p-4">
+      <Skeleton className="h-6 w-1/3 mb-4" />
       <Skeleton className="h-6 w-3/4 mb-2" />
       <Skeleton className="h-4 w-1/2 mb-4" />
-      <Skeleton className="h-6 w-1/3 mb-4" />
     </div>
     <div className="px-4 pb-4 space-y-2">
       <Skeleton className="h-9 w-full" />

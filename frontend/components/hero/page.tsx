@@ -30,7 +30,7 @@ const HeroButton = memo(
       href={href}
       className={`inline-flex h-10 items-center justify-center rounded-lg px-6 text-sm font-medium shadow-lg transition-all duration-300 hover:scale-105 hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 disabled:pointer-events-none disabled:opacity-50 ${
         variant === "primary"
-          ? "bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-600"
+          ? "bg-primary text-white hover:bg-primary/90 focus-visible:ring-primary"
           : "bg-white text-black border-2 border-black/10 hover:bg-gray-50 focus-visible:ring-black"
       }`}
     >
@@ -46,8 +46,8 @@ const Hero = memo(() => {
     <section className="relative w-full py-16 md:py-24 lg:py-32 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white/20 to-transparent"></div>
-      <div className="absolute -top-24 -right-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20"></div>
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-red-200 rounded-full blur-3xl opacity-20"></div>
+      <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20"></div>
+      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20"></div>
 
       <div className="container grid items-center gap-8 px-4 md:px-6 lg:grid-cols-2 lg:gap-12 relative">
         <div className="space-y-8 animate-fadeIn">
@@ -57,7 +57,7 @@ const Hero = memo(() => {
             </span>
             <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600 drop-shadow-sm">
               Find Your Perfect <br />
-              <span className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text">
+              <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text">
                 Wheels
               </span>
             </h1>
@@ -112,7 +112,7 @@ const Hero = memo(() => {
           </div>
         </div>
         <div className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 to-black/20 rounded-2xl transform rotate-6 transition-transform group-hover:rotate-2 mx-8"></div>
+          <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-black/20 rounded-2xl transform rotate-6 transition-transform group-hover:rotate-2 mx-8"></div>
           <Image
             src={HeroCar}
             width={500}

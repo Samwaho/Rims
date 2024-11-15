@@ -148,7 +148,7 @@ export default function ProductPage({
 
   if (error || !product) {
     return (
-      <div className="text-center py-8 text-red-600">
+      <div className="text-center py-8 text-primary">
         Error loading product. Please try again later.
       </div>
     );

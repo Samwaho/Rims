@@ -46,7 +46,7 @@ const STATUS_COLORS = {
   processing: "bg-blue-500/90 hover:bg-blue-500",
   shipped: "bg-purple-500/90 hover:bg-purple-500",
   delivered: "bg-green-500/90 hover:bg-green-500",
-  cancelled: "bg-red-500/90 hover:bg-red-500",
+  cancelled: "bg-primary/90 hover:bg-primary",
 } as const;
 
 const getStatusColor = (status: string): string => {

@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import React, { useState, useCallback } from "react";
-import logo from "@/public/Logo.png";
+import logo from "@/public/wheelshublogo.png";
 import { IoCartOutline, IoMenu, IoSearchOutline } from "react-icons/io5";
 import { Button } from "../ui/button";
 import {

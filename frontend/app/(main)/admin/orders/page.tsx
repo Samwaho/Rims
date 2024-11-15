@@ -147,8 +147,8 @@ export default function AdminOrders() {
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <Card className="p-6">
         <CardContent className="flex flex-col items-center justify-center py-8">
-          <AlertCircle className="w-12 h-12 text-red-500 mb-4" />
-          <h3 className="text-xl font-semibold text-red-600 mb-2">
+          <AlertCircle className="w-12 h-12 text-primary mb-4" />
+          <h3 className="text-xl font-semibold text-primary mb-2">
             Failed to load orders
           </h3>
           <p className="text-gray-600 mb-4 text-center">{errorMessage}</p>

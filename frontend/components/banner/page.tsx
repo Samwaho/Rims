@@ -4,19 +4,16 @@ import React, { memo, useState, useEffect, useCallback } from "react";
 import BannerIMG1 from "@/public/BannerImg1.png";
 import BannerIMG2 from "@/public/BannerImg2.png";
 import Link from "next/link";
+import { Star, ArrowRight } from "lucide-react";
 
-const StarIcon = memo(() => (
-  <svg className="w-6 h-6 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-    <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-  </svg>
-));
+const StarIcon = memo(() => <Star className="w-6 h-6 text-primary" />);
 
 StarIcon.displayName = "StarIcon";
 
 const CountdownItem = memo(
   ({ value, label }: { value: number; label: string }) => (
     <div className="flex flex-col items-center">
-      <div className="bg-red-600 text-white rounded-lg p-2 w-full">
+      <div className="bg-primary text-white rounded-lg p-2 w-full">
         <p className="text-xl font-bold">{String(value).padStart(2, "0")}</p>
       </div>
       <p className="text-xs font-medium text-gray-600 mt-1">{label}</p>
@@ -92,7 +89,7 @@ const Banner = memo(() => {
           <span className="animate-pulse">
             <StarIcon />
           </span>
-          <p className="text-center text-sm font-semibold text-red-600 tracking-wider uppercase">
+          <p className="text-center text-sm font-semibold text-primary tracking-wider uppercase">
             Exclusive Holiday Deals
           </p>
           <span className="animate-pulse">
@@ -110,7 +107,7 @@ const Banner = memo(() => {
           <BannerImage src={BannerIMG1} alt="Premium Tires" height={200} />
 
           <div className="space-y-6 text-center">
-            <div className="bg-white p-6 rounded-2xl shadow-xl border border-red-100">
+            <div className="bg-white p-6 rounded-2xl shadow-xl border border-primary/10">
               <p className="text-lg font-semibold text-gray-800 mb-4">
                 Flash Sale Countdown
               </p>
@@ -123,22 +120,10 @@ const Banner = memo(() => {
 
             <Link
               href="/products"
-              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-red-700 text-white px-6 py-2 rounded-xl font-bold text-lg transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
+              className="inline-flex items-center justify-center gap-2 bg-gradient-to-r from-primary to-primary/90 text-white px-6 py-2 rounded-xl font-bold text-lg transform hover:scale-105 transition-all duration-300 shadow-lg hover:shadow-xl"
             >
               Shop Now
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M17 8l4 4m0 0l-4 4m4-4H3"
-                />
-              </svg>
+              <ArrowRight className="w-5 h-5" />
             </Link>
           </div>
 

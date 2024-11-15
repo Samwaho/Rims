@@ -370,10 +370,6 @@ export const ProductForm = memo(function ProductForm({
             </div>
           </fieldset>
 
-          <pre className="text-xs">
-            {JSON.stringify(form.formState.errors, null, 2)}
-          </pre>
-
           <Button
             type="submit"
             className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-70"

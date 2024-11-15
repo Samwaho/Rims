@@ -57,7 +57,7 @@ const CTA = memo(() => {
           />
           <Button
             type="submit"
-            className="bg-red-600 hover:bg-red-700 text-white font-semibold px-8 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-70"
+            className="bg-primary hover:bg-primary/90 text-white font-semibold px-8 py-2 rounded-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-70"
             disabled={loading}
             aria-label={loading ? "Subscribing..." : "Subscribe to newsletter"}
           >

@@ -49,13 +49,13 @@ const CategoryCard = memo(
         />
       </div>
       <div className="p-6 md:p-8">
-        <h2 className="text-xl md:text-3xl font-bold tracking-tight mb-3 md:mb-4 group-hover:text-red-600 transition-colors duration-300">
+        <h2 className="text-xl md:text-3xl font-bold tracking-tight mb-3 md:mb-4 group-hover:text-primary transition-colors duration-300">
           {title}
         </h2>
         <p className="text-gray-600 mb-6 text-sm md:text-base">{description}</p>
         <Link
           href={href}
-          className="inline-flex h-10 md:h-12 items-center justify-center rounded-lg bg-red-600 px-6 md:px-8 text-sm md:text-base font-medium text-white shadow-lg transition-all duration-300 hover:bg-red-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 hover:shadow-red-400/30"
+          className="inline-flex h-10 md:h-12 items-center justify-center rounded-lg bg-primary px-6 md:px-8 text-sm md:text-base font-medium text-white shadow-lg transition-all duration-300 hover:bg-primary/90 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:shadow-primary/30"
         >
           {buttonText}
           <ArrowIcon />
@@ -97,7 +97,7 @@ const Categories = memo(() => {
         <div className="mb-12 text-center">
           <Link
             href="/products"
-            className="inline-flex h-12 items-center justify-center rounded-lg bg-red-600 px-8 text-base font-medium text-white shadow-lg transition-all duration-300 hover:bg-red-700 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 hover:shadow-red-400/30"
+            className="inline-flex h-12 items-center justify-center rounded-lg bg-primary px-8 text-base font-medium text-white shadow-lg transition-all duration-300 hover:bg-primary/90 hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 hover:shadow-primary/30"
           >
             View All Products
             <ArrowIcon />
