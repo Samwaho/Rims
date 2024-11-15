@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
@@ -30,7 +32,6 @@ import { axiosHeaders } from "@/lib/actions";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
-import { useSearchParams, useRouter } from "next/navigation";
 import { z } from "zod";
 import {
   Select,
@@ -142,14 +143,19 @@ const fetchTaxConfig = async (): Promise<TaxConfig> => {
 };
 
 const fetchShippingRate = async (
-  county: string,
-  subtotalAmount: number
-): Promise<ShippingRate> => {
-  const response = await axios.get(`${BACKEND_URL}/api/shipping/rate`, {
-    params: { county, subtotal: subtotalAmount },
-    ...(await axiosHeaders()),
-  });
-  return response.data;
+  deliveryPointId: string,
+  subtotal: number
+): Promise<number> => {
+  try {
+    const response = await axios.get(`${BACKEND_URL}/api/shipping/rate`, {
+      params: { deliveryPointId, subtotal },
+      ...(await axiosHeaders()),
+    });
+    return response.data.cost;
+  } catch (error) {
+    console.error("Error fetching shipping rate:", error);
+    return 0;
+  }
 };
 
 const validateDiscount = async (
@@ -173,7 +179,6 @@ const fetchDeliveryPoints = async (): Promise<DeliveryPoint[]> => {
       `${BACKEND_URL}/api/shipping`,
       await axiosHeaders()
     );
-    console.log("Delivery Points Response:", response.data);
     return response.data.deliveryPoints || [];
   } catch (error) {
     console.error("Error fetching delivery points:", error);
@@ -189,7 +194,7 @@ const OrderItem = React.memo(({ item }: { item: CheckoutItem }) => (
         <img
           src={item.product.images[0]}
           alt={item.product.name}
-          className="object-cover"
+          className="object-cover w-full h-full"
         />
       </div>
       <div>
@@ -231,10 +236,15 @@ const CheckoutProgress = ({ step }: { step: number }) => (
 export const dynamic = "force-dynamic";
 
 export default function CheckoutPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
-  const router = useRouter();
   const queryClient = useQueryClient();
+
+  // Add an effect to handle initialization
+  useEffect(() => {
+    // Any initialization logic can go here
+  }, []);
 
   // State
   const [paymentMethod, setPaymentMethod] = useState("mpesa");
@@ -248,22 +258,16 @@ export default function CheckoutPage() {
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<Discount | null>(null);
   const [selectedDeliveryPoint, setSelectedDeliveryPoint] = useState("");
-  const [shippingAddress, setShippingAddress] = useState({
-    streetAddress: "",
-    city: "",
-    postalCode: "",
-  });
   const [checkoutStep, setCheckoutStep] = useState(1);
   const [showConfirmation, setShowConfirmation] = useState(false);
 
-  // Queries for items should come first
+  // Queries
   const { data: items = [], isLoading } = useQuery<CheckoutItem[]>({
     queryKey: ["checkout", productId],
     queryFn: async () =>
       productId ? [await fetchProduct(productId)] : fetchCart(),
   });
 
-  // Calculate subtotal before using it in other queries
   const subtotal = useMemo(
     () =>
       items.reduce(
@@ -273,12 +277,25 @@ export default function CheckoutPage() {
     [items]
   );
 
-  // Now we can use subtotal in other queries
   const { data: taxConfig } = useQuery<TaxConfig>({
     queryKey: ["tax-config"],
     queryFn: fetchTaxConfig,
   });
 
+  const { data: deliveryPoints = [], isLoading: isLoadingDeliveryPoints } =
+    useQuery<DeliveryPoint[]>({
+      queryKey: ["deliveryPoints"],
+      queryFn: fetchDeliveryPoints,
+      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    });
+
+  const { data: shippingCost = 0 } = useQuery({
+    queryKey: ["shippingRate", selectedDeliveryPoint, subtotal],
+    queryFn: () => fetchShippingRate(selectedDeliveryPoint, subtotal),
+    enabled: !!selectedDeliveryPoint && subtotal > 0,
+  });
+
+  // Mutations
   const validateDiscountMutation = useMutation({
     mutationFn: (code: string) => validateDiscount(code, subtotal),
     onSuccess: (data) => {
@@ -291,193 +308,8 @@ export default function CheckoutPage() {
     },
   });
 
-  // Add delivery points query first
-  const { data: deliveryPoints = [], isLoading: isLoadingDeliveryPoints } =
-    useQuery<DeliveryPoint[], Error>({
-      queryKey: ["deliveryPoints"],
-      queryFn: fetchDeliveryPoints,
-      staleTime: 1000 * 60 * 5, // Cache for 5 minutes
-    });
-
-  // Add type for the find function parameter
-  const getSelectedPoint = (points: DeliveryPoint[], id: string) =>
-    points.find((p: DeliveryPoint) => p._id === id);
-
-  // Memoized Values
-  const taxAmount = useMemo(
-    () => (taxConfig ? subtotal * (taxConfig.rate / 100) : 0),
-    [subtotal, taxConfig]
-  );
-
-  const discountAmount = useMemo(() => {
-    if (!appliedDiscount) return 0;
-
-    if (appliedDiscount.type === "percentage") {
-      return subtotal * (appliedDiscount.amount / 100);
-    }
-    return appliedDiscount.amount;
-  }, [appliedDiscount, subtotal]);
-
-  const shippingCost = useMemo(() => {
-    if (!selectedDeliveryPoint || !deliveryPoints) return 0;
-
-    const point = getSelectedPoint(deliveryPoints, selectedDeliveryPoint);
-    if (!point) return 0;
-
-    if (
-      point.freeShippingThreshold &&
-      subtotal >= point.freeShippingThreshold
-    ) {
-      return 0;
-    }
-    return point.baseRate;
-  }, [selectedDeliveryPoint, deliveryPoints, subtotal]);
-
-  const totalPrice = useMemo(
-    () => subtotal + taxAmount + shippingCost - discountAmount,
-    [subtotal, taxAmount, shippingCost, discountAmount]
-  );
-
-  const backLink = useMemo(
-    () => (productId ? `/products/${productId}` : "/cart"),
-    [productId]
-  );
-
-  // Add shipping information section to the UI
-  const renderShippingSection = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <MapPin className="w-5 h-5" />
-          Select Pickup Location
-        </CardTitle>
-        <CardDescription>
-          Choose your preferred delivery point for order collection
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {isLoadingDeliveryPoints ? (
-          <div className="space-y-4">
-            <div className="h-10 bg-gray-200 animate-pulse rounded-md"></div>
-            <div className="h-32 bg-gray-200 animate-pulse rounded-md"></div>
-          </div>
-        ) : deliveryPoints.length === 0 ? (
-          <div className="text-center py-4 text-gray-500">
-            No delivery points available
-          </div>
-        ) : (
-          <div className="space-y-2">
-            <Label htmlFor="delivery-point">Pickup Location</Label>
-            <Select
-              value={selectedDeliveryPoint}
-              onValueChange={(value) => {
-                setSelectedDeliveryPoint(value);
-                setCheckoutStep(1);
-              }}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a pickup point" />
-              </SelectTrigger>
-              <SelectContent>
-                {deliveryPoints.map((point) => (
-                  <SelectItem key={point._id} value={point._id}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{point.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {point.freeShippingThreshold &&
-                        subtotal >= point.freeShippingThreshold
-                          ? "Free"
-                          : formatPrice(point.baseRate)}
-                      </span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
-
-        {selectedDeliveryPoint && (
-          <Card className="bg-muted">
-            <CardContent className="pt-6">
-              {(() => {
-                const point = getSelectedPoint(
-                  deliveryPoints,
-                  selectedDeliveryPoint
-                );
-                if (!point) return null;
-
-                return (
-                  <div className="space-y-4">
-                    <div className="flex items-start gap-4">
-                      <MapPin className="w-4 h-4 mt-1 text-muted-foreground" />
-                      <div className="space-y-1">
-                        <p className="font-medium">{point.location}</p>
-                        {point.description && (
-                          <p className="text-sm text-muted-foreground">
-                            {point.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {point.operatingHours && (
-                      <div className="flex items-center gap-4">
-                        <Clock className="w-4 h-4 text-muted-foreground" />
-                        <p className="text-sm">{point.operatingHours}</p>
-                      </div>
-                    )}
-
-                    {(point.contactInfo?.phone || point.contactInfo?.email) && (
-                      <div className="space-y-2">
-                        {point.contactInfo?.phone && (
-                          <div className="flex items-center gap-4">
-                            <PhoneIcon className="w-4 h-4 text-muted-foreground" />
-                            <p className="text-sm">{point.contactInfo.phone}</p>
-                          </div>
-                        )}
-                        {point.contactInfo?.email && (
-                          <div className="flex items-center gap-4">
-                            <Mail className="w-4 h-4 text-muted-foreground" />
-                            <p className="text-sm">{point.contactInfo.email}</p>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {point.freeShippingThreshold && (
-                      <HoverCard>
-                        <HoverCardTrigger asChild>
-                          <div className="flex items-center gap-2 text-sm text-green-600 cursor-help">
-                            <Info className="w-4 h-4" />
-                            Free pickup available
-                          </div>
-                        </HoverCardTrigger>
-                        <HoverCardContent className="w-80">
-                          <p>
-                            Free pickup is available for orders over{" "}
-                            {formatPrice(point.freeShippingThreshold)}
-                          </p>
-                        </HoverCardContent>
-                      </HoverCard>
-                    )}
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
-        )}
-      </CardContent>
-    </Card>
-  );
-
-  // Mutations
   const createOrderMutation = useMutation({
     mutationFn: async () => {
-      const selectedPoint = getSelectedPoint(
-        deliveryPoints,
-        selectedDeliveryPoint
-      );
       const response = await axios.post(
         `${BACKEND_URL}/api/orders`,
         {
@@ -487,14 +319,6 @@ export default function CheckoutPage() {
             paymentMethod === "mpesa" ? { mpesaNumber } : bankDetails,
           deliveryPointId: selectedDeliveryPoint,
           discountCode: appliedDiscount?.code,
-          deliveryPoint: selectedPoint
-            ? {
-                name: selectedPoint.name,
-                location: selectedPoint.location,
-                operatingHours: selectedPoint.operatingHours,
-                contactInfo: selectedPoint.contactInfo,
-              }
-            : undefined,
         },
         await axiosHeaders()
       );
@@ -519,7 +343,38 @@ export default function CheckoutPage() {
     },
   });
 
-  // Handlers
+  // Memoized Values
+  const taxAmount = useMemo(
+    () => (taxConfig ? subtotal * (taxConfig.rate / 100) : 0),
+    [subtotal, taxConfig]
+  );
+
+  const discountAmount = useMemo(() => {
+    if (!appliedDiscount) return 0;
+    return appliedDiscount.type === "percentage"
+      ? subtotal * (appliedDiscount.amount / 100)
+      : appliedDiscount.amount;
+  }, [appliedDiscount, subtotal]);
+
+  const totalPrice = useMemo(
+    () => subtotal + taxAmount + shippingCost - discountAmount,
+    [subtotal, taxAmount, shippingCost, discountAmount]
+  );
+
+  const backLink = useMemo(
+    () => (productId ? `/products/${productId}` : "/cart"),
+    [productId]
+  );
+
+  // Utility Functions
+  const getSelectedPoint = (points: DeliveryPoint[], id: string) =>
+    points.find((p) => p._id === id);
+
+  const formatMpesaNumber = (input: string) => {
+    const numbers = input.replace(/\D/g, "");
+    return numbers.startsWith("254") ? numbers : numbers ? "254" + numbers : "";
+  };
+
   const validateForm = (): boolean => {
     const errors: string[] = [];
 
@@ -543,16 +398,12 @@ export default function CheckoutPage() {
     return errors.length === 0;
   };
 
+  // Event Handlers
   const handlePayment = async () => {
     if (validateForm()) {
       setCheckoutStep(3);
       setShowConfirmation(true);
     }
-  };
-
-  const formatMpesaNumber = (input: string) => {
-    const numbers = input.replace(/\D/g, "");
-    return numbers.startsWith("254") ? numbers : numbers ? "254" + numbers : "";
   };
 
   const handleApplyDiscount = () => {
@@ -591,7 +442,139 @@ export default function CheckoutPage() {
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div className="space-y-6">
-            {renderShippingSection()}
+            {/* Shipping Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MapPin className="w-5 h-5" />
+                  Select Pickup Location
+                </CardTitle>
+                <CardDescription>
+                  Choose your preferred delivery point for order collection
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoadingDeliveryPoints ? (
+                  <div className="space-y-4">
+                    <div className="h-10 bg-gray-200 animate-pulse rounded-md"></div>
+                    <div className="h-32 bg-gray-200 animate-pulse rounded-md"></div>
+                  </div>
+                ) : deliveryPoints.length === 0 ? (
+                  <div className="text-center py-4 text-gray-500">
+                    No delivery points available
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="delivery-point">Pickup Location</Label>
+                    <Select
+                      value={selectedDeliveryPoint}
+                      onValueChange={(value) => {
+                        setSelectedDeliveryPoint(value);
+                        setCheckoutStep(1);
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Select a pickup point" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deliveryPoints.map((point) => (
+                          <SelectItem key={point._id} value={point._id}>
+                            <div className="flex items-center justify-between w-full">
+                              <span>{point.name}</span>
+                              <span className="text-sm text-muted-foreground">
+                                {point.freeShippingThreshold &&
+                                subtotal >= point.freeShippingThreshold
+                                  ? "Free"
+                                  : formatPrice(point.baseRate)}
+                              </span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                {selectedDeliveryPoint && (
+                  <Card className="bg-muted">
+                    <CardContent className="pt-6">
+                      {(() => {
+                        const point = getSelectedPoint(
+                          deliveryPoints,
+                          selectedDeliveryPoint
+                        );
+                        if (!point) return null;
+
+                        return (
+                          <div className="space-y-4">
+                            <div className="flex items-start gap-4">
+                              <MapPin className="w-4 h-4 mt-1 text-muted-foreground" />
+                              <div className="space-y-1">
+                                <p className="font-medium">{point.location}</p>
+                                {point.description && (
+                                  <p className="text-sm text-muted-foreground">
+                                    {point.description}
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            {point.operatingHours && (
+                              <div className="flex items-center gap-4">
+                                <Clock className="w-4 h-4 text-muted-foreground" />
+                                <p className="text-sm">
+                                  {point.operatingHours}
+                                </p>
+                              </div>
+                            )}
+
+                            {(point.contactInfo?.phone ||
+                              point.contactInfo?.email) && (
+                              <div className="space-y-2">
+                                {point.contactInfo?.phone && (
+                                  <div className="flex items-center gap-4">
+                                    <PhoneIcon className="w-4 h-4 text-muted-foreground" />
+                                    <p className="text-sm">
+                                      {point.contactInfo.phone}
+                                    </p>
+                                  </div>
+                                )}
+                                {point.contactInfo?.email && (
+                                  <div className="flex items-center gap-4">
+                                    <Mail className="w-4 h-4 text-muted-foreground" />
+                                    <p className="text-sm">
+                                      {point.contactInfo.email}
+                                    </p>
+                                  </div>
+                                )}
+                              </div>
+                            )}
+
+                            {point.freeShippingThreshold && (
+                              <HoverCard>
+                                <HoverCardTrigger asChild>
+                                  <div className="flex items-center gap-2 text-sm text-green-600 cursor-help">
+                                    <Info className="w-4 h-4" />
+                                    Free pickup available
+                                  </div>
+                                </HoverCardTrigger>
+                                <HoverCardContent className="w-80">
+                                  <p>
+                                    Free pickup is available for orders over{" "}
+                                    {formatPrice(point.freeShippingThreshold)}
+                                  </p>
+                                </HoverCardContent>
+                              </HoverCard>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </CardContent>
+                  </Card>
+                )}
+              </CardContent>
+            </Card>
+
             {/* Order Summary */}
             <Card className="h-fit">
               <CardHeader className="border-b">
@@ -839,7 +822,7 @@ export default function CheckoutPage() {
           </Card>
         </div>
 
-        {/* Add Order Confirmation Dialog */}
+        {/* Order Confirmation Dialog */}
         <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
           <AlertDialogContent className="max-w-md">
             <AlertDialogHeader>
@@ -847,8 +830,8 @@ export default function CheckoutPage() {
               <AlertDialogDescription>
                 You're about to place an order for {formatPrice(totalPrice)}.
                 {paymentMethod === "mpesa"
-                  ? "You'll receive an Mpesa prompt on your phone."
-                  : "Please ensure your bank details are correct."}
+                  ? " You'll receive an Mpesa prompt on your phone."
+                  : " Please ensure your bank details are correct."}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <div className="p-4 bg-muted rounded-lg my-4">

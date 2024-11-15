@@ -35,13 +35,20 @@ const updateProductStock = async (productId, quantity) => {
   });
 };
 
-const calculateOrderTotals = async (subtotal, county, discountCode = null) => {
+const calculateOrderTotals = async (
+  subtotal,
+  deliveryPointId,
+  discountCode = null
+) => {
   const { discount } = await validateDiscountCode({
     code: discountCode,
     subtotal,
   });
-  const shippingCost = await calculateShippingCost({ county, subtotal });
-  const taxRate = await getTaxRate(county);
+  const shippingCost = await calculateShippingCost({
+    deliveryPointId,
+    subtotal,
+  });
+  const taxRate = await getTaxRate();
 
   const taxableAmount = subtotal - discount;
   const tax = taxableAmount * taxRate;
@@ -61,7 +68,7 @@ const calculateOrderTotals = async (subtotal, county, discountCode = null) => {
 const processDirectPurchase = async (
   productId,
   quantity = 1,
-  county,
+  deliveryPointId,
   discountCode = null
 ) => {
   const product = await Product.findById(productId);
@@ -77,11 +84,15 @@ const processDirectPurchase = async (
   const subtotal = product.price * quantity;
   return {
     orderProducts: [orderProduct],
-    ...(await calculateOrderTotals(subtotal, county, discountCode)),
+    ...(await calculateOrderTotals(subtotal, deliveryPointId, discountCode)),
   };
 };
 
-const processCartPurchase = async (userId, county, discountCode = null) => {
+const processCartPurchase = async (
+  userId,
+  deliveryPointId,
+  discountCode = null
+) => {
   const cart = await Cart.findOne({ user: userId }).populate("items.product");
 
   if (!cart?.items?.length) {
@@ -104,7 +115,7 @@ const processCartPurchase = async (userId, county, discountCode = null) => {
 
   return {
     orderProducts,
-    ...(await calculateOrderTotals(subtotal, county, discountCode)),
+    ...(await calculateOrderTotals(subtotal, deliveryPointId, discountCode)),
   };
 };
 
@@ -117,16 +128,26 @@ export const createOrder = async (req, res, next) => {
       paymentMethod,
       paymentDetails,
       discountCode,
-      county,
+      deliveryPointId,
     } = req.body;
 
-    if (!county) {
-      throw { status: 400, message: "Shipping county is required" };
+    if (!deliveryPointId) {
+      throw { status: 400, message: "Delivery point is required" };
     }
 
     const orderData = productId
-      ? await processDirectPurchase(productId, quantity, county, discountCode)
-      : await processCartPurchase(userId, county, discountCode);
+      ? await processDirectPurchase(
+          productId,
+          quantity,
+          deliveryPointId,
+          discountCode
+        )
+      : await processCartPurchase(userId, deliveryPointId, discountCode);
+
+    const deliveryPoint = await ShippingZone.findById(deliveryPointId);
+    if (!deliveryPoint) {
+      throw { status: 400, message: "Invalid delivery point" };
+    }
 
     const order = await Order.create({
       user: userId,
@@ -142,9 +163,12 @@ export const createOrder = async (req, res, next) => {
       paymentMethod,
       paymentDetails,
       paymentStatus: "pending",
-      shippingAddress: {
-        ...req.body.shippingAddress,
-        county,
+      deliveryPoint: {
+        _id: deliveryPoint._id,
+        name: deliveryPoint.name,
+        location: deliveryPoint.location,
+        operatingHours: deliveryPoint.operatingHours,
+        contactInfo: deliveryPoint.contactInfo,
       },
     });
 
@@ -153,10 +177,6 @@ export const createOrder = async (req, res, next) => {
       .populate("products.product", "name price images");
 
     await sendOrderConfirmationEmail(populatedOrder.user.email, populatedOrder);
-
-    if (paymentMethod === "mpesa") {
-      // Add Mpesa payment integration logic here
-    }
 
     res.status(201).json({
       message: "Order created successfully",

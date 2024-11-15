@@ -18,29 +18,45 @@ import { memo } from "react";
 
 interface OrderProduct {
   product: {
+    _id: string;
     name: string;
     price: number;
     images: string[];
     slug: string;
   };
   quantity: number;
-  price: number;
 }
 
 interface Order {
   _id: string;
   products: OrderProduct[];
-  totalAmount: number;
+  subtotal: number;
+  discount: number;
+  discountCode?: string;
+  tax: number;
+  taxRate: number;
+  shippingCost: number;
+  total: number;
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   orderDate: string;
-  paymentStatus: "pending" | "completed" | "failed";
   paymentMethod: "mpesa" | "bank";
-  shippingInfo?: {
-    trackingNumber?: string;
-    carrier?: string;
-    estimatedDelivery?: string;
-    updatedAt?: string;
+  paymentStatus: "pending" | "completed" | "failed" | "refunded";
+  paymentDetails?: any;
+  deliveryPoint: {
+    _id: string;
+    name: string;
+    location: string;
+    operatingHours?: string;
+    contactInfo?: {
+      phone?: string;
+      email?: string;
+    };
   };
+  statusHistory?: Array<{
+    status: string;
+    note?: string;
+    timestamp: string;
+  }>;
 }
 
 const statusStyles = {
@@ -117,25 +133,30 @@ const OrderCard = memo(({ order }: { order: Order }) => (
         </div>
         <div className="flex flex-wrap gap-2">
           <OrderStatusBadge status={order.status} />
-          {order.paymentStatus && (
-            <PaymentStatusBadge status={order.paymentStatus} />
-          )}
+          <PaymentStatusBadge status={order.paymentStatus} />
         </div>
       </div>
     </CardHeader>
     <CardContent className="p-3 sm:p-4">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
         <div className="text-xs sm:text-sm text-gray-600">
-          {order.products.length} items
-          {order.shippingInfo?.trackingNumber && (
-            <span className="block sm:inline sm:ml-2">
-              • Tracking: {order.shippingInfo.trackingNumber}
-            </span>
+          <div>{order.products.length} items</div>
+          {order.deliveryPoint && (
+            <div className="text-gray-500">
+              Delivery Point: {order.deliveryPoint.name}
+            </div>
           )}
         </div>
         <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-4">
-          <div className="text-sm sm:text-base font-semibold">
-            {formatPrice(order.totalAmount)}
+          <div className="flex flex-col items-end">
+            <div className="text-sm sm:text-base font-semibold">
+              {formatPrice(order.total)}
+            </div>
+            {order.discount > 0 && (
+              <div className="text-xs text-green-600">
+                Saved: {formatPrice(order.discount)}
+              </div>
+            )}
           </div>
           <Link href={`/orders/${order._id}`}>
             <Button

@@ -26,23 +26,33 @@ interface OrderProduct {
 interface Order {
   _id: string;
   products: OrderProduct[];
-  totalAmount: number;
+  subtotal: number;
+  discount: number;
+  discountCode?: string;
+  tax: number;
+  taxRate: number;
+  shippingCost: number;
+  total: number;
   status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
   orderDate: string;
   paymentMethod: "mpesa" | "bank";
-  paymentStatus: "pending" | "completed" | "failed";
-  shippingAddress: {
-    fullName: string;
-    phoneNumber: string;
-    address: string;
-    city: string;
+  paymentStatus: "pending" | "completed" | "failed" | "refunded";
+  paymentDetails?: any;
+  deliveryPoint: {
+    _id: string;
+    name: string;
+    location: string;
+    operatingHours?: string;
+    contactInfo?: {
+      phone?: string;
+      email?: string;
+    };
   };
-  shippingInfo?: {
-    trackingNumber?: string;
-    carrier?: string;
-    estimatedDelivery?: string;
-    updatedAt?: string;
-  };
+  statusHistory?: Array<{
+    status: string;
+    note?: string;
+    timestamp: string;
+  }>;
 }
 
 const ORDER_STATUS = {
@@ -214,59 +224,51 @@ export default function OrderConfirmationPage({
           </CardContent>
         </Card>
 
-        {order.shippingAddress && (
-          <Card className="mb-8">
-            <CardHeader>
-              <CardTitle>Shipping Address</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 gap-4 text-sm">
-                <div>
-                  <p className="text-gray-600">Full Name</p>
-                  <p className="font-medium">
-                    {order.shippingAddress.fullName}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Phone Number</p>
-                  <p className="font-medium">
-                    {order.shippingAddress.phoneNumber}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-gray-600">Address</p>
-                  <p className="font-medium">{order.shippingAddress.address}</p>
-                </div>
-                <div>
-                  <p className="text-gray-600">City</p>
-                  <p className="font-medium">{order.shippingAddress.city}</p>
-                </div>
-                {order.shippingInfo?.trackingNumber && (
-                  <div className="col-span-full">
-                    <p className="text-gray-600">Tracking Number</p>
-                    <p className="font-medium">
-                      {order.shippingInfo.trackingNumber}
-                    </p>
-                  </div>
-                )}
-                {order.shippingInfo?.carrier && (
-                  <div className="col-span-full">
-                    <p className="text-gray-600">Carrier</p>
-                    <p className="font-medium">{order.shippingInfo.carrier}</p>
-                  </div>
-                )}
-                {order.shippingInfo?.estimatedDelivery && (
-                  <div className="col-span-full">
-                    <p className="text-gray-600">Estimated Delivery</p>
-                    <p className="font-medium">
-                      {order.shippingInfo.estimatedDelivery}
-                    </p>
-                  </div>
-                )}
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Delivery Point</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <p className="text-gray-600">Location Name</p>
+                <p className="font-medium">{order.deliveryPoint.name}</p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div>
+                <p className="text-gray-600">Address</p>
+                <p className="font-medium">{order.deliveryPoint.location}</p>
+              </div>
+              {order.deliveryPoint.operatingHours && (
+                <div>
+                  <p className="text-gray-600">Operating Hours</p>
+                  <p className="font-medium">
+                    {order.deliveryPoint.operatingHours}
+                  </p>
+                </div>
+              )}
+              {order.deliveryPoint.contactInfo && (
+                <>
+                  {order.deliveryPoint.contactInfo.phone && (
+                    <div>
+                      <p className="text-gray-600">Phone</p>
+                      <p className="font-medium">
+                        {order.deliveryPoint.contactInfo.phone}
+                      </p>
+                    </div>
+                  )}
+                  {order.deliveryPoint.contactInfo.email && (
+                    <div>
+                      <p className="text-gray-600">Email</p>
+                      <p className="font-medium">
+                        {order.deliveryPoint.contactInfo.email}
+                      </p>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
 
         <Card className="mb-8">
           <CardHeader>
@@ -299,10 +301,30 @@ export default function OrderConfirmationPage({
                 />
               ))}
 
-              <div className="border-t pt-4 mt-4">
-                <div className="flex justify-between font-bold text-lg">
+              <div className="border-t pt-4 mt-4 space-y-2">
+                <div className="flex justify-between">
+                  <span>Subtotal</span>
+                  <span>{formatPrice(order.subtotal)}</span>
+                </div>
+                {order.discount > 0 && (
+                  <div className="flex justify-between text-green-600">
+                    <span>
+                      Discount{order.discountCode && ` (${order.discountCode})`}
+                    </span>
+                    <span>-{formatPrice(order.discount)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between">
+                  <span>Tax ({(order.taxRate * 100).toFixed(1)}%)</span>
+                  <span>{formatPrice(order.tax)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Shipping</span>
+                  <span>{formatPrice(order.shippingCost)}</span>
+                </div>
+                <div className="flex justify-between font-bold text-lg pt-2 border-t">
                   <span>Total</span>
-                  <span>{formatPrice(order.totalAmount)}</span>
+                  <span>{formatPrice(order.total)}</span>
                 </div>
               </div>
             </div>

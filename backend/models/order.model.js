@@ -1,83 +1,119 @@
 import mongoose from "mongoose";
 
-const orderSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "User",
-    required: true,
-  },
-  products: [
-    {
-      product: {
+const orderSchema = new mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    products: [
+      {
+        product: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          required: true,
+          min: 1,
+        },
+      },
+    ],
+    subtotal: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    discount: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+    discountCode: String,
+    tax: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    taxRate: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    shippingCost: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    total: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    status: {
+      type: String,
+      enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
+      default: "pending",
+    },
+    paymentMethod: {
+      type: String,
+      enum: ["mpesa", "bank"],
+      required: true,
+    },
+    paymentStatus: {
+      type: String,
+      enum: ["pending", "completed", "failed", "refunded"],
+      default: "pending",
+    },
+    paymentDetails: {
+      type: mongoose.Schema.Types.Mixed,
+    },
+    deliveryPoint: {
+      _id: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
+        ref: "ShippingZone",
         required: true,
       },
-      quantity: {
-        type: Number,
+      name: {
+        type: String,
         required: true,
-        min: 1,
+      },
+      location: {
+        type: String,
+        required: true,
+      },
+      operatingHours: String,
+      contactInfo: {
+        phone: String,
+        email: String,
       },
     },
-  ],
-  subtotal: {
-    type: Number,
-    required: true,
+    statusHistory: [
+      {
+        status: {
+          type: String,
+          required: true,
+        },
+        note: String,
+        updatedBy: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+          required: true,
+        },
+        timestamp: {
+          type: Date,
+          default: Date.now,
+        },
+      },
+    ],
+    orderDate: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  discount: {
-    type: Number,
-    default: 0,
-  },
-  discountCode: {
-    type: String,
-  },
-  shippingCost: {
-    type: Number,
-    default: 0,
-  },
-  tax: {
-    type: Number,
-    default: 0,
-  },
-  taxRate: {
-    type: Number,
-    default: 0,
-  },
-  total: {
-    type: Number,
-    required: true,
-  },
-  status: {
-    type: String,
-    enum: ["pending", "processing", "shipped", "delivered", "cancelled"],
-    default: "pending",
-  },
-  paymentMethod: {
-    type: String,
-    enum: ["mpesa", "bank"],
-    required: true,
-  },
-  paymentDetails: {
-    type: mongoose.Schema.Types.Mixed,
-    required: true,
-  },
-  paymentStatus: {
-    type: String,
-    enum: ["pending", "completed", "failed"],
-    default: "pending",
-  },
-  orderDate: {
-    type: Date,
-    default: Date.now,
-  },
-  shippingInfo: {
-    trackingNumber: String,
-    carrier: String,
-    estimatedDelivery: Date,
-    updatedAt: Date,
-  },
-});
+  { timestamps: true }
+);
 
-const Order = mongoose.model("Order", orderSchema);
-
-export default Order;
+export default mongoose.model("Order", orderSchema);

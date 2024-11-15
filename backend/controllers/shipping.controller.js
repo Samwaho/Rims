@@ -134,14 +134,19 @@ export const toggleDeliveryPointStatus = async (req, res, next) => {
 export const getShippingRate = async (req, res, next) => {
   try {
     const { deliveryPointId, subtotal } = req.query;
+
+    if (!deliveryPointId || !subtotal) {
+      throw { status: 400, message: "Missing required parameters" };
+    }
+
     const shippingCost = await calculateShippingCost({
       deliveryPointId,
-      subtotal,
+      subtotal: Number(subtotal),
     });
 
     res.status(200).json({
       message: "Shipping rate calculated successfully",
-      shippingCost,
+      cost: shippingCost,
     });
   } catch (error) {
     next(errorHandler(res, error.status || 500, error.message));

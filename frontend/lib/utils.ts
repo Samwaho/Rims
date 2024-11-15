@@ -44,12 +44,18 @@ export const formatCurrency = (currency: string, amount: number) => {
   return currencyFormatters.get(currency)!.format(amount);
 };
 
-// Validation schemas with reusable parts
-const addressSchema = z.object({
-  street: z.string().optional(),
-  city: z.string().optional(),
-  county: z.string().optional(),
-  postalCode: z.string().optional(),
+// Updated validation schemas
+const contactInfoSchema = z.object({
+  phone: z.string().optional(),
+  email: z.string().email().optional(),
+});
+
+const deliveryPointSchema = z.object({
+  _id: z.string(),
+  name: z.string(),
+  location: z.string(),
+  operatingHours: z.string().optional(),
+  contactInfo: contactInfoSchema.optional(),
 });
 
 const passwordSchema = z
@@ -64,7 +70,6 @@ export const signUpSchema = z
     password: passwordSchema,
     confirmPassword: passwordSchema,
     phoneNumber: z.string().optional(),
-    address: addressSchema.optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",
@@ -91,4 +96,21 @@ export const productSchema = z.object({
   brand: z.string().min(1, "Brand is required"),
   madeIn: z.string().min(1, "Made in is required"),
   specifications: z.array(specificationSchema),
+});
+
+// Add order-related schemas
+export const orderSchema = z.object({
+  deliveryPointId: z.string().min(1, "Delivery point is required"),
+  paymentMethod: z.enum(["mpesa", "bank"]),
+  paymentDetails: z.union([
+    z.object({
+      mpesaNumber: z.string().regex(/^254\d{9}$/, "Invalid Mpesa number"),
+    }),
+    z.object({
+      accountNumber: z.string().min(1, "Account number is required"),
+      bankName: z.string().min(1, "Bank name is required"),
+      accountHolder: z.string().min(1, "Account holder name is required"),
+    }),
+  ]),
+  discountCode: z.string().optional(),
 });
