@@ -35,12 +35,7 @@ async function connectToDatabase() {
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: process.env.FRONTEND_URL,
-    credentials: true,
-  })
-);
+app.use(cors()); // Allow all origins
 
 // API Routes
 app.use("/api/auth", authRouter);
