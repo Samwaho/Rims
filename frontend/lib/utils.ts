@@ -12,9 +12,11 @@ const priceFormatter = new Intl.NumberFormat("en-KE", {
 });
 
 const dateFormatter = new Intl.DateTimeFormat("en-KE", {
+  year: "numeric",
   month: "long",
   day: "numeric",
-  year: "numeric",
+  hour: "2-digit",
+  minute: "2-digit",
 });
 
 const numberFormatter = new Intl.NumberFormat("en-KE");
@@ -27,7 +29,19 @@ const percentFormatter = new Intl.NumberFormat("en-KE", {
 
 // Formatting utilities using cached formatters
 export const formatPrice = (price: number) => priceFormatter.format(price);
-export const formatDate = (date: Date) => dateFormatter.format(date);
+export const formatDate = (date: Date | string | undefined): string => {
+  if (!date) return "Date not available";
+
+  try {
+    const dateObj = typeof date === "string" ? new Date(date) : date;
+    if (!(dateObj instanceof Date) || isNaN(dateObj.getTime())) {
+      return "Invalid date";
+    }
+    return dateFormatter.format(dateObj);
+  } catch (error) {
+    return "Invalid date";
+  }
+};
 export const formatNumber = (number: number) => numberFormatter.format(number);
 export const formatPercentage = (number: number) =>
   percentFormatter.format(number);
@@ -43,7 +57,6 @@ export const formatCurrency = (currency: string, amount: number) => {
   }
   return currencyFormatters.get(currency)!.format(amount);
 };
-
 // Updated validation schemas
 const contactInfoSchema = z.object({
   phone: z.string().optional(),
@@ -62,6 +75,13 @@ const passwordSchema = z
   .string()
   .min(6, "Password must be at least 6 characters long");
 
+const addressSchema = z.object({
+  street: z.string().optional(),
+  city: z.string().optional(),
+  county: z.string().optional(),
+  postalCode: z.string().optional(),
+});
+
 export const signUpSchema = z
   .object({
     firstName: z.string().min(1, "First name is required"),
@@ -70,6 +90,7 @@ export const signUpSchema = z
     password: passwordSchema,
     confirmPassword: passwordSchema,
     phoneNumber: z.string().optional(),
+    address: addressSchema.optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match",

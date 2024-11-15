@@ -128,7 +128,7 @@ const OrderCard = memo(({ order }: { order: Order }) => (
             Order #{order._id.slice(-8)}
           </CardTitle>
           <CardDescription className="text-sm">
-            {formatDate(new Date(order.orderDate))}
+            {formatDate(order.orderDate)}
           </CardDescription>
         </div>
         <div className="flex flex-wrap gap-2">

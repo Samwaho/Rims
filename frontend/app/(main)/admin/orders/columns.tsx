@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { PaymentStatusBadge } from "./components/PaymentStatusBadge";
 import { memo } from "react";
+import { formatDate, formatPrice } from "@/lib/utils";
 
 export type Order = {
   _id: string;
@@ -141,20 +142,17 @@ export const createColumns = ({
     ),
     cell: ({ row }) => (
       <div className="font-medium text-sm">
-        KES {row.original.totalAmount.toLocaleString()}
+        {formatPrice(row.original.totalAmount || 0)}
       </div>
     ),
   },
   {
     accessorKey: "orderDate",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Date" />
-    ),
-    cell: ({ row }) => (
-      <div className="text-sm text-muted-foreground whitespace-nowrap">
-        {new Date(row.original.orderDate).toLocaleDateString()}
-      </div>
-    ),
+    header: "Date",
+    cell: ({ row }) => {
+      const date: string = row.getValue("orderDate");
+      return <div className="font-medium">{formatDate(date)}</div>;
+    },
   },
   {
     accessorKey: "paymentStatus",
