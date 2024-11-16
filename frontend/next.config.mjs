@@ -12,6 +12,7 @@ const nextConfig = {
         hostname: "utfs.io",
       },
     ],
+    domains: ["uploadthing.com", "utfs.io"],
   },
   poweredByHeader: false,
   compress: true,

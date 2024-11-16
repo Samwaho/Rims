@@ -5,8 +5,8 @@ import { ourFileRouter } from "./core";
 export const { GET, POST } = createNextRouteHandler({
   router: ourFileRouter,
   config: {
-    // Add any additional configuration here
-    uploadthingId: process.env.UPLOADTHING_APP_ID,
-    uploadthingSecret: process.env.UPLOADTHING_SECRET,
+    uploadthingId: process.env.UPLOADTHING_APP_ID!,
+    uploadthingSecret: process.env.UPLOADTHING_SECRET!,
+    isDev: process.env.NODE_ENV === "development",
   },
 });

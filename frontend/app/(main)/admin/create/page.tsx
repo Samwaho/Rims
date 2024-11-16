@@ -26,11 +26,9 @@ export default function CreateProductPage() {
   const { startUpload, isUploading } = useUploadThing("productImage", {
     onClientUploadComplete: () => {
       toast.success("Images uploaded successfully!");
-      return;
     },
-    onUploadError: (error) => {
+    onUploadError: (error: Error) => {
       toast.error(`Error uploading images: ${error.message}`);
-      return;
     },
   });
 

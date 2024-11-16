@@ -1,35 +1,25 @@
 import { createUploadthing, type FileRouter } from "uploadthing/next";
 import { getAuthUser } from "@/lib/actions";
 
-const f = createUploadthing({
-  errorFormatter: (err) => {
-    console.error("Upload error:", err);
-    return { message: "Failed to upload images" };
-  },
-});
+const f = createUploadthing();
 
-// FileRouter for your app, can contain multiple FileRoutes
 export const ourFileRouter = {
-  productImage: f({ image: { maxFileSize: "4MB", maxFileCount: 10 } })
-    .middleware(async ({ req }) => {
+  productImage: f({ image: { maxFileSize: "4MB", maxFileCount: 4 } })
+    .middleware(async () => {
       try {
         const user = await getAuthUser();
-        if (!user) throw new Error("Unauthorized");
-        return { userId: user._id };
-      } catch (error) {
-        console.error("Middleware error:", error);
-        throw new Error("Authentication failed");
+        if (!user || user.role !== "admin") {
+          throw new Error("Unauthorized");
+        }
+        return { userId: user.id };
+      } catch (err) {
+        throw new Error("Unauthorized");
       }
     })
     .onUploadComplete(async ({ metadata, file }) => {
-      try {
-        console.log("Upload complete for userId:", metadata.userId);
-        console.log("file url", file.url);
-        return { uploadedBy: metadata.userId };
-      } catch (error) {
-        console.error("Upload complete error:", error);
-        throw error;
-      }
+      console.log("Upload complete for userId:", metadata.userId);
+      console.log("File URL:", file.url);
+      return { uploadedBy: metadata.userId, url: file.url };
     }),
 } satisfies FileRouter;
 
