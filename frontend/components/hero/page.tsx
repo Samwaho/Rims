@@ -45,9 +45,9 @@ const Hero = memo(() => {
   return (
     <section className="relative w-full py-16 md:py-24 lg:py-32 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
       {/* Decorative elements */}
-      <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-white/20 to-transparent"></div>
-      <div className="absolute -top-24 -right-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20"></div>
-      <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-primary/20 rounded-full blur-3xl opacity-20"></div>
+      <div className="absolute top-0 left-0 w-full h-16 md:h-32 bg-gradient-to-b from-white/20 to-transparent"></div>
+      <div className="absolute -top-12 -right-12 md:-top-24 md:-right-24 w-48 h-48 md:w-96 md:h-96 bg-primary/20 rounded-full blur-2xl md:blur-3xl opacity-10 md:opacity-20"></div>
+      <div className="absolute -bottom-12 -left-12 md:-bottom-24 md:-left-24 w-48 h-48 md:w-96 md:h-96 bg-primary/20 rounded-full blur-2xl md:blur-3xl opacity-10 md:opacity-20"></div>
 
       <div className="container grid items-center gap-8 px-4 md:px-6 lg:grid-cols-2 lg:gap-12 relative">
         <div className="space-y-8 animate-fadeIn">
@@ -61,6 +61,20 @@ const Hero = memo(() => {
                 Wheels
               </span>
             </h1>
+            {/* Mobile Image */}
+            <div className="relative group block lg:hidden mb-6">
+              <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-black/20 rounded-2xl transform rotate-6 transition-transform group-hover:rotate-2"></div>
+              <Image
+                src={HeroCar}
+                width={500}
+                height={500}
+                alt="Luxury Car Wheels"
+                className="relative z-10 mx-auto overflow-hidden rounded-2xl shadow-2xl transition-all duration-300 group-hover:scale-[1.02] group-hover:shadow-3xl"
+                priority
+                quality={100}
+              />
+              <div className="absolute inset-0 z-20 rounded-2xl bg-gradient-to-t from-black/20 to-transparent"></div>
+            </div>
           </div>
           <p className="max-w-[600px] text-gray-700 text-lg md:text-xl/relaxed lg:text-lg/relaxed xl:text-xl/relaxed leading-relaxed">
             Discover our curated collection of premium tires and wheels for your
@@ -111,7 +125,8 @@ const Hero = memo(() => {
             </p>
           </div>
         </div>
-        <div className="relative group">
+        {/* Desktop Image */}
+        <div className="relative group hidden lg:block">
           <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-black/20 rounded-2xl transform rotate-6 transition-transform group-hover:rotate-2 mx-8"></div>
           <Image
             src={HeroCar}
