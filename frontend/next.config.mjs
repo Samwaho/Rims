@@ -5,6 +5,7 @@ const nextConfig = {
       {
         protocol: "https",
         hostname: "uploadthing.com",
+        pathname: "**",
       },
       {
         protocol: "https",

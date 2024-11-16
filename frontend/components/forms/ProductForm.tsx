@@ -17,6 +17,14 @@ import {
 import * as z from "zod";
 import { productSchema } from "@/lib/utils";
 import { memo, useEffect } from "react";
+import { PRODUCT_CATEGORIES } from "@/lib/utils";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export type ProductFormValues = z.infer<typeof productSchema> & {
   images: File[];
@@ -98,7 +106,7 @@ const SpecificationField = memo(
     onValueChange: (value: string) => void;
     onRemove: () => void;
   }) => (
-    <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg bg-white">
+    <div className="flex flex-col sm:flex-row gap-4 p-4 rounded-lg bg-white shadow-sm">
       <div className="flex-1">
         <Input
           placeholder="Specification name"
@@ -176,19 +184,19 @@ export const ProductForm = memo(function ProductForm({
   };
 
   return (
-    <Card className="p-6 sm:p-8 shadow-lg border border-gray-100">
+    <Card className="p-6 sm:p-8 shadow-xl border border-gray-200 bg-white/50 backdrop-blur-sm">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+          <h1 className="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
             {title}
           </h1>
-          <p className="text-muted-foreground mt-2">{description}</p>
+          <p className="text-muted-foreground mt-2 text-sm">{description}</p>
         </div>
         {onBack && (
           <Button
             variant="outline"
             onClick={onBack}
-            className="text-muted-foreground hover:bg-gray-100 gap-2"
+            className="text-muted-foreground hover:bg-gray-50 gap-2 border-gray-200"
           >
             <ArrowLeft className="w-4 h-4" />
             Back
@@ -204,21 +212,21 @@ export const ProductForm = memo(function ProductForm({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700">
+                  <FormLabel className="text-gray-700 font-medium">
                     Product Name *
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       placeholder="Enter product name"
-                      className="h-11 focus:ring-2 focus:ring-primary/20"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange(e);
                       }}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}
             />
@@ -228,19 +236,21 @@ export const ProductForm = memo(function ProductForm({
               name="brand"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700">Brand *</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Brand *
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       placeholder="Enter brand name"
-                      className="h-11 focus:ring-2 focus:ring-primary/20"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange(e);
                       }}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}
             />
@@ -250,19 +260,21 @@ export const ProductForm = memo(function ProductForm({
               name="madeIn"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700">Made In *</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Made In *
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       placeholder="Enter country of origin"
-                      className="h-11 focus:ring-2 focus:ring-primary/20"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange(e);
                       }}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}
             />
@@ -272,20 +284,22 @@ export const ProductForm = memo(function ProductForm({
               name="price"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700">Price (KES) *</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Price (KES) *
+                  </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       type="number"
                       placeholder="Enter price"
-                      className="h-11 focus:ring-2 focus:ring-primary/20"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange(e);
                       }}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}
             />
@@ -295,7 +309,7 @@ export const ProductForm = memo(function ProductForm({
               name="stock"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className="text-gray-700">
+                  <FormLabel className="text-gray-700 font-medium">
                     Stock Quantity *
                   </FormLabel>
                   <FormControl>
@@ -303,14 +317,14 @@ export const ProductForm = memo(function ProductForm({
                       {...field}
                       type="number"
                       placeholder="Enter stock quantity"
-                      className="h-11 focus:ring-2 focus:ring-primary/20"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange(e);
                       }}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}
             />
@@ -320,19 +334,51 @@ export const ProductForm = memo(function ProductForm({
               name="description"
               render={({ field }) => (
                 <FormItem className="md:col-span-2">
-                  <FormLabel className="text-gray-700">Description *</FormLabel>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Description *
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
                       placeholder="Enter product description"
-                      className="min-h-[120px] focus:ring-2 focus:ring-primary/20 resize-y"
+                      className="min-h-[120px] focus:ring-2 focus:ring-primary/20 resize-y bg-white"
                       onChange={(e) => {
                         field.onChange(e);
                         handleFieldChange(e);
                       }}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-500" />
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="category"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Category *
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 bg-white">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PRODUCT_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}
             />
@@ -349,7 +395,7 @@ export const ProductForm = memo(function ProductForm({
                 multiple
                 accept="image/*"
                 onChange={handleImageChange}
-                className="h-12 cursor-pointer focus:ring-2 focus:ring-primary/20 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file"
+                className="h-12 cursor-pointer focus:ring-2 focus:ring-primary/20 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90 transition-colors"
               />
               <p className="text-sm text-muted-foreground">
                 Maximum file size: 5MB. Supported formats: JPG, PNG, GIF
@@ -381,7 +427,7 @@ export const ProductForm = memo(function ProductForm({
                 type="button"
                 variant="outline"
                 onClick={addSpecification}
-                className="text-sm hover:bg-blue-50 transition-colors"
+                className="text-sm hover:bg-primary/10 transition-colors border-primary/20"
               >
                 <Plus className="w-4 h-4 mr-2" />
                 Add Specification
@@ -410,7 +456,7 @@ export const ProductForm = memo(function ProductForm({
 
           <Button
             type="submit"
-            className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-70"
+            className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-70 bg-primary hover:bg-primary/90"
             disabled={isSubmitting || isUploading}
           >
             {isSubmitting || isUploading ? (

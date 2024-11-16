@@ -1,3 +1,5 @@
+import { ProductCategory } from "@/lib/utils";
+
 // Base specification type used across product-related interfaces
 export interface Specification {
   name: string;
@@ -20,7 +22,7 @@ export interface Product {
   description: string;
   price: number;
   stock: number;
-  category: "general" | "wheels" | "tyres"; // Enum values from productSchema
+  category: ProductCategory;
   brand: string;
   madeIn: string;
   images: string[];
@@ -36,6 +38,6 @@ export interface Product {
 // Product filter state with precise types
 export interface FilterState {
   brand: string[];
-  category: ("general" | "wheels" | "tyres")[]; // Match product categories
+  category: ProductCategory[]; // Match product categories
   priceRange?: readonly [number, number]; // Readonly tuple for range
 }

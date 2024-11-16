@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { ProductForm } from "@/components/forms/ProductForm";
@@ -49,6 +49,8 @@ export default function CreateProductPage() {
     },
   });
 
+  const queryClient = useQueryClient();
+
   const createProductMutation = useMutation({
     mutationFn: async (
       data: Omit<ProductFormValues, "images"> & { images: string[] }
@@ -81,6 +83,7 @@ export default function CreateProductPage() {
     },
     onSuccess: () => {
       toast.success("Product created successfully!");
+      queryClient.invalidateQueries({ queryKey: ["products"] });
       router.push("/admin");
     },
     onError: (error: any) => {
@@ -148,17 +151,14 @@ export default function CreateProductPage() {
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
-      console.log("Form submission started", data);
       let imageUrls: string[] = [];
 
       if (data.images?.length) {
-        console.log("Starting image upload", data.images);
         const uploadedImages = await startUpload(Array.from(data.images));
         if (!uploadedImages) {
           throw new Error("Failed to upload images");
         }
         imageUrls = uploadedImages.map((img) => img.url);
-        console.log("Images uploaded successfully:", imageUrls);
       }
 
       const productData = {
@@ -175,7 +175,6 @@ export default function CreateProductPage() {
         images: imageUrls,
       };
 
-      console.log("Creating product with data:", productData);
       await createProductMutation.mutateAsync(productData);
     } catch (error: any) {
       console.error("Submit error:", error);
@@ -192,7 +191,7 @@ export default function CreateProductPage() {
   }
 
   return (
-    <div className="container max-w-5xl mx-auto py-8 px-4 sm:py-12">
+    <div className="container max-w-4xl mx-auto py-6 px-4 sm:py-10">
       <ProductForm
         form={form}
         onSubmit={onSubmit}

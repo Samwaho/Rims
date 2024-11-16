@@ -107,12 +107,16 @@ const specificationSchema = z.object({
   value: z.string().min(1, "Specification value is required"),
 });
 
+export const PRODUCT_CATEGORIES = ["tyres", "wheels", "general"] as const;
+
+export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
+
 export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(1, "Description is required"),
   price: z.number().or(z.string()).pipe(z.coerce.number().min(0)),
   stock: z.number().or(z.string()).pipe(z.coerce.number().min(0)),
-  category: z.string(),
+  category: z.enum(PRODUCT_CATEGORIES),
   brand: z.string().min(1, "Brand is required"),
   madeIn: z.string().min(1, "Country of origin is required"),
   images: z.any(),

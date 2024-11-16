@@ -43,5 +43,7 @@ export function useProducts(search?: string) {
         ? lastPage.currentPage + 1
         : undefined,
     staleTime: 1000 * 60 * 5,
+    refetchOnMount: true,
+    refetchOnWindowFocus: true,
   });
 }
