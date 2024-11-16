@@ -9,14 +9,17 @@ import { toast } from "sonner";
 import { ProductForm } from "@/components/forms/ProductForm";
 import { productSchema } from "@/lib/utils";
 import { getAuthUser } from "@/lib/actions";
-import { useUploadThing } from "@/lib/uploadthing";
 import type { ProductFormValues } from "@/components/forms/ProductForm";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { axiosHeaders } from "@/lib/actions";
+import { UploadClient } from "@uploadcare/upload-client";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const uploadClient = new UploadClient({
+  publicKey: process.env.NEXT_PUBLIC_UPLOADCARE_PUBLIC_KEY || "",
+});
 
 interface Specification {
   name: string;
@@ -34,18 +37,20 @@ export default function EditProductPage({
   const [newImages, setNewImages] = useState<File[]>([]);
   const [isDirty, setIsDirty] = useState(false);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
+  const [isUploading, setIsUploading] = useState(false);
   const queryClient = useQueryClient();
 
-  const { startUpload, isUploading } = useUploadThing("productImage", {
-    onClientUploadComplete: () => {
-      toast.success("Images uploaded successfully!");
-      return;
-    },
-    onUploadError: (error) => {
-      toast.error("Error uploading images");
-      return;
-    },
-  });
+  const uploadImages = async (files: File[]) => {
+    try {
+      const uploadPromises = files.map((file) => uploadClient.uploadFile(file));
+
+      const results = await Promise.all(uploadPromises);
+      return results.map((result) => `https://ucarecdn.com/${result.uuid}/`);
+    } catch (error) {
+      console.error("Upload error:", error);
+      throw new Error("Failed to upload images");
+    }
+  };
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -146,7 +151,6 @@ export default function EditProductPage({
   const updateProductMutation = useMutation({
     mutationFn: async (data: ProductFormValues) => {
       try {
-        // Ensure specifications are valid
         const validSpecifications = (data.specifications || []).filter(
           (spec) => spec && spec.name?.trim() && spec.value?.trim()
         );
@@ -166,12 +170,17 @@ export default function EditProductPage({
         let finalImageUrls = [...existingImages];
 
         if (newImages.length > 0) {
-          const uploadedImages = await startUpload(newImages);
-          if (!uploadedImages) throw new Error("Failed to upload new images");
-          finalImageUrls = [
-            ...finalImageUrls,
-            ...uploadedImages.map((image) => image.url),
-          ];
+          setIsUploading(true);
+          try {
+            const uploadedImageUrls = await uploadImages(newImages);
+            finalImageUrls = [...finalImageUrls, ...uploadedImageUrls];
+            toast.success("Images uploaded successfully!");
+          } catch (error) {
+            toast.error("Failed to upload new images");
+            throw error;
+          } finally {
+            setIsUploading(false);
+          }
         }
 
         const response = await axios.put(

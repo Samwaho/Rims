@@ -9,28 +9,23 @@ import { toast } from "sonner";
 import { ProductForm } from "@/components/forms/ProductForm";
 import { productSchema } from "@/lib/utils";
 import { getAuthUser } from "@/lib/actions";
-import { useUploadThing } from "@/lib/uploadthing";
 import { Loader2 } from "lucide-react";
 import axios from "axios";
 import { axiosHeaders } from "@/lib/actions";
 import type { ProductFormValues } from "@/components/forms/ProductForm";
+import { UploadClient } from "@uploadcare/upload-client";
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const uploadClient = new UploadClient({
+  publicKey: process.env.NEXT_PUBLIC_UPLOADCARE_PUBLIC_KEY || "",
+});
 
 export default function CreateProductPage() {
   const router = useRouter();
   const [imagePreview, setImagePreview] = useState<string[]>([]);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
   const [isDirty, setIsDirty] = useState(false);
-
-  const { startUpload, isUploading } = useUploadThing("productImage", {
-    onClientUploadComplete: () => {
-      toast.success("Images uploaded successfully!");
-    },
-    onUploadError: (error: Error) => {
-      toast.error(`Error uploading images: ${error.message}`);
-    },
-  });
+  const [isUploading, setIsUploading] = useState(false);
 
   const form = useForm<ProductFormValues>({
     resolver: zodResolver(productSchema),
@@ -147,16 +142,34 @@ export default function CreateProductPage() {
     setIsDirty(true);
   };
 
+  const uploadImages = async (files: File[]) => {
+    try {
+      const uploadPromises = files.map((file) => uploadClient.uploadFile(file));
+
+      const results = await Promise.all(uploadPromises);
+      return results.map((result) => `https://ucarecdn.com/${result.uuid}/`);
+    } catch (error) {
+      console.error("Upload error:", error);
+      throw new Error("Failed to upload images");
+    }
+  };
+
   const onSubmit = async (data: ProductFormValues) => {
     try {
       let imageUrls: string[] = [];
 
       if (data.images?.length) {
-        const uploadedImages = await startUpload(Array.from(data.images));
-        if (!uploadedImages) {
-          throw new Error("Failed to upload images");
+        setIsUploading(true);
+        try {
+          const filesToUpload = Array.from(data.images) as File[];
+          imageUrls = await uploadImages(filesToUpload);
+          toast.success("Images uploaded successfully!");
+        } catch (error) {
+          toast.error("Failed to upload images");
+          throw error;
+        } finally {
+          setIsUploading(false);
         }
-        imageUrls = uploadedImages.map((img) => img.url);
       }
 
       const productData = {
