@@ -18,7 +18,9 @@ import * as z from "zod";
 import { productSchema } from "@/lib/utils";
 import { memo, useEffect } from "react";
 
-export type ProductFormValues = z.infer<typeof productSchema>;
+export type ProductFormValues = z.infer<typeof productSchema> & {
+  images: File[];
+};
 
 export interface Specification {
   name: string;
@@ -195,15 +197,7 @@ export const ProductForm = memo(function ProductForm({
       </div>
 
       <Form {...form}>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            form.handleSubmit((data) => {
-              onSubmit(data).catch((error) => {});
-            })(e);
-          }}
-          className="space-y-8"
-        >
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <FormField
               control={form.control}
@@ -217,6 +211,50 @@ export const ProductForm = memo(function ProductForm({
                     <Input
                       {...field}
                       placeholder="Enter product name"
+                      className="h-11 focus:ring-2 focus:ring-primary/20"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700">Brand *</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter brand name"
+                      className="h-11 focus:ring-2 focus:ring-primary/20"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="madeIn"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700">Made In *</FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter country of origin"
                       className="h-11 focus:ring-2 focus:ring-primary/20"
                       onChange={(e) => {
                         field.onChange(e);

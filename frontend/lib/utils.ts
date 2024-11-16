@@ -110,13 +110,18 @@ const specificationSchema = z.object({
 export const productSchema = z.object({
   name: z.string().min(1, "Product name is required"),
   description: z.string().min(1, "Description is required"),
-  price: z.coerce.number().min(0, "Price must be a positive number"),
-  stock: z.coerce.number().int().min(0, "Stock must be a non-negative integer"),
-  images: z.array(z.instanceof(File)).min(1, "At least one image is required"),
-  category: z.enum(["general", "wheels", "tyres"]),
+  price: z.number().or(z.string()).pipe(z.coerce.number().min(0)),
+  stock: z.number().or(z.string()).pipe(z.coerce.number().min(0)),
+  category: z.string(),
   brand: z.string().min(1, "Brand is required"),
-  madeIn: z.string().min(1, "Made in is required"),
-  specifications: z.array(specificationSchema),
+  madeIn: z.string().min(1, "Country of origin is required"),
+  images: z.any(),
+  specifications: z.array(
+    z.object({
+      name: z.string(),
+      value: z.string(),
+    })
+  ),
 });
 
 // Add order-related schemas

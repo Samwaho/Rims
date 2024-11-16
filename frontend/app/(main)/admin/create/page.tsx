@@ -29,7 +29,7 @@ export default function CreateProductPage() {
       return;
     },
     onUploadError: (error) => {
-      toast.error("Error uploading images");
+      toast.error(`Error uploading images: ${error.message}`);
       return;
     },
   });
@@ -53,30 +53,39 @@ export default function CreateProductPage() {
     mutationFn: async (
       data: Omit<ProductFormValues, "images"> & { images: string[] }
     ) => {
-      const { data: responseData } = await axios.post(
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/products`,
         {
           productData: {
-            ...data,
+            name: data.name,
+            description: data.description,
             price: Number(data.price),
             stock: Number(data.stock),
-            specifications: data.specifications,
+            category: data.category,
+            brand: data.brand || "",
+            madeIn: data.madeIn || "",
+            specifications: data.specifications.filter(
+              (spec) => spec.name.trim() && spec.value.trim()
+            ),
           },
           imageUrls: data.images,
         },
         await axiosHeaders()
       );
-      return responseData;
+
+      if (!response.data) {
+        throw new Error("No data received from server");
+      }
+
+      return response.data;
     },
     onSuccess: () => {
       toast.success("Product created successfully!");
       router.push("/admin");
     },
     onError: (error: any) => {
-      toast.error(
-        error.response?.data?.message ||
-          "Failed to create product. Please try again."
-      );
+      console.error("Mutation error:", error);
+      toast.error(error.response?.data?.message || "Failed to create product");
     },
   });
 
@@ -129,38 +138,47 @@ export default function CreateProductPage() {
     const currentImages = form.getValues("images");
     form.setValue(
       "images",
-      currentImages.filter((_, index) => index !== indexToRemove)
+      currentImages.filter((_: File, index: number) => index !== indexToRemove)
     );
-    setImagePreview((prev) =>
-      prev.filter((_, index) => index !== indexToRemove)
+    setImagePreview((prev: string[]) =>
+      prev.filter((_: string, index: number) => index !== indexToRemove)
     );
     setIsDirty(true);
   };
 
   const onSubmit = async (data: ProductFormValues) => {
     try {
-      const imageUrls = data.images?.length
-        ? (await startUpload(Array.from(data.images)))?.map((img) => img.url) ||
-          []
-        : [];
+      console.log("Form submission started", data);
+      let imageUrls: string[] = [];
 
-      if (data.images?.length && !imageUrls.length) {
-        toast.error("Failed to upload images");
-        return;
+      if (data.images?.length) {
+        console.log("Starting image upload", data.images);
+        const uploadedImages = await startUpload(Array.from(data.images));
+        if (!uploadedImages) {
+          throw new Error("Failed to upload images");
+        }
+        imageUrls = uploadedImages.map((img) => img.url);
+        console.log("Images uploaded successfully:", imageUrls);
       }
 
       const productData = {
-        ...data,
+        name: data.name,
+        description: data.description,
         price: Number(data.price),
         stock: Number(data.stock),
+        category: data.category,
+        brand: data.brand || "",
+        madeIn: data.madeIn || "",
         specifications: data.specifications.filter(
           (spec) => spec.name.trim() && spec.value.trim()
         ),
         images: imageUrls,
       };
 
+      console.log("Creating product with data:", productData);
       await createProductMutation.mutateAsync(productData);
     } catch (error: any) {
+      console.error("Submit error:", error);
       toast.error(error.message || "Failed to create product");
     }
   };
