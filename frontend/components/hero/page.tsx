@@ -43,7 +43,7 @@ HeroButton.displayName = "HeroButton";
 
 const Hero = memo(() => {
   return (
-    <section className="relative w-full py-16 md:py-24 lg:py-32 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+    <section className="relative w-full py-8 md:py-24 lg:py-32 bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
       {/* Decorative elements */}
       <div className="absolute top-0 left-0 w-full h-16 md:h-32 bg-gradient-to-b from-white/20 to-transparent"></div>
       <div className="absolute -top-12 -right-12 md:-top-24 md:-right-24 w-48 h-48 md:w-96 md:h-96 bg-primary/20 rounded-full blur-2xl md:blur-3xl opacity-10 md:opacity-20"></div>
