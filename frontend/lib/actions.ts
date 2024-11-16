@@ -44,3 +44,17 @@ export const requireAuth = async () => {
   }
   return user;
 };
+
+export const logout = async () => {
+  try {
+    await axios.post(
+      `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/logout`,
+      {},
+      await axiosHeaders()
+    );
+    cookies().delete("access_token");
+    redirect("/");
+  } catch (error: any) {
+    console.error("logout error:", error?.message || error);
+  }
+};
