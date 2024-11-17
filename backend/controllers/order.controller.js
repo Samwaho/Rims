@@ -37,17 +37,15 @@ const updateProductStock = async (productId, quantity) => {
 
 const calculateOrderTotals = async (
   subtotal,
-  deliveryPointId,
+  shippingDetails,
   discountCode = null
 ) => {
   const { discount } = await validateDiscountCode({
     code: discountCode,
     subtotal,
   });
-  const shippingCost = await calculateShippingCost({
-    deliveryPointId,
-    subtotal,
-  });
+
+  const shippingCost = 500;
   const taxRate = await getTaxRate();
 
   const taxableAmount = subtotal - discount;
@@ -68,7 +66,7 @@ const calculateOrderTotals = async (
 const processDirectPurchase = async (
   productId,
   quantity = 1,
-  deliveryPointId,
+  shippingDetails,
   discountCode = null
 ) => {
   const product = await Product.findById(productId);
@@ -84,13 +82,13 @@ const processDirectPurchase = async (
   const subtotal = product.price * quantity;
   return {
     orderProducts: [orderProduct],
-    ...(await calculateOrderTotals(subtotal, deliveryPointId, discountCode)),
+    ...(await calculateOrderTotals(subtotal, shippingDetails, discountCode)),
   };
 };
 
 const processCartPurchase = async (
   userId,
-  deliveryPointId,
+  shippingDetails,
   discountCode = null
 ) => {
   const cart = await Cart.findOne({ user: userId }).populate("items.product");
@@ -115,7 +113,7 @@ const processCartPurchase = async (
 
   return {
     orderProducts,
-    ...(await calculateOrderTotals(subtotal, deliveryPointId, discountCode)),
+    ...(await calculateOrderTotals(subtotal, shippingDetails, discountCode)),
   };
 };
 
@@ -128,26 +126,27 @@ export const createOrder = async (req, res, next) => {
       paymentMethod,
       paymentDetails,
       discountCode,
-      deliveryPointId,
+      shippingDetails,
     } = req.body;
 
-    if (!deliveryPointId) {
-      throw { status: 400, message: "Delivery point is required" };
+    if (
+      !shippingDetails?.city ||
+      !shippingDetails?.subCounty ||
+      !shippingDetails?.estateName ||
+      !shippingDetails?.houseNumber ||
+      !shippingDetails?.contactNumber
+    ) {
+      throw { status: 400, message: "Required shipping details are missing" };
     }
 
     const orderData = productId
       ? await processDirectPurchase(
           productId,
           quantity,
-          deliveryPointId,
+          shippingDetails,
           discountCode
         )
-      : await processCartPurchase(userId, deliveryPointId, discountCode);
-
-    const deliveryPoint = await ShippingZone.findById(deliveryPointId);
-    if (!deliveryPoint) {
-      throw { status: 400, message: "Invalid delivery point" };
-    }
+      : await processCartPurchase(userId, shippingDetails, discountCode);
 
     const order = await Order.create({
       user: userId,
@@ -163,13 +162,7 @@ export const createOrder = async (req, res, next) => {
       paymentMethod,
       paymentDetails,
       paymentStatus: "pending",
-      deliveryPoint: {
-        _id: deliveryPoint._id,
-        name: deliveryPoint.name,
-        location: deliveryPoint.location,
-        operatingHours: deliveryPoint.operatingHours,
-        contactInfo: deliveryPoint.contactInfo,
-      },
+      shippingDetails,
     });
 
     const populatedOrder = await Order.findById(order._id)

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -26,6 +26,8 @@ import {
   Mail,
   Info,
   Loader2,
+  Building,
+  Home,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -33,7 +35,6 @@ import { axiosHeaders } from "@/lib/actions";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
-import { z } from "zod";
 import {
   Select,
   SelectContent,
@@ -55,6 +56,17 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 // Types
 interface Product {
@@ -111,6 +123,21 @@ const bankDetailsSchema = z.object({
   bankName: z.string().min(1, "Bank name is required"),
   accountHolder: z.string().min(1, "Account holder name is required"),
 });
+
+const shippingSchema = z.object({
+  shippingDetails: z.object({
+    city: z.string().min(1, "City is required"),
+    subCounty: z.string().min(1, "Sub County is required"),
+    estateName: z.string().min(1, "Estate name is required"),
+    apartmentName: z.string().optional(),
+    houseNumber: z.string().min(1, "House number is required"),
+    contactNumber: z.string().regex(/^\+254\d{9}$/, {
+      message: "Please enter a valid phone number starting with +254",
+    }),
+  }),
+});
+
+type ShippingFormValues = z.infer<typeof shippingSchema>;
 
 // API Functions
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
@@ -332,7 +359,14 @@ export default function CheckoutPage() {
           paymentMethod,
           paymentDetails:
             paymentMethod === "mpesa" ? { mpesaNumber } : bankDetails,
-          deliveryPointId: selectedDeliveryPoint,
+          shippingDetails: {
+            city: form.getValues("shippingDetails.city"),
+            subCounty: form.getValues("shippingDetails.subCounty"),
+            estateName: form.getValues("shippingDetails.estateName"),
+            apartmentName: form.getValues("shippingDetails.apartmentName"),
+            houseNumber: form.getValues("shippingDetails.houseNumber"),
+            contactNumber: form.getValues("shippingDetails.contactNumber"),
+          },
           discountCode: appliedDiscount?.code,
         },
         await axiosHeaders()
@@ -397,16 +431,15 @@ export default function CheckoutPage() {
   const validateForm = (): boolean => {
     const errors: string[] = [];
 
-    if (!selectedDeliveryPoint) {
-      errors.push("Please select a pickup location");
-    }
-
     try {
       if (paymentMethod === "mpesa") {
         mpesaNumberSchema.parse(mpesaNumber);
       } else {
         bankDetailsSchema.parse(bankDetails);
       }
+
+      // Validate shipping details
+      shippingSchema.parse(form.getValues());
     } catch (error) {
       if (error instanceof z.ZodError) {
         errors.push(...error.errors.map((err) => err.message));
@@ -432,6 +465,130 @@ export default function CheckoutPage() {
     }
     validateDiscountMutation.mutate(discountCode);
   };
+
+  const form = useForm<ShippingFormValues>({
+    resolver: zodResolver(shippingSchema),
+    defaultValues: {
+      shippingDetails: {
+        city: "",
+        subCounty: "",
+        estateName: "",
+        apartmentName: "",
+        houseNumber: "",
+        contactNumber: "+254",
+      },
+    },
+  });
+
+  const renderFormField = useCallback(
+    ({
+      name,
+      label,
+      type = "text",
+      placeholder,
+      icon: Icon,
+      required = true,
+    }: {
+      name: keyof ShippingFormValues["shippingDetails"];
+      label: string;
+      type?: string;
+      placeholder: string;
+      icon: any;
+      required?: boolean;
+    }) => (
+      <FormField
+        control={form.control}
+        name={`shippingDetails.${name}`}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="text-gray-700">
+              {label}
+              {required && <span className="text-red-500 ml-1">*</span>}
+            </FormLabel>
+            <FormControl>
+              <div className="relative">
+                <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
+                <Input
+                  {...field}
+                  type={type}
+                  placeholder={placeholder}
+                  className="h-11 pl-10"
+                />
+              </div>
+            </FormControl>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    ),
+    [form.control]
+  );
+
+  const renderShippingFields = useCallback(
+    () => (
+      <Form {...form}>
+        <Card className="border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+          <CardHeader className="border-b border-gray-100">
+            <CardTitle className="flex items-center gap-2 text-xl">
+              <MapPin className="w-5 h-5 text-primary" />
+              Shipping Details
+            </CardTitle>
+            <CardDescription>Enter your delivery information</CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderFormField({
+                  name: "city",
+                  label: "City",
+                  placeholder: "e.g., Nairobi",
+                  icon: Building,
+                })}
+                {renderFormField({
+                  name: "subCounty",
+                  label: "Sub County",
+                  placeholder: "e.g., Westlands",
+                  icon: MapPin,
+                })}
+              </div>
+
+              {renderFormField({
+                name: "estateName",
+                label: "Estate Name",
+                placeholder: "e.g., Kileleshwa",
+                icon: Home,
+              })}
+
+              {renderFormField({
+                name: "apartmentName",
+                label: "Apartment Name",
+                placeholder: "e.g., Sunrise Apartments",
+                icon: Building,
+                required: false,
+              })}
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {renderFormField({
+                  name: "houseNumber",
+                  label: "House Number",
+                  placeholder: "e.g., A1",
+                  icon: Home,
+                })}
+                {renderFormField({
+                  name: "contactNumber",
+                  label: "Contact Number",
+                  placeholder: "+254712345678",
+                  icon: PhoneIcon,
+                  type: "tel",
+                })}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </Form>
+    ),
+    [renderFormField]
+  );
 
   if (isLoading) {
     return (
@@ -462,152 +619,7 @@ export default function CheckoutPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
           <div className="space-y-8">
             {/* Shipping Section */}
-            <Card className="border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
-              <CardHeader className="border-b border-gray-100">
-                <CardTitle className="flex items-center gap-2 text-xl">
-                  <MapPin className="w-5 h-5 text-primary" />
-                  Select Pickup Location
-                </CardTitle>
-                <CardDescription className="text-gray-600">
-                  Choose your preferred delivery point for order collection
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-6 pt-6">
-                {isLoadingDeliveryPoints ? (
-                  <div className="space-y-4">
-                    <div className="h-12 bg-gray-100 animate-pulse rounded-lg"></div>
-                    <div className="h-36 bg-gray-100 animate-pulse rounded-lg"></div>
-                  </div>
-                ) : deliveryPoints.length === 0 ? (
-                  <div className="text-center py-6 text-gray-500">
-                    No delivery points available
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    <Label htmlFor="delivery-point" className="text-gray-700">
-                      Pickup Location
-                    </Label>
-                    <Select
-                      value={selectedDeliveryPoint}
-                      onValueChange={(value) => {
-                        setSelectedDeliveryPoint(value);
-                        setCheckoutStep(1);
-                      }}
-                    >
-                      <SelectTrigger className="w-full h-12">
-                        <SelectValue placeholder="Select a pickup point" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {deliveryPoints.map((point) => (
-                          <SelectItem
-                            key={point._id}
-                            value={point._id}
-                            className="py-3"
-                          >
-                            <div className="flex items-center justify-between gap-3 w-full">
-                              <span className="font-medium">{point.name}</span>
-                              <span
-                                className={`text-sm ${
-                                  point.freeShippingThreshold &&
-                                  subtotal >= point.freeShippingThreshold
-                                    ? "text-green-600 font-medium"
-                                    : "text-gray-600"
-                                }`}
-                              >
-                                {point.freeShippingThreshold &&
-                                subtotal >= point.freeShippingThreshold
-                                  ? "Free"
-                                  : formatPrice(point.baseRate)}
-                              </span>
-                            </div>
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-
-                {selectedDeliveryPoint && (
-                  <Card className="bg-gray-50/80 border-gray-100">
-                    <CardContent className="pt-6">
-                      {(() => {
-                        const point = getSelectedPoint(
-                          deliveryPoints,
-                          selectedDeliveryPoint
-                        );
-                        if (!point) return null;
-
-                        return (
-                          <div className="space-y-5">
-                            <div className="flex items-start gap-4">
-                              <MapPin className="w-5 h-5 mt-1 text-primary" />
-                              <div className="space-y-1.5">
-                                <p className="font-medium text-gray-900">
-                                  {point.location}
-                                </p>
-                                {point.description && (
-                                  <p className="text-sm text-gray-600 leading-relaxed">
-                                    {point.description}
-                                  </p>
-                                )}
-                              </div>
-                            </div>
-
-                            {point.operatingHours && (
-                              <div className="flex items-center gap-4">
-                                <Clock className="w-5 h-5 text-primary" />
-                                <p className="text-sm text-gray-700">
-                                  {point.operatingHours}
-                                </p>
-                              </div>
-                            )}
-
-                            {(point.contactInfo?.phone ||
-                              point.contactInfo?.email) && (
-                              <div className="space-y-3">
-                                {point.contactInfo?.phone && (
-                                  <div className="flex items-center gap-4">
-                                    <PhoneIcon className="w-5 h-5 text-primary" />
-                                    <p className="text-sm text-gray-700">
-                                      +{point.contactInfo.phone}
-                                    </p>
-                                  </div>
-                                )}
-                                {point.contactInfo?.email && (
-                                  <div className="flex items-center gap-4">
-                                    <Mail className="w-5 h-5 text-primary" />
-                                    <p className="text-sm text-gray-700">
-                                      {point.contactInfo.email}
-                                    </p>
-                                  </div>
-                                )}
-                              </div>
-                            )}
-
-                            {point.freeShippingThreshold && (
-                              <HoverCard>
-                                <HoverCardTrigger asChild>
-                                  <div className="flex items-center gap-2 text-sm text-green-600 cursor-help bg-green-50 px-4 py-2 rounded-lg">
-                                    <Info className="w-4 h-4" />
-                                    Free pickup available
-                                  </div>
-                                </HoverCardTrigger>
-                                <HoverCardContent className="w-80">
-                                  <p className="text-sm">
-                                    Free pickup is available for orders over{" "}
-                                    {formatPrice(point.freeShippingThreshold)}
-                                  </p>
-                                </HoverCardContent>
-                              </HoverCard>
-                            )}
-                          </div>
-                        );
-                      })()}
-                    </CardContent>
-                  </Card>
-                )}
-              </CardContent>
-            </Card>
+            {renderShippingFields()}
 
             {/* Order Summary */}
             <Card className="h-fit border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">

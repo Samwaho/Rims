@@ -30,7 +30,7 @@ const ProductsPage = () => {
   );
 
   const [filters, setFilters] = useState<FilterState>({
-    brand: [],
+    size: [],
     category: searchParams.get("category")
       ? [searchParams.get("category") as "wheels" | "tyres"]
       : [],
@@ -62,20 +62,21 @@ const ProductsPage = () => {
 
   const filteredProducts = useMemo(() => {
     return products
-      .filter((product) => {
-        const { brand, category, price, name } = product;
+      .filter((product: Product) => {
+        const { size, category, price, name } = product;
         const {
-          brand: brandFilters,
+          size: sizeFilters,
           category: categoryFilters,
           priceRange,
         } = filters;
 
+        const categoryMatch =
+          categoryFilters.length === 0 ||
+          categoryFilters.includes(category as "general" | "wheels" | "tyres");
+
         return (
-          (brandFilters.length === 0 || brandFilters.includes(brand)) &&
-          (categoryFilters.length === 0 ||
-            categoryFilters.includes(
-              category as "general" | "wheels" | "tyres"
-            )) &&
+          (sizeFilters.length === 0 || sizeFilters.includes(size)) &&
+          categoryMatch &&
           (!priceRange || (price >= priceRange[0] && price <= priceRange[1])) &&
           name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
         );
@@ -97,7 +98,7 @@ const ProductsPage = () => {
 
   const handleClearFilters = () => {
     setFilters({
-      brand: [],
+      size: [],
       category: [],
       priceRange: undefined,
     });
@@ -135,28 +136,43 @@ const ProductsPage = () => {
       <ProductsHeader searchTerm={searchTerm} onSearchChange={setSearchTerm} />
 
       <section className="py-8 md:py-12">
-        <div className=" mx-auto px-2">
+        <div className="mx-auto px-2">
           <div className="grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-8">
             <FilterAccordion
               isLoading={isLoading}
               filters={{
-                ...filters,
+                size: filters.size,
+                category: filters.category,
                 priceRange: filters.priceRange as [number, number] | undefined,
               }}
-              products={products}
+              products={products as Product[]}
               maxPrice={maxPrice}
-              onFilterChange={(type, value) => {
-                setFilters((prev) => ({
-                  ...prev,
-                  [type]: prev[type].includes(value as any)
-                    ? prev[type].filter((item) => item !== value)
-                    : [...prev[type], value as any],
-                }));
+              onFilterChange={(type: "size" | "category", value: string) => {
+                setFilters((prev) => {
+                  if (type === "category") {
+                    const categoryValue = value as
+                      | "general"
+                      | "wheels"
+                      | "tyres";
+                    return {
+                      ...prev,
+                      category: prev.category.includes(categoryValue)
+                        ? prev.category.filter((item) => item !== categoryValue)
+                        : [...prev.category, categoryValue],
+                    };
+                  }
+                  return {
+                    ...prev,
+                    size: prev.size.includes(value)
+                      ? prev.size.filter((item) => item !== value)
+                      : [...prev.size, value],
+                  };
+                });
               }}
               onPriceRangeChange={(value) => {
                 setFilters((prev) => ({
                   ...prev,
-                  priceRange: value as [number, number],
+                  priceRange: value,
                 }));
               }}
             />
@@ -167,15 +183,17 @@ const ProductsPage = () => {
                   ? Array(PRODUCTS_PER_PAGE)
                       .fill(0)
                       .map((_, index) => <ProductCard.Skeleton key={index} />)
-                  : filteredProducts.map((product) => (
+                  : filteredProducts.map((product: Product) => (
                       <ProductCard
                         key={product._id}
                         product={{
-                          ...product,
-                          category: product.category as
-                            | "general"
-                            | "wheels"
-                            | "tyres",
+                          _id: product._id,
+                          name: product.name,
+                          size: product.size,
+                          madeIn: product.madeIn,
+                          category: product.category,
+                          price: product.price,
+                          images: product.images,
                         }}
                         onAddToCart={() =>
                           addToCartMutation.mutate({

@@ -60,7 +60,7 @@ export default function EditProductPage({
       price: 0,
       stock: 0,
       category: "general" as const,
-      brand: "",
+      size: "",
       madeIn: "",
       images: [],
       specifications: [],
@@ -161,7 +161,7 @@ export default function EditProductPage({
           price: Number(data.price),
           stock: Number(data.stock),
           category: data.category,
-          brand: data.brand,
+          size: data.size,
           madeIn: data.madeIn,
           specifications: validSpecifications,
         };

@@ -70,24 +70,29 @@ const orderSchema = new mongoose.Schema(
     paymentDetails: {
       type: mongoose.Schema.Types.Mixed,
     },
-    deliveryPoint: {
-      _id: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "ShippingZone",
-        required: true,
-      },
-      name: {
+    shippingDetails: {
+      city: {
         type: String,
         required: true,
       },
-      location: {
+      subCounty: {
         type: String,
         required: true,
       },
-      operatingHours: String,
-      contactInfo: {
-        phone: String,
-        email: String,
+      estateName: {
+        type: String,
+        required: true,
+      },
+      apartmentName: {
+        type: String,
+      },
+      houseNumber: {
+        type: String,
+        required: true,
+      },
+      contactNumber: {
+        type: String,
+        required: true,
       },
     },
     statusHistory: [

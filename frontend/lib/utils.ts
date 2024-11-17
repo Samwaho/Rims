@@ -112,13 +112,13 @@ export const PRODUCT_CATEGORIES = ["tyres", "wheels", "general"] as const;
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
 export const productSchema = z.object({
-  name: z.string().min(1, "Product name is required"),
+  name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),
-  price: z.number().or(z.string()).pipe(z.coerce.number().min(0)),
-  stock: z.number().or(z.string()).pipe(z.coerce.number().min(0)),
-  category: z.enum(PRODUCT_CATEGORIES),
-  brand: z.string().min(1, "Brand is required"),
-  madeIn: z.string().min(1, "Country of origin is required"),
+  price: z.number().min(0, "Price must be greater than or equal to 0"),
+  stock: z.number().int().min(0, "Stock must be greater than or equal to 0"),
+  category: z.enum(["general", "wheels", "tyres"]),
+  size: z.string().min(1, "Size is required"),
+  madeIn: z.string(),
   images: z.any(),
   specifications: z.array(
     z.object({

@@ -10,25 +10,19 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/utils";
-
-interface Product {
-  _id: string;
-  brand: string;
-  category: string;
-  price: number;
-}
+import { Product } from "@/types/product";
 
 interface FilterAccordionProps {
   isLoading: boolean;
   filters: {
-    brand: string[];
+    size: string[];
     category: string[];
     priceRange?: [number, number];
   };
   products: Product[];
   maxPrice: number;
-  onFilterChange: (type: "brand" | "category", value: string) => void;
-  onPriceRangeChange: (value: number[]) => void;
+  onFilterChange: (type: "size" | "category", value: string) => void;
+  onPriceRangeChange: (value: [number, number]) => void;
 }
 
 const LoadingSkeleton = memo(({ count }: { count: number }) => (
@@ -70,7 +64,7 @@ const PriceRangeContent = memo(
   }: {
     priceRange?: [number, number];
     maxPrice: number;
-    onPriceRangeChange: (value: number[]) => void;
+    onPriceRangeChange: (value: [number, number]) => void;
   }) => (
     <>
       <Slider
@@ -78,7 +72,7 @@ const PriceRangeContent = memo(
         max={maxPrice}
         step={100}
         value={priceRange || [0, maxPrice]}
-        onValueChange={onPriceRangeChange}
+        onValueChange={(value) => onPriceRangeChange(value as [number, number])}
         className="w-full mt-2"
       />
       <div className="flex justify-between text-sm text-muted-foreground mt-2">
@@ -100,8 +94,8 @@ export const FilterAccordion: React.FC<FilterAccordionProps> = memo(
     onFilterChange,
     onPriceRangeChange,
   }) => {
-    const uniqueBrands = useMemo(
-      () => Array.from(new Set(products.map((product) => product.brand))),
+    const uniqueSizes = useMemo(
+      () => Array.from(new Set(products.map((product) => product.size))),
       [products]
     );
 
@@ -109,21 +103,21 @@ export const FilterAccordion: React.FC<FilterAccordionProps> = memo(
 
     return (
       <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="brand">
+        <AccordionItem value="size">
           <AccordionTrigger className="text-base font-medium">
-            Brand
+            Size
           </AccordionTrigger>
           <AccordionContent>
             <div className="grid gap-2">
               {isLoading ? (
                 <LoadingSkeleton count={5} />
               ) : (
-                uniqueBrands.map((brand) => (
+                uniqueSizes.map((size) => (
                   <FilterItem
-                    key={brand}
-                    label={brand}
-                    checked={filters.brand.includes(brand)}
-                    onChange={() => onFilterChange("brand", brand)}
+                    key={size}
+                    label={size}
+                    checked={filters.size.includes(size)}
+                    onChange={() => onFilterChange("size", size)}
                   />
                 ))
               )}

@@ -42,21 +42,22 @@ interface Order {
   paymentMethod: "mpesa" | "bank";
   paymentStatus: "pending" | "completed" | "failed" | "refunded";
   paymentDetails?: any;
-  deliveryPoint: {
-    _id: string;
-    name: string;
-    location: string;
-    operatingHours?: string;
-    contactInfo?: {
-      phone?: string;
-      email?: string;
-    };
+  shippingDetails: {
+    city: string;
+    subCounty: string;
+    estateName: string;
+    apartmentName?: string;
+    houseNumber: string;
+    contactNumber: string;
   };
   statusHistory?: Array<{
     status: string;
     note?: string;
     timestamp: string;
   }>;
+  deliveryPoint?: {
+    name: string;
+  };
 }
 
 const statusStyles = {
@@ -141,11 +142,24 @@ const OrderCard = memo(({ order }: { order: Order }) => (
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 sm:gap-0">
         <div className="text-xs sm:text-sm text-gray-600">
           <div>{order.products.length} items</div>
-          {order.deliveryPoint && (
+          {order.shippingDetails ? (
+            <>
+              <div className="text-gray-500">
+                Delivery to: {order.shippingDetails.estateName},{" "}
+                {order.shippingDetails.city}
+              </div>
+              {order.shippingDetails.apartmentName && (
+                <div className="text-gray-500">
+                  {order.shippingDetails.apartmentName}, Unit{" "}
+                  {order.shippingDetails.houseNumber}
+                </div>
+              )}
+            </>
+          ) : order.deliveryPoint ? (
             <div className="text-gray-500">
               Delivery Point: {order.deliveryPoint.name}
             </div>
-          )}
+          ) : null}
         </div>
         <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3 sm:gap-4">
           <div className="flex flex-col items-end">

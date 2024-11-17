@@ -38,15 +38,13 @@ interface Order {
   paymentMethod: "mpesa" | "bank";
   paymentStatus: "pending" | "completed" | "failed" | "refunded";
   paymentDetails?: any;
-  deliveryPoint: {
-    _id: string;
-    name: string;
-    location: string;
-    operatingHours?: string;
-    contactInfo?: {
-      phone?: string;
-      email?: string;
-    };
+  shippingDetails: {
+    city: string;
+    subCounty: string;
+    estateName: string;
+    apartmentName?: string;
+    houseNumber: string;
+    contactNumber: string;
   };
   statusHistory?: Array<{
     status: string;
@@ -226,46 +224,44 @@ export default function OrderConfirmationPage({
 
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Delivery Point</CardTitle>
+            <CardTitle>Shipping Details</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
-                <p className="text-gray-600">Location Name</p>
-                <p className="font-medium">{order.deliveryPoint.name}</p>
+                <p className="text-gray-600">City</p>
+                <p className="font-medium">{order.shippingDetails.city}</p>
               </div>
               <div>
-                <p className="text-gray-600">Address</p>
-                <p className="font-medium">{order.deliveryPoint.location}</p>
+                <p className="text-gray-600">Sub County</p>
+                <p className="font-medium">{order.shippingDetails.subCounty}</p>
               </div>
-              {order.deliveryPoint.operatingHours && (
+              <div>
+                <p className="text-gray-600">Estate Name</p>
+                <p className="font-medium">
+                  {order.shippingDetails.estateName}
+                </p>
+              </div>
+              {order.shippingDetails.apartmentName && (
                 <div>
-                  <p className="text-gray-600">Operating Hours</p>
+                  <p className="text-gray-600">Apartment Name</p>
                   <p className="font-medium">
-                    {order.deliveryPoint.operatingHours}
+                    {order.shippingDetails.apartmentName}
                   </p>
                 </div>
               )}
-              {order.deliveryPoint.contactInfo && (
-                <>
-                  {order.deliveryPoint.contactInfo.phone && (
-                    <div>
-                      <p className="text-gray-600">Phone</p>
-                      <p className="font-medium">
-                        {order.deliveryPoint.contactInfo.phone}
-                      </p>
-                    </div>
-                  )}
-                  {order.deliveryPoint.contactInfo.email && (
-                    <div>
-                      <p className="text-gray-600">Email</p>
-                      <p className="font-medium">
-                        {order.deliveryPoint.contactInfo.email}
-                      </p>
-                    </div>
-                  )}
-                </>
-              )}
+              <div>
+                <p className="text-gray-600">House Number</p>
+                <p className="font-medium">
+                  {order.shippingDetails.houseNumber}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-600">Contact Number</p>
+                <p className="font-medium">
+                  {order.shippingDetails.contactNumber}
+                </p>
+              </div>
             </div>
           </CardContent>
         </Card>

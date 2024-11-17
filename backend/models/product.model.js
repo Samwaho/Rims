@@ -60,7 +60,7 @@ const productSchema = new mongoose.Schema(
       required: true,
       enum: ["general", "wheels", "tyres"],
     },
-    brand: {
+    size: {
       type: String,
       required: true,
     },

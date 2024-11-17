@@ -65,7 +65,7 @@ export default function ProductDetails({
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-8 text-sm lg:text-base">
           <div>
-            <span className="font-semibold">Brand:</span> {product.brand}
+            <span className="font-semibold">Size:</span> {product.size}
           </div>
           <div>
             <span className="font-semibold">Made in:</span> {product.madeIn}

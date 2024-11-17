@@ -14,7 +14,7 @@ import type { Product } from "@/types/product";
 interface ProductCardProps {
   product: Pick<
     Product,
-    "_id" | "name" | "brand" | "madeIn" | "category" | "price" | "images"
+    "_id" | "name" | "size" | "madeIn" | "category" | "price" | "images"
   >;
   onAddToCart: () => void;
 }

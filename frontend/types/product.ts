@@ -22,22 +22,34 @@ export interface Product {
   description: string;
   price: number;
   stock: number;
-  category: ProductCategory;
-  brand: string;
+  category: "general" | "wheels" | "tyres";
+  size: string;
   madeIn: string;
   images: string[];
   specifications: Specification[];
-  averageRating: number;
-  reviewCount: number;
   reviews: Review[];
   numReviews: number;
+  averageRating: number;
   createdAt: string;
   updatedAt: string;
 }
 
 // Product filter state with precise types
 export interface FilterState {
-  brand: string[];
-  category: ProductCategory[]; // Match product categories
-  priceRange?: readonly [number, number]; // Readonly tuple for range
+  size: string[];
+  category: ProductCategory[];
+  priceRange?: readonly [number, number];
+}
+
+// Update the ProductFormValues interface
+export interface ProductFormValues {
+  name: string;
+  description: string;
+  price: number;
+  stock: number;
+  category: "general" | "wheels" | "tyres";
+  size: string;
+  madeIn: string;
+  images: any;
+  specifications: Specification[];
 }

@@ -233,16 +233,16 @@ export const ProductForm = memo(function ProductForm({
 
             <FormField
               control={form.control}
-              name="brand"
+              name="size"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">
-                    Brand *
+                    Size *
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Enter brand name"
+                      placeholder="Enter size"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
                         field.onChange(e);
@@ -294,7 +294,7 @@ export const ProductForm = memo(function ProductForm({
                       placeholder="Enter price"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
-                        field.onChange(e);
+                        field.onChange(Number(e.target.value));
                         handleFieldChange(e);
                       }}
                     />
@@ -319,7 +319,7 @@ export const ProductForm = memo(function ProductForm({
                       placeholder="Enter stock quantity"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
-                        field.onChange(e);
+                        field.onChange(Number(e.target.value));
                         handleFieldChange(e);
                       }}
                     />

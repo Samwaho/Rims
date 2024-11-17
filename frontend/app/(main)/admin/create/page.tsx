@@ -35,7 +35,7 @@ export default function CreateProductPage() {
       price: 0,
       stock: 0,
       category: "general",
-      brand: "",
+      size: "",
       madeIn: "",
       images: [],
       specifications: [],
@@ -57,7 +57,7 @@ export default function CreateProductPage() {
             price: Number(data.price),
             stock: Number(data.stock),
             category: data.category,
-            brand: data.brand || "",
+            size: data.size || "",
             madeIn: data.madeIn || "",
             specifications: data.specifications.filter(
               (spec) => spec.name.trim() && spec.value.trim()
@@ -173,17 +173,13 @@ export default function CreateProductPage() {
       }
 
       const productData = {
-        name: data.name,
-        description: data.description,
+        ...data,
         price: Number(data.price),
         stock: Number(data.stock),
-        category: data.category,
-        brand: data.brand || "",
-        madeIn: data.madeIn || "",
+        images: imageUrls,
         specifications: data.specifications.filter(
           (spec) => spec.name.trim() && spec.value.trim()
         ),
-        images: imageUrls,
       };
 
       await createProductMutation.mutateAsync(productData);

@@ -60,7 +60,7 @@ const validateProductData = (productData) => {
     "price",
     "stock",
     "category",
-    "brand",
+    "size",
     "madeIn",
   ];
   const missingFields = requiredFields.filter(
