@@ -36,7 +36,11 @@ interface Order {
   products: OrderProduct[];
   subtotal: number;
   discount: number;
-  discountCode?: string;
+  discountDetails?: {
+    code: string;
+    type: "percentage" | "fixed";
+    value: number;
+  };
   tax: number;
   taxRate: number;
   shippingCost: number;
@@ -380,7 +384,17 @@ export default function OrderConfirmationPage({
                 {order.discount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>
-                      Discount{order.discountCode && ` (${order.discountCode})`}
+                      Discount
+                      {order.discountDetails && (
+                        <>
+                          {" "}
+                          ({order.discountDetails.code}
+                          {order.discountDetails.type === "percentage"
+                            ? ` - ${order.discountDetails.value}%`
+                            : ""}
+                          )
+                        </>
+                      )}
                     </span>
                     <span>-{formatPrice(order.discount)}</span>
                   </div>

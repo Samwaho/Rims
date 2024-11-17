@@ -31,7 +31,14 @@ const orderSchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
-    discountCode: String,
+    discountDetails: {
+      code: String,
+      type: {
+        type: String,
+        enum: ["percentage", "fixed"],
+      },
+      value: Number,
+    },
     tax: {
       type: Number,
       required: true,

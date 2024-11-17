@@ -39,22 +39,40 @@ const calculateOrderTotals = async (
   shippingDetails,
   discountCode = null
 ) => {
-  const { discount } = await validateDiscountCode({
-    code: discountCode,
-    subtotal,
-  });
+  let discountDetails = null;
+  let discountAmount = 0;
+
+  if (discountCode) {
+    try {
+      const discountResult = await validateDiscountCode({
+        code: discountCode,
+        subtotal,
+      });
+
+      discountAmount = discountResult.discount;
+      discountDetails = {
+        code: discountCode,
+        type: discountResult.type,
+        value: discountResult.value,
+      };
+    } catch (error) {
+      console.error("Discount validation error:", error);
+      // If discount validation fails, continue with zero discount
+    }
+  }
 
   const shippingCost = 500;
   const taxRate = await getTaxRate();
 
-  const taxableAmount = subtotal - discount;
+  const taxableAmount = subtotal - discountAmount;
   const tax = taxableAmount * taxRate;
 
-  const total = subtotal - discount + tax + shippingCost;
+  const total = subtotal - discountAmount + tax + shippingCost;
 
   return {
     subtotal,
-    discount,
+    discount: discountAmount,
+    discountDetails,
     taxRate,
     tax,
     shippingCost,
@@ -124,7 +142,7 @@ export const createOrder = async (req, res, next) => {
       quantity,
       paymentMethod,
       paymentDetails,
-      discountCode,
+      discount,
       shippingDetails,
     } = req.body;
 
@@ -143,16 +161,16 @@ export const createOrder = async (req, res, next) => {
           productId,
           quantity,
           shippingDetails,
-          discountCode
+          discount?.code
         )
-      : await processCartPurchase(userId, shippingDetails, discountCode);
+      : await processCartPurchase(userId, shippingDetails, discount?.code);
 
     const order = await Order.create({
       user: userId,
       products: orderData.orderProducts,
       subtotal: orderData.subtotal,
       discount: orderData.discount,
-      discountCode,
+      discountDetails: orderData.discountDetails,
       tax: orderData.tax,
       taxRate: orderData.taxRate,
       shippingCost: orderData.shippingCost,

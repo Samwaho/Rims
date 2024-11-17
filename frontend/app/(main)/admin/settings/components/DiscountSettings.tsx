@@ -94,18 +94,44 @@ export function DiscountSettings() {
     },
   });
 
+  const toggleDiscountMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      await axios.patch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discounts/${id}`,
+        { isActive },
+        await axiosHeaders()
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["discounts"] });
+      toast.success("Discount status updated successfully");
+    },
+    onError: () => {
+      toast.error("Failed to update discount status");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newDiscount.code || !newDiscount.value) {
+    if (!newDiscount.code || !newDiscount.value || !newDiscount.expiryDate) {
       toast.error("Please fill in all required fields");
       return;
     }
-    createDiscountMutation.mutate({
-      ...newDiscount,
+
+    const discountData = {
+      code: newDiscount.code.toUpperCase(),
+      type: newDiscount.type,
       value: parseFloat(newDiscount.value),
       minPurchase: parseFloat(newDiscount.minPurchase) || 0,
       maxUses: parseInt(newDiscount.maxUses) || null,
-    });
+      isActive: true,
+      startDate: new Date().toISOString(),
+      endDate: new Date(newDiscount.expiryDate).toISOString(),
+      usageLimit: parseInt(newDiscount.maxUses) || null,
+      usedCount: 0,
+    };
+
+    createDiscountMutation.mutate(discountData);
   };
 
   const handleDelete = (id: string) => {
@@ -242,8 +268,10 @@ export function DiscountSettings() {
               <Switch
                 checked={discount.isActive}
                 onCheckedChange={(checked) =>
-                  // Add toggle mutation here
-                  console.log("Toggle:", checked)
+                  toggleDiscountMutation.mutate({
+                    id: discount._id,
+                    isActive: checked,
+                  })
                 }
               />
               <Button

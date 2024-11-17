@@ -95,9 +95,10 @@ interface ShippingRate {
 }
 
 interface Discount {
+  code: string;
   amount: number;
   type: "percentage" | "fixed";
-  code: string;
+  value: number;
 }
 
 interface DeliveryPoint {
@@ -200,7 +201,17 @@ const validateDiscount = async (
     },
     await axiosHeaders()
   );
-  return response.data;
+
+  if (!response.data.discount) {
+    throw new Error("Invalid discount");
+  }
+
+  return {
+    code,
+    amount: response.data.discount,
+    type: response.data.type,
+    value: response.data.value,
+  };
 };
 
 const fetchDeliveryPoints = async (): Promise<DeliveryPoint[]> => {
@@ -369,7 +380,14 @@ export default function CheckoutPage() {
             houseNumber: form.getValues("shippingDetails.houseNumber"),
             contactNumber: form.getValues("shippingDetails.contactNumber"),
           },
-          discountCode: appliedDiscount?.code,
+          discount: appliedDiscount
+            ? {
+                code: appliedDiscount.code,
+                type: appliedDiscount.type,
+                value: appliedDiscount.value,
+                amount: discountAmount,
+              }
+            : null,
           tax: {
             name: taxConfig?.name,
             rate: taxConfig?.rate,
@@ -420,7 +438,7 @@ export default function CheckoutPage() {
   const discountAmount = useMemo(() => {
     if (!appliedDiscount) return 0;
     return appliedDiscount.type === "percentage"
-      ? subtotal * (appliedDiscount.amount / 100)
+      ? (subtotal * appliedDiscount.value) / 100
       : appliedDiscount.amount;
   }, [appliedDiscount, subtotal]);
 
@@ -723,9 +741,11 @@ export default function CheckoutPage() {
                     {appliedDiscount && (
                       <div className="flex justify-between text-green-600">
                         <span>
-                          Discount ({appliedDiscount.code})
-                          {appliedDiscount.type === "percentage" &&
-                            ` - ${appliedDiscount.amount}%`}
+                          Discount ({appliedDiscount.code}
+                          {appliedDiscount.type === "percentage"
+                            ? ` - ${appliedDiscount.value}%`
+                            : ""}
+                          )
                         </span>
                         <span className="font-medium">
                           -{formatPrice(discountAmount)}
