@@ -71,13 +71,13 @@ export default function ProductDetails({
             <span className="font-semibold">Made in:</span> {product.madeIn}
           </div>
         </div>
-        <div className="flex items-center p-1.5 sm:p-2.5 bg-gray-300 rounded-xl w-fit relative backdrop-blur-sm">
-          <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-foreground" />
+        <div className="flex items-center p-2.5 sm:p-4 bg-gray-200 rounded-xl w-fit relative backdrop-blur-sm">
+          <Tag className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-foreground" />
           <div className="flex flex-col">
-            <p className="text-sm sm:text-base lg:text-lg font-bold text-foreground tracking-tight">
+            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
               {formatPrice(product.price)}
             </p>
-            <span className="text-[8px] sm:text-[10px] lg:text-xs text-foreground/80">
+            <span className="text-[10px] sm:text-xs lg:text-sm text-foreground/80">
               Price for 4 pieces
             </span>
           </div>
