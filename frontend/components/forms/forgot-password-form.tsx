@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -19,6 +19,7 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
+import { sendPasswordResetEmail, initEmailJS } from "@/lib/emailService";
 
 const INITIAL_VALUES = { email: "" };
 
@@ -37,11 +38,18 @@ export default function ForgotPasswordForm() {
   });
 
   const { mutate: requestPasswordReset, isPending } = useMutation({
-    mutationFn: async (data: ForgotPasswordValues) =>
-      await axios.post(
+    mutationFn: async (data: ForgotPasswordValues) => {
+      const response = await axios.post(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/forgot-password`,
         data
-      ),
+      );
+
+      if (response.data.resetLink) {
+        await sendPasswordResetEmail(data.email, response.data.resetLink);
+      }
+
+      return response;
+    },
     onSuccess: () => {
       setIsEmailSent(true);
       toast.success("Reset instructions sent to your email", {
@@ -69,6 +77,10 @@ export default function ForgotPasswordForm() {
     },
     [requestPasswordReset]
   );
+
+  useEffect(() => {
+    initEmailJS();
+  }, []);
 
   if (isEmailSent) {
     return (

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -18,6 +19,7 @@ import {
 import { useRouter, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Lock } from "lucide-react";
+import { sendPasswordResetSuccessEmail, initEmailJS } from "@/lib/emailService";
 
 // Password validation schema
 const resetPasswordSchema = z
@@ -47,6 +49,10 @@ export default function ResetPasswordForm() {
   const router = useRouter();
   const token = useSearchParams().get("token");
 
+  useEffect(() => {
+    initEmailJS();
+  }, []);
+
   const form = useForm<ResetPasswordValues>({
     resolver: zodResolver(resetPasswordSchema),
     defaultValues: INITIAL_VALUES,
@@ -60,6 +66,20 @@ export default function ResetPasswordForm() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/reset-password/${token}`,
         { newPassword: data.password }
       );
+
+      // Send success email if the response includes user data
+      if (response.data.user) {
+        try {
+          await sendPasswordResetSuccessEmail(
+            response.data.user.email,
+            response.data.user.username
+          );
+        } catch (emailError) {
+          console.error("Failed to send success email:", emailError);
+          // Don't throw the error as we don't want to affect the password reset
+        }
+      }
+
       return response.data;
     },
     onSuccess: () => {

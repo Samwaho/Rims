@@ -1,7 +1,6 @@
 import Order from "../models/order.model.js";
 import Cart from "../models/cart.model.js";
 import Product from "../models/product.model.js";
-import { sendOrderConfirmationEmail } from "../utils/sendVerificationEmail.js";
 import { errorHandler } from "../utils/error.js";
 import Discount from "../models/discount.model.js";
 import ShippingZone from "../models/shipping.model.js";
@@ -169,22 +168,6 @@ export const createOrder = async (req, res, next) => {
       .populate("user", "username email")
       .populate("products.product", "name price images")
       .lean();
-
-    const orderForEmail = {
-      ...populatedOrder,
-      totalAmount: Number(populatedOrder.total),
-      _id: populatedOrder._id.toString(),
-      products: populatedOrder.products.map((item) => ({
-        ...item,
-        product: {
-          ...item.product,
-          price: Number(item.product.price),
-        },
-        quantity: Number(item.quantity),
-      })),
-    };
-
-    await sendOrderConfirmationEmail(populatedOrder.user.email, orderForEmail);
 
     res.status(201).json({
       message: "Order created successfully",

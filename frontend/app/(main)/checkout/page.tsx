@@ -67,6 +67,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { sendOrderConfirmationEmail, initEmailJS } from "@/lib/emailService";
+import emailjs from "@emailjs/browser";
 
 // Types
 interface Product {
@@ -371,6 +373,18 @@ export default function CheckoutPage() {
         },
         await axiosHeaders()
       );
+
+      // Send confirmation email
+      try {
+        await sendOrderConfirmationEmail(
+          response.data.order.user.email,
+          response.data.order
+        );
+      } catch (emailError) {
+        console.error("Failed to send confirmation email:", emailError);
+        // Don't throw the error as we don't want to affect the order creation
+      }
+
       return response.data.order._id;
     },
     onSuccess: (orderId) => {

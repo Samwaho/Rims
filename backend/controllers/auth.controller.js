@@ -163,13 +163,15 @@ export const forgotPasswordController = async (req, res, next) => {
     await user.save();
 
     const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
-    const emailSent = await sendResetEmail(email, resetLink);
 
-    if (!emailSent) {
-      return errorHandler(res, 500, "Error sending reset email");
-    }
-
-    return res.status(200).json(genericResponse);
+    return res.status(200).json({
+      ...genericResponse,
+      resetLink,
+      user: {
+        email: user.email,
+        username: user.firstName + " " + user.lastName,
+      },
+    });
   } catch (error) {
     next(error);
   }
@@ -205,8 +207,13 @@ export const resetPasswordController = async (req, res, next) => {
     user.resetPasswordExpires = undefined;
     await user.save();
 
-    await sendPasswordResetSuccessEmail(user.email);
-    return res.status(200).json({ message: "Password reset successfully" });
+    return res.status(200).json({
+      message: "Password reset successfully",
+      user: {
+        email: user.email,
+        username: user.firstName + " " + user.lastName,
+      },
+    });
   } catch (error) {
     next(error);
   }
