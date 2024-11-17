@@ -12,6 +12,7 @@ import orderRouter from "./routes/order.route.js";
 import discountRoute from "./routes/discount.route.js";
 import shippingRoute from "./routes/shipping.route.js";
 import taxRoute from "./routes/tax.route.js";
+import userRouter from "./routes/user.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -39,6 +40,7 @@ app.use(cors()); // Allow all origins
 
 // API Routes
 app.use("/api/auth", authRouter);
+app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", orderRouter);

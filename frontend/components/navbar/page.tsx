@@ -36,6 +36,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { NavSearch } from "./NavSearch";
 import { UserDropdown } from "./UserDropdown";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useUser } from "@/hooks/useUser";
 
 interface NavbarProps {
   initialLoggedIn: boolean;
@@ -58,6 +60,7 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
   const [loggedIn, setLoggedIn] = useState(initialLoggedIn);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const { user } = useUser();
 
   // Handle scroll effect
   useEffect(() => {
@@ -139,6 +142,8 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
         );
       }
 
+      const initials = user ? `${user.firstName[0]}${user.lastName[0]}` : "";
+
       return (
         <>
           <Link href="/cart" className={`relative ${isMobile ? "w-full" : ""}`}>
@@ -153,12 +158,18 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
             <CartCount />
           </Link>
           {!isMobile && (
-            <UserDropdown onNavigate={router.push} isAdmin={isAdmin} />
+            <UserDropdown onNavigate={router.push} isAdmin={isAdmin}>
+              <Avatar className="h-8 w-8">
+                <AvatarFallback className="bg-primary text-white">
+                  {initials.toUpperCase()}
+                </AvatarFallback>
+              </Avatar>
+            </UserDropdown>
           )}
         </>
       );
     },
-    [loggedIn, handleDrawerLinkClick, router, isAdmin]
+    [loggedIn, handleDrawerLinkClick, router, isAdmin, user]
   );
 
   return (
@@ -201,7 +212,15 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
 
           <div className="flex items-center gap-2 lg:hidden">
             {loggedIn && (
-              <UserDropdown onNavigate={router.push} isAdmin={isAdmin} />
+              <UserDropdown onNavigate={router.push} isAdmin={isAdmin}>
+                <Avatar className="h-8 w-8">
+                  <AvatarFallback className="bg-primary text-white">
+                    {user
+                      ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
+                      : ""}
+                  </AvatarFallback>
+                </Avatar>
+              </UserDropdown>
             )}
 
             <Drawer

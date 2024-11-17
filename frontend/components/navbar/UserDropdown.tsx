@@ -1,4 +1,9 @@
-import { IoLogOutOutline, IoPersonOutline } from "react-icons/io5";
+import {
+  IoLogOutOutline,
+  IoPersonOutline,
+  IoCartOutline,
+  IoSettingsOutline,
+} from "react-icons/io5";
 import { Button } from "../ui/button";
 import {
   DropdownMenu,
@@ -13,54 +18,90 @@ import { logout } from "@/lib/actions";
 interface UserDropdownProps {
   onNavigate: (path: string) => void;
   isAdmin?: boolean;
+  children: React.ReactNode;
 }
 
-export const UserDropdown = ({ onNavigate, isAdmin }: UserDropdownProps) => (
+export const UserDropdown = ({
+  onNavigate,
+  isAdmin,
+  children,
+}: UserDropdownProps) => (
   <DropdownMenu>
     <DropdownMenuTrigger asChild>
       <Button
-        variant="outline"
-        size="icon"
-        className="h-8 w-8 md:h-10 md:w-10 rounded-full bg-gray-200 transform hover:scale-105 transition-all duration-300"
+        variant="ghost"
+        className="relative h-8 w-8 rounded-full hover:ring-2 hover:ring-primary/20 transition-all duration-200"
       >
-        <IoPersonOutline size={20} />
+        {children}
       </Button>
     </DropdownMenuTrigger>
     <DropdownMenuContent
-      className="w-56 animate-in slide-in-from-top-2"
+      className="w-64 animate-in slide-in-from-top-2 p-2"
       align="end"
     >
-      <DropdownMenuLabel>My Account</DropdownMenuLabel>
-      <DropdownMenuSeparator />
+      <DropdownMenuLabel className="font-normal p-2">
+        <div className="flex flex-col space-y-1">
+          <p className="text-sm font-semibold leading-none text-primary">
+            My Account
+          </p>
+          <p className="text-xs leading-none text-muted-foreground mt-1">
+            Manage your account settings and preferences
+          </p>
+        </div>
+      </DropdownMenuLabel>
+      <DropdownMenuSeparator className="my-2" />
       <DropdownMenuItem
-        className="cursor-pointer hover:bg-primary/10 transition-colors"
+        className="cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-3 p-3 rounded-md"
         onClick={() => onNavigate("/profile")}
       >
-        Profile
+        <IoPersonOutline className="h-5 w-5 text-primary" />
+        <div className="flex flex-col">
+          <span className="font-medium">Profile</span>
+          <span className="text-xs text-muted-foreground">
+            View and edit your profile
+          </span>
+        </div>
       </DropdownMenuItem>
       <DropdownMenuItem
-        className="cursor-pointer hover:bg-primary/10 transition-colors"
+        className="cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-3 p-3 rounded-md"
         onClick={() => onNavigate("/orders")}
       >
-        Orders
+        <IoCartOutline className="h-5 w-5 text-primary" />
+        <div className="flex flex-col">
+          <span className="font-medium">Orders</span>
+          <span className="text-xs text-muted-foreground">
+            View your order history
+          </span>
+        </div>
       </DropdownMenuItem>
       {isAdmin && (
         <DropdownMenuItem
-          className="cursor-pointer hover:bg-primary/10 transition-colors"
+          className="cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-3 p-3 rounded-md"
           onClick={() => onNavigate("/admin")}
         >
-          Admin Dashboard
+          <IoSettingsOutline className="h-5 w-5 text-primary" />
+          <div className="flex flex-col">
+            <span className="font-medium">Admin Dashboard</span>
+            <span className="text-xs text-muted-foreground">
+              Manage site settings
+            </span>
+          </div>
         </DropdownMenuItem>
       )}
-      <DropdownMenuSeparator />
+      <DropdownMenuSeparator className="my-2" />
       <form action={logout}>
         <DropdownMenuItem
-          className="cursor-pointer flex items-center gap-2 text-gray-600 hover:text-red-600 transition-colors"
+          className="cursor-pointer flex items-center gap-3 p-3 rounded-md text-red-600 hover:text-red-700 hover:bg-red-50 transition-colors"
           asChild
         >
-          <button className="w-full flex items-center gap-2">
-            <IoLogOutOutline size={20} />
-            <span>Logout</span>
+          <button className="w-full flex items-center gap-3">
+            <IoLogOutOutline className="h-5 w-5" />
+            <div className="flex flex-col items-start">
+              <span className="font-medium">Logout</span>
+              <span className="text-xs text-red-400">
+                Sign out of your account
+              </span>
+            </div>
           </button>
         </DropdownMenuItem>
       </form>
