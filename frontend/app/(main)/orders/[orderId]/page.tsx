@@ -5,7 +5,14 @@ import axios from "axios";
 import { axiosHeaders } from "@/lib/actions";
 import { formatPrice } from "@/lib/utils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle, Package, Truck, Clock, ArrowLeft } from "lucide-react";
+import {
+  CheckCircle,
+  Package,
+  Plane,
+  Clock,
+  ArrowLeft,
+  Truck,
+} from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
@@ -34,7 +41,13 @@ interface Order {
   taxRate: number;
   shippingCost: number;
   total: number;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  status:
+    | "pending"
+    | "processing"
+    | "in_transit"
+    | "shipped"
+    | "delivered"
+    | "cancelled";
   orderDate: string;
   paymentMethod: "mpesa" | "bank";
   paymentStatus: "pending" | "completed" | "failed" | "refunded";
@@ -67,6 +80,12 @@ const ORDER_STATUS = {
     bgColor: "bg-blue-50",
     text: "Processing",
   },
+  in_transit: {
+    icon: Plane,
+    color: "text-orange-500",
+    bgColor: "bg-orange-50",
+    text: "In Transit",
+  },
   shipped: {
     icon: Truck,
     color: "text-purple-500",
@@ -90,7 +109,7 @@ const ORDER_STATUS = {
 const getOrderStatus = (status: Order["status"]) => ORDER_STATUS[status];
 
 const OrderTimeline = memo(({ status }: { status: Order["status"] }) => {
-  const steps = ["pending", "processing", "shipped", "delivered"];
+  const steps = ["pending", "processing", "in_transit", "shipped", "delivered"];
   const currentIndex = steps.indexOf(status);
 
   return (

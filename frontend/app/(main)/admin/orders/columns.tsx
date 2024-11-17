@@ -13,6 +13,13 @@ import {
 import { PaymentStatusBadge } from "./components/PaymentStatusBadge";
 import { memo } from "react";
 import { formatDate, formatPrice } from "@/lib/utils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+  TooltipProvider,
+} from "@/components/ui/tooltip";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 export type Order = {
   _id: string;
@@ -44,6 +51,7 @@ export type Order = {
 const STATUS_COLORS = {
   pending: "bg-yellow-500/90 hover:bg-yellow-500",
   processing: "bg-blue-500/90 hover:bg-blue-500",
+  in_transit: "bg-orange-500/90 hover:bg-orange-500",
   shipped: "bg-purple-500/90 hover:bg-purple-500",
   delivered: "bg-green-500/90 hover:bg-green-500",
   cancelled: "bg-primary/90 hover:bg-primary",
@@ -62,30 +70,56 @@ interface ColumnProps {
 
 // Memoized cell components
 const CustomerCell = memo(({ user }: { user: Order["user"] }) => (
-  <div className="space-y-1">
-    <p className="font-medium text-sm truncate max-w-[150px] sm:max-w-none">
-      {user.username}
-    </p>
-    <p className="text-xs text-muted-foreground truncate max-w-[150px] sm:max-w-none">
-      {user.email}
-    </p>
-  </div>
+  <TooltipProvider>
+    <Tooltip>
+      <TooltipTrigger>
+        <div className="space-y-1">
+          <p className="font-medium text-sm truncate max-w-[120px] md:max-w-[180px] lg:max-w-[250px]">
+            {user.username}
+          </p>
+          <p className="text-xs text-muted-foreground truncate max-w-[120px] md:max-w-[180px] lg:max-w-[250px]">
+            {user.email}
+          </p>
+        </div>
+      </TooltipTrigger>
+      <TooltipContent>
+        <div className="space-y-1">
+          <p className="font-medium">{user.username}</p>
+          <p className="text-sm">{user.email}</p>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  </TooltipProvider>
 ));
 CustomerCell.displayName = "CustomerCell";
 
 const ProductsCell = memo(({ products }: { products: Order["products"] }) => (
-  <div className="space-y-1.5 max-h-[100px] overflow-y-auto pr-2">
-    {products.map((item, index) => (
-      <div key={index} className="text-sm flex items-center gap-1.5">
-        <span className="font-medium truncate max-w-[150px] sm:max-w-[200px]">
-          {item.product?.name || "Deleted Product"}
-        </span>
-        <span className="text-muted-foreground whitespace-nowrap">
-          × {item.quantity}
-        </span>
-      </div>
-    ))}
-  </div>
+  <ScrollArea className="h-[100px] w-full pr-4">
+    <div className="space-y-2">
+      {products.map((item, index) => (
+        <TooltipProvider key={index}>
+          <Tooltip>
+            <TooltipTrigger>
+              <div className="text-sm flex items-center gap-2 p-1 rounded hover:bg-accent/50 transition-colors">
+                <span className="font-medium truncate max-w-[120px] md:max-w-[180px] lg:max-w-[250px]">
+                  {item.product?.name || "Deleted Product"}
+                </span>
+                <Badge variant="secondary" className="h-5 px-1.5">
+                  {item.quantity}
+                </Badge>
+              </div>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>{item.product?.name || "Deleted Product"}</p>
+              <p className="text-sm text-muted-foreground">
+                Quantity: {item.quantity}
+              </p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      ))}
+    </div>
+  </ScrollArea>
 ));
 ProductsCell.displayName = "ProductsCell";
 
@@ -103,15 +137,16 @@ const StatusSelect = memo(
       defaultValue={status}
       onValueChange={(value) => onUpdate(orderId, value)}
     >
-      <SelectTrigger className="w-[110px] sm:w-[140px] h-8">
+      <SelectTrigger className="w-[130px] md:w-[150px] h-9">
         <SelectValue placeholder="Update status" />
       </SelectTrigger>
       <SelectContent>
-        {Object.keys(STATUS_COLORS).map((status) => (
-          <SelectItem key={status} value={status}>
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-          </SelectItem>
-        ))}
+        <SelectItem value="pending">Pending</SelectItem>
+        <SelectItem value="processing">Processing</SelectItem>
+        <SelectItem value="in_transit">In Transit</SelectItem>
+        <SelectItem value="shipped">Shipped</SelectItem>
+        <SelectItem value="delivered">Delivered</SelectItem>
+        <SelectItem value="cancelled">Cancelled</SelectItem>
       </SelectContent>
     </Select>
   )
@@ -151,7 +186,11 @@ export const createColumns = ({
     header: "Date",
     cell: ({ row }) => {
       const date: string = row.getValue("orderDate");
-      return <div className="font-medium">{formatDate(date)}</div>;
+      return (
+        <div className="font-medium text-sm whitespace-nowrap">
+          {formatDate(date)}
+        </div>
+      );
     },
   },
   {
@@ -160,9 +199,9 @@ export const createColumns = ({
       <DataTableColumnHeader column={column} title="Payment" />
     ),
     cell: ({ row }) => (
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <PaymentStatusBadge status={row.original.paymentStatus} />
-        <div className="text-xs text-muted-foreground">
+        <div className="text-xs font-medium text-muted-foreground">
           {row.original.paymentMethod.toUpperCase()}
         </div>
       </div>
@@ -177,9 +216,9 @@ export const createColumns = ({
       <Badge
         className={`${getStatusColor(
           row.original.status
-        )} text-white capitalize transition-colors duration-200`}
+        )} text-white capitalize transition-colors duration-200 whitespace-nowrap`}
       >
-        {row.original.status}
+        {row.original.status.replace("_", " ")}
       </Badge>
     ),
   },

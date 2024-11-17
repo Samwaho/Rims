@@ -230,6 +230,18 @@ export const updateOrderStatus = async (req, res, next) => {
       throw { status: 400, message: "Status is required" };
     }
 
+    const validStatuses = [
+      "pending",
+      "processing",
+      "in_transit",
+      "shipped",
+      "delivered",
+      "cancelled",
+    ];
+    if (!validStatuses.includes(status)) {
+      throw { status: 400, message: "Invalid status value" };
+    }
+
     const order = await Order.findById(orderId);
     if (!order) {
       throw { status: 404, message: "Order not found" };
