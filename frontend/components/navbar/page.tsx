@@ -123,6 +123,10 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
     [handleDrawerLinkClick]
   );
 
+  const handleLogout = useCallback(() => {
+    setLoggedIn(false);
+  }, []);
+
   const renderAuthButton = useCallback(
     (isMobile = false) => {
       if (!loggedIn) {
@@ -158,7 +162,11 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
             <CartCount />
           </Link>
           {!isMobile && (
-            <UserDropdown onNavigate={router.push} isAdmin={isAdmin}>
+            <UserDropdown
+              onNavigate={router.push}
+              isAdmin={isAdmin}
+              onLogout={handleLogout}
+            >
               <Avatar className="h-8 w-8">
                 <AvatarFallback className="bg-primary text-white">
                   {initials.toUpperCase()}
@@ -169,7 +177,7 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
         </>
       );
     },
-    [loggedIn, handleDrawerLinkClick, router, isAdmin, user]
+    [loggedIn, handleDrawerLinkClick, router, isAdmin, user, handleLogout]
   );
 
   return (
@@ -212,7 +220,11 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
 
           <div className="flex items-center gap-2 lg:hidden">
             {loggedIn && (
-              <UserDropdown onNavigate={router.push} isAdmin={isAdmin}>
+              <UserDropdown
+                onNavigate={router.push}
+                isAdmin={isAdmin}
+                onLogout={handleLogout}
+              >
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-primary text-white">
                     {user
