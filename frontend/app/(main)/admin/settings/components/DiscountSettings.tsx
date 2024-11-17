@@ -16,7 +16,9 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { axiosHeaders } from "@/lib/actions";
-import { Loader2, Plus, Trash2 } from "lucide-react";
+import { Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { format } from "date-fns";
 
 interface DiscountCode {
   _id: string;
@@ -27,8 +29,29 @@ interface DiscountCode {
   maxUses: number;
   usedCount: number;
   isActive: boolean;
-  expiryDate: string;
+  endDate: string;
 }
+
+const formatDate = (dateString: string) => {
+  try {
+    console.log("Incoming date string:", dateString);
+
+    if (!dateString) {
+      return "No date set";
+    }
+
+    const date = new Date(dateString);
+
+    if (isNaN(date.getTime())) {
+      return "Invalid date";
+    }
+
+    return format(date, "PP");
+  } catch (error) {
+    console.error("Date formatting error:", error, "for date:", dateString);
+    return "Invalid date";
+  }
+};
 
 export function DiscountSettings() {
   const queryClient = useQueryClient();
@@ -48,6 +71,7 @@ export function DiscountSettings() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discounts`,
         await axiosHeaders()
       );
+      console.log("API response discounts:", data.discounts);
       return data.discounts;
     },
   });
@@ -142,148 +166,202 @@ export function DiscountSettings() {
 
   if (isLoading) {
     return (
-      <div className="flex justify-center py-8">
-        <Loader2 className="w-6 h-6 animate-spin text-primary" />
+      <div className="flex justify-center items-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Discount Codes</h2>
+    <div className="max-w-5xl mx-auto space-y-8 p-4 md:p-6">
+      <div className="space-y-6">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight">Discount Codes</h2>
+        </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <Label htmlFor="code">Code</Label>
-            <Input
-              id="code"
-              value={newDiscount.code}
-              onChange={(e) =>
-                setNewDiscount({ ...newDiscount, code: e.target.value })
-              }
-              placeholder="SUMMER2024"
-            />
+        <form
+          onSubmit={handleSubmit}
+          className="space-y-6 p-6 border rounded-lg bg-card"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="space-y-2">
+              <Label htmlFor="code">Code *</Label>
+              <Input
+                id="code"
+                value={newDiscount.code}
+                onChange={(e) =>
+                  setNewDiscount({ ...newDiscount, code: e.target.value })
+                }
+                placeholder="SUMMER2024"
+                className="uppercase"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="type">Type *</Label>
+              <Select
+                value={newDiscount.type}
+                onValueChange={(value) =>
+                  setNewDiscount({ ...newDiscount, type: value })
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="percentage">Percentage Off</SelectItem>
+                  <SelectItem value="fixed">Fixed Amount Off</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="value">
+                {newDiscount.type === "percentage"
+                  ? "Percentage Off *"
+                  : "Amount Off *"}
+              </Label>
+              <Input
+                id="value"
+                type="number"
+                step={newDiscount.type === "percentage" ? "1" : "0.01"}
+                value={newDiscount.value}
+                onChange={(e) =>
+                  setNewDiscount({ ...newDiscount, value: e.target.value })
+                }
+                placeholder={newDiscount.type === "percentage" ? "10" : "1000"}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="minPurchase">Minimum Purchase Amount</Label>
+              <Input
+                id="minPurchase"
+                type="number"
+                step="0.01"
+                value={newDiscount.minPurchase}
+                onChange={(e) =>
+                  setNewDiscount({
+                    ...newDiscount,
+                    minPurchase: e.target.value,
+                  })
+                }
+                placeholder="1000"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="maxUses">Maximum Number of Uses</Label>
+              <Input
+                id="maxUses"
+                type="number"
+                value={newDiscount.maxUses}
+                onChange={(e) =>
+                  setNewDiscount({ ...newDiscount, maxUses: e.target.value })
+                }
+                placeholder="100"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="expiryDate">Expiry Date *</Label>
+              <Input
+                id="expiryDate"
+                type="date"
+                value={newDiscount.expiryDate}
+                onChange={(e) =>
+                  setNewDiscount({ ...newDiscount, expiryDate: e.target.value })
+                }
+                min={new Date().toISOString().split("T")[0]}
+              />
+            </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="type">Type</Label>
-            <Select
-              value={newDiscount.type}
-              onValueChange={(value) =>
-                setNewDiscount({ ...newDiscount, type: value })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="percentage">Percentage</SelectItem>
-                <SelectItem value="fixed">Fixed Amount</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <Alert className="mt-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Fields marked with * are required
+            </AlertDescription>
+          </Alert>
 
-          <div className="space-y-2">
-            <Label htmlFor="value">
-              {newDiscount.type === "percentage" ? "Percentage" : "Amount"}
-            </Label>
-            <Input
-              id="value"
-              type="number"
-              step={newDiscount.type === "percentage" ? "1" : "0.01"}
-              value={newDiscount.value}
-              onChange={(e) =>
-                setNewDiscount({ ...newDiscount, value: e.target.value })
-              }
-              placeholder={newDiscount.type === "percentage" ? "10" : "1000"}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="minPurchase">Minimum Purchase (Optional)</Label>
-            <Input
-              id="minPurchase"
-              type="number"
-              step="0.01"
-              value={newDiscount.minPurchase}
-              onChange={(e) =>
-                setNewDiscount({ ...newDiscount, minPurchase: e.target.value })
-              }
-              placeholder="1000"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="maxUses">Maximum Uses (Optional)</Label>
-            <Input
-              id="maxUses"
-              type="number"
-              value={newDiscount.maxUses}
-              onChange={(e) =>
-                setNewDiscount({ ...newDiscount, maxUses: e.target.value })
-              }
-              placeholder="100"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="expiryDate">Expiry Date</Label>
-            <Input
-              id="expiryDate"
-              type="date"
-              value={newDiscount.expiryDate}
-              onChange={(e) =>
-                setNewDiscount({ ...newDiscount, expiryDate: e.target.value })
-              }
-            />
-          </div>
-
-          <Button type="submit" className="col-span-2">
-            <Plus className="w-4 h-4 mr-2" />
+          <Button
+            type="submit"
+            className="w-full md:w-auto"
+            disabled={createDiscountMutation.isPending}
+          >
+            {createDiscountMutation.isPending ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" />
+            )}
             Create Discount Code
           </Button>
         </form>
       </div>
 
       <div className="space-y-4">
-        {discounts?.map((discount: DiscountCode) => (
-          <div
-            key={discount._id}
-            className="flex items-center justify-between p-4 border rounded-lg"
-          >
-            <div className="space-y-1">
-              <h3 className="font-medium">{discount.code}</h3>
-              <p className="text-sm text-gray-500">
-                {discount.type === "percentage"
-                  ? `${discount.value}% off`
-                  : `KES ${discount.value} off`}
-              </p>
-              <p className="text-xs text-gray-400">
-                Used {discount.usedCount} times
-                {discount.maxUses && ` (Max: ${discount.maxUses})`}
-              </p>
-            </div>
-            <div className="flex items-center gap-4">
-              <Switch
-                checked={discount.isActive}
-                onCheckedChange={(checked) =>
-                  toggleDiscountMutation.mutate({
-                    id: discount._id,
-                    isActive: checked,
-                  })
-                }
-              />
-              <Button
-                variant="destructive"
-                size="icon"
-                onClick={() => handleDelete(discount._id)}
-              >
-                <Trash2 className="w-4 h-4" />
-              </Button>
-            </div>
+        {discounts?.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            No discount codes found. Create one above.
           </div>
-        ))}
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {discounts?.map((discount: DiscountCode) => (
+              <div
+                key={discount._id}
+                className={`p-6 border rounded-lg transition-colors ${
+                  !discount.isActive ? "bg-muted" : "bg-card"
+                }`}
+              >
+                <div className="flex flex-col space-y-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h3 className="text-lg font-semibold">{discount.code}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {discount.type === "percentage"
+                          ? `${discount.value}% off`
+                          : `KES ${discount.value.toLocaleString()} off`}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <Switch
+                        checked={discount.isActive}
+                        onCheckedChange={(checked) =>
+                          toggleDiscountMutation.mutate({
+                            id: discount._id,
+                            isActive: checked,
+                          })
+                        }
+                      />
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                        onClick={() => handleDelete(discount._id)}
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-1 text-sm text-muted-foreground">
+                    <p>
+                      Used {discount.usedCount} times
+                      {discount.maxUses && ` of ${discount.maxUses}`}
+                    </p>
+                    {discount.minPurchase > 0 && (
+                      <p>
+                        Min. purchase: KES{" "}
+                        {discount.minPurchase.toLocaleString()}
+                      </p>
+                    )}
+                    <p>Expires: {formatDate(discount.endDate)}</p>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
