@@ -169,7 +169,7 @@ const fetchTaxConfig = async (): Promise<TaxConfig> => {
     `${BACKEND_URL}/api/tax`,
     await axiosHeaders()
   );
-  return response.data[0]; // Assuming we're using the first tax config
+  return response.data[0] || { rate: 0, name: "No Tax" };
 };
 
 const fetchShippingRate = async (
@@ -370,6 +370,11 @@ export default function CheckoutPage() {
             contactNumber: form.getValues("shippingDetails.contactNumber"),
           },
           discountCode: appliedDiscount?.code,
+          tax: {
+            name: taxConfig?.name,
+            rate: taxConfig?.rate,
+            amount: taxAmount,
+          },
         },
         await axiosHeaders()
       );
@@ -407,10 +412,10 @@ export default function CheckoutPage() {
   });
 
   // Memoized Values
-  const taxAmount = useMemo(
-    () => (taxConfig ? subtotal * (taxConfig.rate / 100) : 0),
-    [subtotal, taxConfig]
-  );
+  const taxAmount = useMemo(() => {
+    if (!taxConfig) return 0;
+    return Math.round(subtotal * (taxConfig.rate / 100));
+  }, [subtotal, taxConfig]);
 
   const discountAmount = useMemo(() => {
     if (!appliedDiscount) return 0;
@@ -681,8 +686,11 @@ export default function CheckoutPage() {
                     </div>
                     {taxConfig && (
                       <div className="flex justify-between text-gray-700">
-                        <span>
-                          {taxConfig.name} ({taxConfig.rate}%)
+                        <span className="flex items-center gap-2">
+                          <Info className="w-4 h-4 text-gray-500" />
+                          <span>
+                            {taxConfig.name} ({taxConfig.rate}%)
+                          </span>
                         </span>
                         <span className="font-medium">
                           {formatPrice(taxAmount)}

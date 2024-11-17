@@ -29,7 +29,7 @@ export function TaxSettings() {
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tax`,
         await axiosHeaders()
       );
-      return data.taxConfigs;
+      return data;
     },
   });
 
