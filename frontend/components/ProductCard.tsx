@@ -52,60 +52,60 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
   );
 
   return (
-    <div className="group bg-background rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-primary/20">
+    <div className="group bg-background rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-primary/20">
       <Link href={`/products/${product._id}`} className="block relative">
-        <div className="relative w-full h-52 overflow-hidden">
+        <div className="relative w-full h-40 sm:h-52 overflow-hidden">
           <Image
             src={product.images[0]}
             alt={product.name}
             fill
             className="object-cover group-hover:scale-110 transition-transform duration-500 ease-in-out"
-            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+            sizes="(max-width: 640px) 100vw, (max-width: 768px) 50vw, 33vw"
             priority
           />
         </div>
-        <div className="p-4 sm:p-5">
-          <div className="flex items-center p-2 sm:p-3 bg-primary/5 rounded-2xl w-fit mb-3 sm:mb-4 relative backdrop-blur-sm">
-            <Tag className="w-4 h-4 mr-2 text-primary" />
+        <div className="p-3 sm:p-4">
+          <div className="flex items-center p-1.5 sm:p-2.5 bg-primary/5 rounded-xl w-fit mb-2 sm:mb-3 relative backdrop-blur-sm">
+            <Tag className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 text-primary" />
             <div className="flex flex-col">
-              <p className="text-base sm:text-lg lg:text-xl font-bold text-primary tracking-tight">
+              <p className="text-sm sm:text-base lg:text-lg font-bold text-primary tracking-tight">
                 {formatPrice(product.price)}
               </p>
-              <span className="text-[10px] sm:text-xs text-primary/80">
+              <span className="text-[8px] sm:text-[10px] lg:text-xs text-primary/80">
                 Price for 4 pieces
               </span>
             </div>
           </div>
-          <div className="flex flex-col gap-2">
-            <h3 className="text-base sm:text-lg font-bold line-clamp-1 group-hover:text-primary transition-colors duration-300">
+          <div className="flex flex-col gap-1.5 sm:gap-2">
+            <h3 className="text-sm sm:text-base font-bold line-clamp-1 group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
-            <p className="text-sm text-muted-foreground flex items-center gap-2">
+            <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
               <span className="font-medium text-foreground">Made in</span>
               <span className="inline-flex items-center">
-                <span className="w-1.5 h-1.5 rounded-full bg-primary/40 mr-2"></span>
+                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary/40 mr-1.5 sm:mr-2"></span>
                 {product.madeIn}
               </span>
             </p>
           </div>
         </div>
       </Link>
-      <div className="px-4 pb-4 sm:px-5 sm:pb-5 space-y-2.5">
+      <div className="px-3 pb-3 sm:px-4 sm:pb-4 space-y-2">
         <Button
           size="sm"
           variant="outline"
-          className="w-full h-10 transition-all duration-300 bg-gray-50 hover:bg-primary hover:text-primary-foreground group border-gray-200 hover:border-primary"
+          className="w-full h-8 sm:h-10 text-xs sm:text-sm transition-all duration-300 bg-gray-50 hover:bg-primary hover:text-primary-foreground group border-gray-200 hover:border-primary"
           onClick={handleAddToCart}
         >
-          <ShoppingCart className="w-4 h-4 mr-2.5 transition-transform group-hover:scale-110" />
+          <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 transition-transform group-hover:scale-110" />
           Add to Cart
         </Button>
         <Button
           size="sm"
-          className="w-full h-10 bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110 hover:scale-[1.02]"
+          className="w-full h-8 sm:h-10 text-xs sm:text-sm bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110 hover:scale-[1.02]"
           onClick={handleBuyNow}
         >
-          <CreditCard className="w-4 h-4 mr-2.5 transition-transform group-hover:scale-110" />
+          <CreditCard className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-2 transition-transform group-hover:scale-110" />
           Buy Now
         </Button>
       </div>
@@ -114,16 +114,16 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
 };
 
 const ProductCardSkeleton = memo(() => (
-  <div className="bg-background rounded-xl overflow-hidden shadow-md border border-gray-200 animate-pulse">
-    <Skeleton className="w-full h-52" />
-    <div className="p-5">
-      <Skeleton className="h-12 w-1/3 mb-4 rounded-xl" />
-      <Skeleton className="h-7 w-3/4 mb-2 rounded-lg" />
-      <Skeleton className="h-5 w-1/2 mb-4 rounded-lg" />
+  <div className="bg-background rounded-lg overflow-hidden shadow-sm border border-gray-200 animate-pulse">
+    <Skeleton className="w-full h-40 sm:h-52" />
+    <div className="p-3 sm:p-4">
+      <Skeleton className="h-8 sm:h-12 w-1/3 mb-3 sm:mb-4 rounded-lg" />
+      <Skeleton className="h-5 sm:h-7 w-3/4 mb-2 rounded-md" />
+      <Skeleton className="h-4 sm:h-5 w-1/2 mb-3 sm:mb-4 rounded-md" />
     </div>
-    <div className="px-5 pb-5 space-y-2.5">
-      <Skeleton className="h-10 w-full rounded-lg" />
-      <Skeleton className="h-10 w-full rounded-lg" />
+    <div className="px-3 pb-3 sm:px-4 sm:pb-4 space-y-2">
+      <Skeleton className="h-8 sm:h-10 w-full rounded-md" />
+      <Skeleton className="h-8 sm:h-10 w-full rounded-md" />
     </div>
   </div>
 ));
