@@ -1,187 +1,108 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
-import { DataTableColumnHeader } from "@/components/ui/data-table/column-header";
+import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import { Pencil, Trash2 } from "lucide-react";
+import { Edit, Trash } from "lucide-react";
 import Link from "next/link";
-import { memo } from "react";
+import { formatPrice } from "@/lib/utils";
+import Image from "next/image";
+import { cn } from "@/lib/utils";
 
-export type Product = {
-  _id: string;
-  name: string;
-  price: number;
-  description: string;
-  category: string;
-  stock: number;
-  images: string[];
-  brand: string;
-  madeIn: string;
-  specifications: Array<{ name: string; value: string }>;
-  averageRating: number;
-  reviewCount: number;
-  createdAt: string;
-};
-
-interface ColumnProps {
-  handleDelete: (productId: string) => Promise<void>;
+interface CreateColumnsProps {
+  handleDelete: (productId: string) => void;
 }
-
-// Memoized cell components for better performance
-const ImageCell = memo(
-  ({ imageUrl, name }: { imageUrl: string; name: string }) => (
-    <div className="relative w-20 h-20">
-      <img
-        src={imageUrl || "/placeholder.png"}
-        alt={name}
-        className="absolute inset-0 w-full h-full object-cover rounded-lg shadow-sm transition-transform hover:scale-105"
-        loading="lazy"
-      />
-    </div>
-  )
-);
-ImageCell.displayName = "ImageCell";
-
-const ProductDetailsCell = memo(
-  ({
-    name,
-    brand,
-    category,
-  }: {
-    name: string;
-    brand: string;
-    category: string;
-  }) => (
-    <div className="space-y-1.5 py-1">
-      <p className="font-medium text-gray-900 line-clamp-2 text-sm sm:text-base">
-        {name}
-      </p>
-      <p className="text-xs sm:text-sm text-gray-500 line-clamp-1">{brand}</p>
-      <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 transition-colors">
-        {category}
-      </span>
-    </div>
-  )
-);
-ProductDetailsCell.displayName = "ProductDetailsCell";
-
-const StockPriceCell = memo(
-  ({ price, stock }: { price: number; stock: number }) => {
-    const lowStock = stock < 10;
-    return (
-      <div className="space-y-1.5 py-1">
-        <p className="font-medium text-sm sm:text-base">
-          KES {price.toLocaleString()}
-        </p>
-        <p
-          className={`text-xs sm:text-sm font-medium ${
-            lowStock ? "text-red-500 animate-pulse" : "text-gray-500"
-          }`}
-        >
-          {stock} in stock
-          {lowStock && " (Low)"}
-        </p>
-      </div>
-    );
-  }
-);
-StockPriceCell.displayName = "StockPriceCell";
-
-const StatsCell = memo(
-  ({ rating, reviews }: { rating: number; reviews: number }) => (
-    <div className="space-y-1.5 py-1">
-      <div className="flex items-center gap-1.5">
-        <span className="text-yellow-400 animate-pulse">★</span>
-        <span className="text-sm sm:text-base font-medium">
-          {rating.toFixed(1)}
-        </span>
-      </div>
-      <p className="text-xs sm:text-sm text-gray-500">
-        {reviews.toLocaleString()} reviews
-      </p>
-    </div>
-  )
-);
-StatsCell.displayName = "StatsCell";
-
-const ActionButtons = memo(
-  ({ id, onDelete }: { id: string; onDelete: () => void }) => (
-    <div className="flex items-center gap-2">
-      <Link href={`/admin/edit/${id}`}>
-        <Button
-          variant="outline"
-          size="sm"
-          className="h-8 w-8 p-0 hover:bg-gray-100 transition-colors"
-        >
-          <Pencil className="h-4 w-4" />
-        </Button>
-      </Link>
-      <Button
-        variant="destructive"
-        size="sm"
-        className="h-8 w-8 p-0 hover:bg-red-600 transition-colors"
-        onClick={onDelete}
-      >
-        <Trash2 className="h-4 w-4" />
-      </Button>
-    </div>
-  )
-);
-ActionButtons.displayName = "ActionButtons";
 
 export const createColumns = ({
   handleDelete,
-}: ColumnProps): ColumnDef<Product>[] => [
+}: CreateColumnsProps): ColumnDef<Product, any>[] => [
   {
     accessorKey: "images",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Image" />
-    ),
+    header: "Image",
     cell: ({ row }) => (
-      <ImageCell imageUrl={row.original.images[0]} name={row.original.name} />
+      <div className="relative h-12 w-12 sm:h-16 sm:w-16 overflow-hidden rounded-lg border border-gray-200 shadow-sm transition-all duration-200 hover:shadow-md">
+        <Image
+          src={row.original.images[0] || "/placeholder.png"}
+          alt={row.original.name}
+          fill
+          className="object-cover transition-transform duration-200 hover:scale-110"
+          sizes="(max-width: 640px) 48px, 64px"
+          priority
+        />
+      </div>
     ),
   },
   {
     accessorKey: "name",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Product Details" />
-    ),
+    header: "Name",
     cell: ({ row }) => (
-      <ProductDetailsCell
-        name={row.original.name}
-        brand={row.original.brand}
-        category={row.original.category}
-      />
+      <div className="max-w-[200px] sm:max-w-none">
+        <span className="font-medium text-gray-900 line-clamp-2 sm:line-clamp-1">
+          {row.original.name}
+        </span>
+      </div>
     ),
   },
   {
     accessorKey: "price",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Stock & Price" />
-    ),
+    header: "Price",
     cell: ({ row }) => (
-      <StockPriceCell price={row.original.price} stock={row.original.stock} />
+      <span className="font-semibold text-primary whitespace-nowrap">
+        {formatPrice(row.original.price)}
+      </span>
     ),
   },
   {
-    accessorKey: "averageRating",
-    header: ({ column }) => (
-      <DataTableColumnHeader column={column} title="Stats" />
-    ),
-    cell: ({ row }) => (
-      <StatsCell
-        rating={row.original.averageRating}
-        reviews={row.original.reviewCount}
-      />
-    ),
+    accessorKey: "stock",
+    header: "Stock",
+    cell: ({ row }) => {
+      const stock = row.original.stock;
+      const isLowStock = stock < 10;
+      const isOutOfStock = stock === 0;
+
+      return (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-1.5 sm:gap-2">
+          <span className="font-medium">{stock}</span>
+          {isOutOfStock ? (
+            <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-semibold rounded-full bg-red-100 text-red-700 border border-red-200">
+              Out of Stock
+            </span>
+          ) : (
+            isLowStock && (
+              <span className="px-2 py-0.5 sm:px-2.5 sm:py-1 text-xs font-semibold rounded-full bg-amber-50 text-amber-600 border border-amber-200">
+                Low Stock
+              </span>
+            )
+          )}
+        </div>
+      );
+    },
   },
   {
-    id: "actions",
+    accessorKey: "actions",
+    header: "Actions",
     cell: ({ row }) => (
-      <ActionButtons
-        id={row.original._id}
-        onDelete={() => handleDelete(row.original._id)}
-      />
+      <div className="flex items-center gap-2 sm:gap-3">
+        <Link href={`/admin/edit/${row.original._id}`}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 w-8 sm:h-9 sm:w-9 p-0 hover:bg-primary/10 hover:text-primary hover:border-primary/30 transition-colors duration-200"
+            title="Edit product"
+          >
+            <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+          </Button>
+        </Link>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => handleDelete(row.original._id)}
+          className="h-8 w-8 sm:h-9 sm:w-9 p-0 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors duration-200"
+          title="Delete product"
+        >
+          <Trash className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        </Button>
+      </div>
     ),
   },
 ];
