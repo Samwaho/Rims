@@ -21,6 +21,7 @@ import { useRouter } from "next/navigation";
 import { axiosHeaders, setCookies } from "@/lib/actions";
 import { signInSchema } from "@/lib/utils";
 import { Mail, Lock } from "lucide-react";
+import { GoogleLoginButton } from "@/components/GoogleLoginButton";
 
 type SignInFormValues = z.infer<typeof signInSchema>;
 
@@ -134,6 +135,19 @@ export default function SignInForm() {
               "Sign In"
             )}
           </Button>
+
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-white px-2 text-muted-foreground">
+                Or continue with
+              </span>
+            </div>
+          </div>
+
+          <GoogleLoginButton />
 
           <div className="space-y-3 text-center">
             <p className="text-gray-600">

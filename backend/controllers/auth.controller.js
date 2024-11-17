@@ -218,3 +218,28 @@ export const resetPasswordController = async (req, res, next) => {
     next(error);
   }
 };
+
+export const googleAuthCallback = async (req, res, next) => {
+  try {
+    const user = req.user;
+    const accessToken = createAccessToken(user._id);
+    setAccessTokenCookie(res, accessToken);
+
+    const userResponse = { ...user._doc };
+    delete userResponse.password;
+
+    // Check if this is a new user (just signed up) or existing user
+    const isNewUser = user.createdAt === user.updatedAt;
+
+    // Redirect to frontend with success and indicate if it's a new user
+    res.redirect(
+      `${FRONTEND_URL}/auth/google/success?token=${accessToken}&isNewUser=${isNewUser}`
+    );
+  } catch (error) {
+    // Log the error for debugging
+    console.error("Google Auth Error:", error);
+
+    // Redirect to frontend with error
+    res.redirect(`${FRONTEND_URL}/auth/google/error`);
+  }
+};

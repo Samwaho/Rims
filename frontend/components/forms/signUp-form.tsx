@@ -22,6 +22,7 @@ import { useRouter } from "next/navigation";
 import { signUpSchema } from "@/lib/utils";
 import { axiosHeaders } from "@/lib/actions";
 import { Mail, Lock, User, Phone, MapPin, Building, Home } from "lucide-react";
+import { GoogleLoginButton } from "@/components/GoogleLoginButton";
 
 type SignUpFormValues = z.infer<typeof signUpSchema>;
 
@@ -243,6 +244,19 @@ export default function SignUpForm() {
             "Create Account"
           )}
         </Button>
+
+        <div className="relative">
+          <div className="absolute inset-0 flex items-center">
+            <span className="w-full border-t" />
+          </div>
+          <div className="relative flex justify-center text-xs uppercase">
+            <span className="bg-white px-2 text-muted-foreground">
+              Or continue with
+            </span>
+          </div>
+        </div>
+
+        <GoogleLoginButton />
 
         <div className="text-center">
           <p className="text-gray-600">

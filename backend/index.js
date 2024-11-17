@@ -3,6 +3,7 @@ import dotenv from "dotenv";
 import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import passport from "./config/passport.config.js";
 
 // Route imports
 import authRouter from "./routes/auth.route.js";
@@ -22,6 +23,12 @@ const app = express();
 const PORT = process.env.SERVER_PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI;
 
+// Add this after dotenv.config()
+console.log("Google OAuth credentials loaded:", {
+  clientId: process.env.GOOGLE_CLIENT_ID ? "Present" : "Missing",
+  clientSecret: process.env.GOOGLE_CLIENT_SECRET ? "Present" : "Missing",
+});
+
 // Database connection
 async function connectToDatabase() {
   try {
@@ -36,7 +43,13 @@ async function connectToDatabase() {
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-app.use(cors()); // Allow all origins
+app.use(
+  cors({
+    origin: "*",
+    credentials: true,
+  })
+);
+app.use(passport.initialize());
 
 // API Routes
 app.use("/api/auth", authRouter);

@@ -101,6 +101,10 @@ const userSchema = mongoose.Schema(
     },
     resetPasswordToken: String,
     resetPasswordExpires: Date,
+    googleId: {
+      type: String,
+      sparse: true,
+    },
   },
   { timestamps: true }
 );

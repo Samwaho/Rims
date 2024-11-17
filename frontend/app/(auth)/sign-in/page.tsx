@@ -3,9 +3,9 @@ import React from "react";
 
 const SignIn = () => {
   return (
-    <div className="w-full max-w-xl mx-auto p-4 space-y-4">
+    <div className="w-full max-w-xl mx-auto p-4">
       <SignInForm />
-      <div className="text-center space-y-4">
+      <div className="text-center mt-4">
         <p className="text-sm text-gray-600">
           Having trouble signing in?{" "}
           <a
