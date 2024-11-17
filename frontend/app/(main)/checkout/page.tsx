@@ -189,21 +189,26 @@ const fetchDeliveryPoints = async (): Promise<DeliveryPoint[]> => {
 
 // Components
 const OrderItem = React.memo(({ item }: { item: CheckoutItem }) => (
-  <div className="flex justify-between items-center bg-gray-50 p-4 rounded-lg hover:bg-gray-100 transition-colors">
-    <div className="flex items-center space-x-4">
-      <div className="w-16 h-16 relative rounded-md overflow-hidden">
+  <div className="flex justify-between items-center bg-gray-50/80 p-5 rounded-xl hover:bg-gray-100/90 transition-all duration-300 border border-gray-100">
+    <div className="flex items-center gap-5">
+      <div className="w-20 h-20 relative rounded-lg overflow-hidden shadow-sm">
         <img
           src={item.product.images[0]}
           alt={item.product.name}
-          className="object-cover w-full h-full"
+          className="object-cover w-full h-full transform hover:scale-110 transition-transform duration-300"
         />
       </div>
-      <div>
-        <p className="font-medium text-gray-900">{item.product.name}</p>
-        <p className="text-sm text-gray-500">Quantity: {item.quantity}</p>
+      <div className="space-y-1">
+        <p className="font-semibold text-gray-900 tracking-tight">
+          {item.product.name}
+        </p>
+        <div>
+          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+          <p className="text-xs text-gray-500">Price for 4 pieces per item</p>
+        </div>
       </div>
     </div>
-    <span className="font-semibold text-gray-900">
+    <span className="font-bold text-gray-900 tracking-tight">
       {formatPrice(item.product.price * item.quantity)}
     </span>
   </div>
@@ -212,25 +217,34 @@ const OrderItem = React.memo(({ item }: { item: CheckoutItem }) => (
 OrderItem.displayName = "OrderItem";
 
 const CheckoutProgress = ({ step }: { step: number }) => (
-  <div className="mb-8">
-    <div className="flex justify-between mb-2">
+  <div className="mb-10">
+    <div className="flex justify-between mb-3">
       <span
-        className={`text-sm ${step >= 1 ? "text-primary" : "text-gray-400"}`}
+        className={`text-sm font-medium transition-colors duration-300 ${
+          step >= 1 ? "text-primary" : "text-gray-400"
+        }`}
       >
         Delivery
       </span>
       <span
-        className={`text-sm ${step >= 2 ? "text-primary" : "text-gray-400"}`}
+        className={`text-sm font-medium transition-colors duration-300 ${
+          step >= 2 ? "text-primary" : "text-gray-400"
+        }`}
       >
         Payment
       </span>
       <span
-        className={`text-sm ${step >= 3 ? "text-primary" : "text-gray-400"}`}
+        className={`text-sm font-medium transition-colors duration-300 ${
+          step >= 3 ? "text-primary" : "text-gray-400"
+        }`}
       >
         Confirmation
       </span>
     </div>
-    <Progress value={(step / 3) * 100} className="h-2" />
+    <Progress
+      value={(step / 3) * 100}
+      className="h-2.5 rounded-full bg-gray-100"
+    />
   </div>
 );
 
@@ -421,56 +435,58 @@ export default function CheckoutPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
+        <Loader2 className="h-14 w-14 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-5xl mx-auto">
-        <div className="flex items-center mb-8">
+    <div className="min-h-screen bg-gray-50/50 py-14 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center mb-10">
           <Link
             href={backLink}
-            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors"
+            className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-300"
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
             {productId ? "Back to Product" : "Back to Cart"}
           </Link>
-          <h1 className="text-3xl font-bold text-center flex-1 mr-8">
+          <h1 className="text-3xl font-bold text-center flex-1 mr-8 tracking-tight">
             Secure Checkout
           </h1>
         </div>
 
         <CheckoutProgress step={checkoutStep} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          <div className="space-y-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+          <div className="space-y-8">
             {/* Shipping Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MapPin className="w-5 h-5" />
+            <Card className="border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardHeader className="border-b border-gray-100">
+                <CardTitle className="flex items-center gap-2 text-xl">
+                  <MapPin className="w-5 h-5 text-primary" />
                   Select Pickup Location
                 </CardTitle>
-                <CardDescription>
+                <CardDescription className="text-gray-600">
                   Choose your preferred delivery point for order collection
                 </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6 pt-6">
                 {isLoadingDeliveryPoints ? (
                   <div className="space-y-4">
-                    <div className="h-10 bg-gray-200 animate-pulse rounded-md"></div>
-                    <div className="h-32 bg-gray-200 animate-pulse rounded-md"></div>
+                    <div className="h-12 bg-gray-100 animate-pulse rounded-lg"></div>
+                    <div className="h-36 bg-gray-100 animate-pulse rounded-lg"></div>
                   </div>
                 ) : deliveryPoints.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500">
+                  <div className="text-center py-6 text-gray-500">
                     No delivery points available
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    <Label htmlFor="delivery-point">Pickup Location</Label>
+                  <div className="space-y-3">
+                    <Label htmlFor="delivery-point" className="text-gray-700">
+                      Pickup Location
+                    </Label>
                     <Select
                       value={selectedDeliveryPoint}
                       onValueChange={(value) => {
@@ -478,15 +494,26 @@ export default function CheckoutPage() {
                         setCheckoutStep(1);
                       }}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger className="w-full h-12">
                         <SelectValue placeholder="Select a pickup point" />
                       </SelectTrigger>
                       <SelectContent>
                         {deliveryPoints.map((point) => (
-                          <SelectItem key={point._id} value={point._id}>
-                            <div className="flex items-center justify-between gap-2 w-full">
-                              <span>{point.name}</span>
-                              <span className="text-sm text-muted-foreground">
+                          <SelectItem
+                            key={point._id}
+                            value={point._id}
+                            className="py-3"
+                          >
+                            <div className="flex items-center justify-between gap-3 w-full">
+                              <span className="font-medium">{point.name}</span>
+                              <span
+                                className={`text-sm ${
+                                  point.freeShippingThreshold &&
+                                  subtotal >= point.freeShippingThreshold
+                                    ? "text-green-600 font-medium"
+                                    : "text-gray-600"
+                                }`}
+                              >
                                 {point.freeShippingThreshold &&
                                 subtotal >= point.freeShippingThreshold
                                   ? "Free"
@@ -501,7 +528,7 @@ export default function CheckoutPage() {
                 )}
 
                 {selectedDeliveryPoint && (
-                  <Card className="bg-muted">
+                  <Card className="bg-gray-50/80 border-gray-100">
                     <CardContent className="pt-6">
                       {(() => {
                         const point = getSelectedPoint(
@@ -511,13 +538,15 @@ export default function CheckoutPage() {
                         if (!point) return null;
 
                         return (
-                          <div className="space-y-4">
+                          <div className="space-y-5">
                             <div className="flex items-start gap-4">
-                              <MapPin className="w-4 h-4 mt-1 text-muted-foreground" />
-                              <div className="space-y-1">
-                                <p className="font-medium">{point.location}</p>
+                              <MapPin className="w-5 h-5 mt-1 text-primary" />
+                              <div className="space-y-1.5">
+                                <p className="font-medium text-gray-900">
+                                  {point.location}
+                                </p>
                                 {point.description && (
-                                  <p className="text-sm text-muted-foreground">
+                                  <p className="text-sm text-gray-600 leading-relaxed">
                                     {point.description}
                                   </p>
                                 )}
@@ -526,8 +555,8 @@ export default function CheckoutPage() {
 
                             {point.operatingHours && (
                               <div className="flex items-center gap-4">
-                                <Clock className="w-4 h-4 text-muted-foreground" />
-                                <p className="text-sm">
+                                <Clock className="w-5 h-5 text-primary" />
+                                <p className="text-sm text-gray-700">
                                   {point.operatingHours}
                                 </p>
                               </div>
@@ -535,19 +564,19 @@ export default function CheckoutPage() {
 
                             {(point.contactInfo?.phone ||
                               point.contactInfo?.email) && (
-                              <div className="space-y-2">
+                              <div className="space-y-3">
                                 {point.contactInfo?.phone && (
                                   <div className="flex items-center gap-4">
-                                    <PhoneIcon className="w-4 h-4 text-muted-foreground" />
-                                    <p className="text-sm">
+                                    <PhoneIcon className="w-5 h-5 text-primary" />
+                                    <p className="text-sm text-gray-700">
                                       +{point.contactInfo.phone}
                                     </p>
                                   </div>
                                 )}
                                 {point.contactInfo?.email && (
                                   <div className="flex items-center gap-4">
-                                    <Mail className="w-4 h-4 text-muted-foreground" />
-                                    <p className="text-sm">
+                                    <Mail className="w-5 h-5 text-primary" />
+                                    <p className="text-sm text-gray-700">
                                       {point.contactInfo.email}
                                     </p>
                                   </div>
@@ -558,13 +587,13 @@ export default function CheckoutPage() {
                             {point.freeShippingThreshold && (
                               <HoverCard>
                                 <HoverCardTrigger asChild>
-                                  <div className="flex items-center gap-2 text-sm text-green-600 cursor-help">
+                                  <div className="flex items-center gap-2 text-sm text-green-600 cursor-help bg-green-50 px-4 py-2 rounded-lg">
                                     <Info className="w-4 h-4" />
                                     Free pickup available
                                   </div>
                                 </HoverCardTrigger>
                                 <HoverCardContent className="w-80">
-                                  <p>
+                                  <p className="text-sm">
                                     Free pickup is available for orders over{" "}
                                     {formatPrice(point.freeShippingThreshold)}
                                   </p>
@@ -581,52 +610,62 @@ export default function CheckoutPage() {
             </Card>
 
             {/* Order Summary */}
-            <Card className="h-fit">
-              <CardHeader className="border-b">
-                <CardTitle>Order Summary</CardTitle>
+            <Card className="h-fit border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+              <CardHeader className="border-b border-gray-100">
+                <CardTitle className="text-xl">Order Summary</CardTitle>
                 <CardDescription>Review your items</CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="space-y-4">
+                <div className="space-y-5">
                   {items.map((item) => (
                     <OrderItem key={item._id} item={item} />
                   ))}
-                  <Separator className="my-4" />
+                  <Separator className="my-6" />
 
                   {/* Discount Code Input */}
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     <Input
                       placeholder="Enter discount code"
                       value={discountCode}
                       onChange={(e) => setDiscountCode(e.target.value)}
-                      className="flex-1"
+                      className="flex-1 h-12"
                     />
                     <Button
                       onClick={handleApplyDiscount}
                       disabled={validateDiscountMutation.isPending}
                       variant="outline"
+                      className="h-12 px-6 hover:bg-primary hover:text-primary-foreground"
                     >
                       Apply
                     </Button>
                   </div>
 
                   {/* Price Breakdown */}
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-gray-600">
+                  <div className="space-y-3 pt-2">
+                    <div className="flex justify-between text-gray-700">
                       <span>Subtotal</span>
-                      <span>{formatPrice(subtotal)}</span>
+                      <div className="text-right">
+                        <span className="font-medium">
+                          {formatPrice(subtotal)}
+                        </span>
+                        <div className="text-xs text-gray-500 mt-0.5">
+                          All prices are for 4 pieces per item
+                        </div>
+                      </div>
                     </div>
                     {taxConfig && (
-                      <div className="flex justify-between text-gray-600">
+                      <div className="flex justify-between text-gray-700">
                         <span>
                           {taxConfig.name} ({taxConfig.rate}%)
                         </span>
-                        <span>{formatPrice(taxAmount)}</span>
+                        <span className="font-medium">
+                          {formatPrice(taxAmount)}
+                        </span>
                       </div>
                     )}
-                    <div className="flex justify-between text-gray-600">
+                    <div className="flex justify-between text-gray-700">
                       <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4" />
+                        <MapPin className="w-4 h-4 text-primary" />
                         <span>
                           Pickup Fee
                           {selectedDeliveryPoint &&
@@ -638,7 +677,9 @@ export default function CheckoutPage() {
                         </span>
                       </div>
                       <span
-                        className={shippingCost === 0 ? "text-green-600" : ""}
+                        className={`font-medium ${
+                          shippingCost === 0 ? "text-green-600" : ""
+                        }`}
                       >
                         {shippingCost === 0
                           ? "Free"
@@ -652,11 +693,13 @@ export default function CheckoutPage() {
                           {appliedDiscount.type === "percentage" &&
                             ` - ${appliedDiscount.amount}%`}
                         </span>
-                        <span>-{formatPrice(discountAmount)}</span>
+                        <span className="font-medium">
+                          -{formatPrice(discountAmount)}
+                        </span>
                       </div>
                     )}
-                    <Separator className="my-2" />
-                    <div className="flex justify-between font-bold text-lg text-gray-900">
+                    <Separator className="my-4" />
+                    <div className="flex justify-between font-bold text-xl text-gray-900">
                       <span>Total</span>
                       <span>{formatPrice(totalPrice)}</span>
                     </div>
@@ -667,9 +710,9 @@ export default function CheckoutPage() {
           </div>
 
           {/* Payment Options */}
-          <Card className="h-fit">
-            <CardHeader className="border-b">
-              <CardTitle>Payment Method</CardTitle>
+          <Card className="h-fit border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="border-b border-gray-100">
+              <CardTitle className="text-xl">Payment Method</CardTitle>
               <CardDescription>
                 Choose your preferred payment option below
               </CardDescription>
@@ -683,28 +726,28 @@ export default function CheckoutPage() {
                 }}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2 mb-6">
+                <TabsList className="grid w-full grid-cols-2 mb-8">
                   <TabsTrigger
                     value="mpesa"
-                    className="data-[state=active]:bg-green-50"
+                    className="data-[state=active]:bg-green-50 py-3"
                   >
-                    <PhoneIcon className="w-4 h-4 mr-2" />
+                    <PhoneIcon className="w-5 h-5 mr-2" />
                     Mpesa
                   </TabsTrigger>
                   <TabsTrigger
                     value="bank"
-                    className="data-[state=active]:bg-blue-50"
+                    className="data-[state=active]:bg-blue-50 py-3"
                   >
-                    <CreditCard className="w-4 h-4 mr-2" />
+                    <CreditCard className="w-5 h-5 mr-2" />
                     Bank Transfer
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="mpesa">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-center bg-green-50 p-6 rounded-xl border border-green-100">
-                      <PhoneIcon className="w-12 h-12 text-green-600 mr-4" />
+                  <div className="space-y-8">
+                    <div className="flex items-center justify-center bg-green-50 p-8 rounded-xl border border-green-100">
+                      <PhoneIcon className="w-14 h-14 text-green-600 mr-5" />
                       <div>
-                        <h3 className="font-semibold text-green-800 text-lg">
+                        <h3 className="font-semibold text-green-800 text-xl mb-1">
                           Pay with Mpesa
                         </h3>
                         <p className="text-green-600">
@@ -712,8 +755,10 @@ export default function CheckoutPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="mpesa-number">Mpesa Number</Label>
+                    <div className="space-y-3">
+                      <Label htmlFor="mpesa-number" className="text-gray-700">
+                        Mpesa Number
+                      </Label>
                       <Input
                         id="mpesa-number"
                         placeholder="+254712345678"
@@ -721,7 +766,7 @@ export default function CheckoutPage() {
                         onChange={(e) =>
                           setMpesaNumber(formatMpesaNumber(e.target.value))
                         }
-                        className="text-lg"
+                        className="text-lg h-12"
                         maxLength={13}
                       />
                       <p className="text-sm text-gray-500">
@@ -730,7 +775,7 @@ export default function CheckoutPage() {
                     </div>
                   </div>
                   {formErrors.length > 0 && (
-                    <div className="mt-4 p-4 bg-red-50 rounded-md">
+                    <div className="mt-6 p-4 bg-red-50 rounded-xl border border-red-100">
                       {formErrors.map((error, index) => (
                         <p key={index} className="text-red-600 text-sm">
                           {error}
@@ -740,11 +785,11 @@ export default function CheckoutPage() {
                   )}
                 </TabsContent>
                 <TabsContent value="bank">
-                  <div className="space-y-6">
-                    <div className="flex items-center justify-center bg-blue-50 p-6 rounded-xl border border-blue-100">
-                      <CreditCard className="w-12 h-12 text-blue-600 mr-4" />
+                  <div className="space-y-8">
+                    <div className="flex items-center justify-center bg-blue-50 p-8 rounded-xl border border-blue-100">
+                      <CreditCard className="w-14 h-14 text-blue-600 mr-5" />
                       <div>
-                        <h3 className="font-semibold text-blue-800 text-lg">
+                        <h3 className="font-semibold text-blue-800 text-xl mb-1">
                           Bank Transfer
                         </h3>
                         <p className="text-blue-600">
@@ -752,9 +797,9 @@ export default function CheckoutPage() {
                         </p>
                       </div>
                     </div>
-                    <div className="grid gap-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="account-name">
+                    <div className="grid gap-5">
+                      <div className="space-y-3">
+                        <Label htmlFor="account-name" className="text-gray-700">
                           Account Holder Name
                         </Label>
                         <Input
@@ -767,10 +812,16 @@ export default function CheckoutPage() {
                               accountHolder: e.target.value,
                             })
                           }
+                          className="h-12"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="account-number">Account Number</Label>
+                      <div className="space-y-3">
+                        <Label
+                          htmlFor="account-number"
+                          className="text-gray-700"
+                        >
+                          Account Number
+                        </Label>
                         <Input
                           id="account-number"
                           placeholder="Enter your account number"
@@ -781,10 +832,13 @@ export default function CheckoutPage() {
                               accountNumber: e.target.value,
                             })
                           }
+                          className="h-12"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="bank-name">Bank Name</Label>
+                      <div className="space-y-3">
+                        <Label htmlFor="bank-name" className="text-gray-700">
+                          Bank Name
+                        </Label>
                         <Input
                           id="bank-name"
                           placeholder="Enter your bank name"
@@ -795,6 +849,7 @@ export default function CheckoutPage() {
                               bankName: e.target.value,
                             })
                           }
+                          className="h-12"
                         />
                       </div>
                     </div>
@@ -834,6 +889,7 @@ export default function CheckoutPage() {
               <AlertDialogTitle>Confirm Your Order</AlertDialogTitle>
               <AlertDialogDescription>
                 You're about to place an order for {formatPrice(totalPrice)}.
+                All prices are for 4 pieces per item.
                 {paymentMethod === "mpesa"
                   ? " You'll receive an Mpesa prompt on your phone."
                   : " Please ensure your bank details are correct."}

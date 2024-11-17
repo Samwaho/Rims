@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/utils";
-import { ShoppingCart, CreditCard } from "lucide-react";
+import { ShoppingCart, CreditCard, Tag } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
@@ -52,51 +52,60 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
   );
 
   return (
-    <div className="group bg-background rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-100">
+    <div className="group bg-background rounded-xl overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 border border-gray-200 hover:border-primary/20">
       <Link href={`/products/${product._id}`} className="block relative">
-        <div className="relative w-full h-48 overflow-hidden">
+        <div className="relative w-full h-52 overflow-hidden">
           <Image
             src={product.images[0]}
             alt={product.name}
             fill
-            className="object-cover group-hover:scale-105 transition-transform duration-300"
+            className="object-cover group-hover:scale-110 transition-transform duration-500 ease-in-out"
             sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             priority
           />
         </div>
-        <div className="p-3 sm:p-4">
-          <div className="mb-2 sm:mb-3">
-            <span className="text-lg sm:text-xl font-bold text-primary">
-              {formatPrice(product.price)}
-            </span>
+        <div className="p-4 sm:p-5">
+          <div className="flex items-center p-2 sm:p-3 bg-primary/5 rounded-2xl w-fit mb-3 sm:mb-4 relative backdrop-blur-sm">
+            <Tag className="w-4 h-4 mr-2 text-primary" />
+            <div className="flex flex-col">
+              <p className="text-base sm:text-lg lg:text-xl font-bold text-primary tracking-tight">
+                {formatPrice(product.price)}
+              </p>
+              <span className="text-[10px] sm:text-xs text-primary/80">
+                Price for 4 pieces
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col gap-1">
-            <h3 className="text-base sm:text-lg font-semibold line-clamp-1 group-hover:text-primary transition-colors">
+          <div className="flex flex-col gap-2">
+            <h3 className="text-base sm:text-lg font-bold line-clamp-1 group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
-              <span className="font-medium text-foreground">Made in</span> •{" "}
-              {product.madeIn}
+            <p className="text-sm text-muted-foreground flex items-center gap-2">
+              <span className="font-medium text-foreground">Made in</span>
+              <span className="inline-flex items-center">
+                <span className="w-1.5 h-1.5 rounded-full bg-primary/40 mr-2"></span>
+                {product.madeIn}
+              </span>
             </p>
           </div>
         </div>
       </Link>
-      <div className="px-3 pb-3 sm:px-4 sm:pb-4 space-y-2">
+      <div className="px-4 pb-4 sm:px-5 sm:pb-5 space-y-2.5">
         <Button
           size="sm"
           variant="outline"
-          className="w-full transition-all duration-300 bg-gray-100 hover:bg-primary hover:text-primary-foreground group"
+          className="w-full h-10 transition-all duration-300 bg-gray-50 hover:bg-primary hover:text-primary-foreground group border-gray-200 hover:border-primary"
           onClick={handleAddToCart}
         >
-          <ShoppingCart className="w-4 h-4 mr-2" />
+          <ShoppingCart className="w-4 h-4 mr-2.5 transition-transform group-hover:scale-110" />
           Add to Cart
         </Button>
         <Button
           size="sm"
-          className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110"
+          className="w-full h-10 bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110 hover:scale-[1.02]"
           onClick={handleBuyNow}
         >
-          <CreditCard className="w-4 h-4 mr-2" />
+          <CreditCard className="w-4 h-4 mr-2.5 transition-transform group-hover:scale-110" />
           Buy Now
         </Button>
       </div>
@@ -105,16 +114,16 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
 };
 
 const ProductCardSkeleton = memo(() => (
-  <div className="bg-background rounded-lg overflow-hidden shadow-sm border border-gray-100">
-    <Skeleton className="w-full h-48" />
-    <div className="p-4">
-      <Skeleton className="h-6 w-1/3 mb-4" />
-      <Skeleton className="h-6 w-3/4 mb-2" />
-      <Skeleton className="h-4 w-1/2 mb-4" />
+  <div className="bg-background rounded-xl overflow-hidden shadow-md border border-gray-200 animate-pulse">
+    <Skeleton className="w-full h-52" />
+    <div className="p-5">
+      <Skeleton className="h-12 w-1/3 mb-4 rounded-xl" />
+      <Skeleton className="h-7 w-3/4 mb-2 rounded-lg" />
+      <Skeleton className="h-5 w-1/2 mb-4 rounded-lg" />
     </div>
-    <div className="px-4 pb-4 space-y-2">
-      <Skeleton className="h-9 w-full" />
-      <Skeleton className="h-9 w-full" />
+    <div className="px-5 pb-5 space-y-2.5">
+      <Skeleton className="h-10 w-full rounded-lg" />
+      <Skeleton className="h-10 w-full rounded-lg" />
     </div>
   </div>
 ));

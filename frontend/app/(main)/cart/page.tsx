@@ -11,10 +11,27 @@ import axios from "axios";
 import { Skeleton } from "@/components/ui/skeleton";
 import { axiosHeaders } from "@/lib/actions";
 import { toast } from "sonner";
-import { Trash2, Minus, Plus, ShoppingBag, AlertCircle } from "lucide-react";
+import {
+  Trash2,
+  Minus,
+  Plus,
+  ShoppingBag,
+  AlertCircle,
+  Loader2,
+} from "lucide-react";
 import { useRouter } from "next/navigation";
 import { Suspense } from "react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 interface CartItem {
   _id: string;
@@ -47,18 +64,18 @@ const fetchCart = async (): Promise<CartItem[]> => {
 export const dynamic = "force-dynamic";
 
 const CartSkeleton = memo(() => (
-  <div className="space-y-4">
+  <div className="space-y-6 animate-pulse">
     {[...Array(3)].map((_, index) => (
       <div
         key={index}
-        className="flex items-center space-x-6 bg-white p-6 rounded-lg shadow-sm"
+        className="flex items-center space-x-8 bg-white p-8 rounded-xl shadow-sm border border-gray-100"
       >
-        <Skeleton className="h-24 w-24 rounded-md" />
-        <div className="flex-1 space-y-2">
-          <Skeleton className="h-6 w-2/3" />
-          <Skeleton className="h-5 w-1/3" />
+        <Skeleton className="h-32 w-32 rounded-lg" />
+        <div className="flex-1 space-y-3">
+          <Skeleton className="h-7 w-2/3" />
+          <Skeleton className="h-6 w-1/3" />
         </div>
-        <Skeleton className="h-10 w-32" />
+        <Skeleton className="h-12 w-36" />
       </div>
     ))}
   </div>
@@ -67,15 +84,17 @@ const CartSkeleton = memo(() => (
 CartSkeleton.displayName = "CartSkeleton";
 
 const EmptyCart = memo(() => (
-  <div className="text-center py-16 bg-white rounded-lg shadow-sm border border-gray-100">
-    <ShoppingBag className="mx-auto h-20 w-20 text-gray-400 mb-6" />
-    <p className="text-2xl text-gray-600 mb-4">Your cart is empty</p>
-    <p className="text-gray-500 mb-8">
+  <div className="text-center py-20 bg-white rounded-xl shadow-sm border border-gray-100">
+    <ShoppingBag className="mx-auto h-24 w-24 text-primary/40 mb-8 animate-bounce" />
+    <h2 className="text-3xl font-bold text-gray-800 mb-4">
+      Your cart is empty
+    </h2>
+    <p className="text-gray-600 text-lg mb-10">
       Looks like you haven't added any items to your cart yet.
     </p>
     <Link
       href="/products"
-      className="inline-block bg-primary hover:opacity-90 text-white font-semibold py-3 px-8 rounded-full transition duration-300"
+      className="inline-flex items-center justify-center bg-primary hover:bg-primary/90 text-white font-semibold py-4 px-10 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
     >
       Start Shopping
     </Link>
@@ -90,44 +109,56 @@ const CartItem = memo(
     quantity,
     onQuantityChange,
     onRemove,
+    isUpdating,
   }: {
     item: CartItem;
     quantity: number;
     onQuantityChange: (id: string, quantity: number) => void;
     onRemove: (id: string) => void;
+    isUpdating: boolean;
   }) => (
-    <div className="flex flex-col sm:flex-row items-center gap-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:border-primary/20 transition duration-300">
+    <div
+      className={`flex flex-col sm:flex-row items-center gap-6 bg-white p-8 rounded-xl shadow-sm border border-gray-100 hover:border-primary/30 hover:shadow-md transition-all duration-300 ${
+        isUpdating ? "opacity-70" : ""
+      }`}
+    >
       <Link
         href={`/products/${item.product._id}`}
-        className="relative w-32 h-32 flex-shrink-0 overflow-hidden rounded-md hover:opacity-80 transition-opacity"
+        className="relative w-36 h-36 flex-shrink-0 overflow-hidden rounded-lg group"
       >
         <Image
           src={item.product.images[0]}
           alt={item.product.name}
           layout="fill"
           objectFit="cover"
-          className="rounded-md"
+          className="rounded-lg group-hover:scale-110 transition-transform duration-500"
         />
       </Link>
-      <div className="flex-1 text-center sm:text-left">
+      <div className="flex-1 text-center sm:text-left space-y-2">
         <Link
           href={`/products/${item.product._id}`}
-          className="font-semibold text-lg hover:text-primary transition-colors"
+          className="font-bold text-xl hover:text-primary transition-colors duration-300"
         >
           {item.product.name}
         </Link>
-        <p className="text-primary font-medium mt-1">
-          {formatPrice(item.product.price)}
-        </p>
+        <div>
+          <p className="text-primary text-lg font-semibold">
+            {formatPrice(item.product.price)}
+          </p>
+          <p className="text-sm text-gray-500 font-medium">
+            Price for 4 pieces
+          </p>
+        </div>
       </div>
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-3">
         <Button
           size="sm"
           variant="outline"
           onClick={() => onQuantityChange(item._id, quantity - 1)}
-          className="w-8 h-8 rounded-full p-0"
+          className="w-10 h-10 rounded-full p-0 hover:bg-primary/10 hover:text-primary transition-colors duration-300"
+          disabled={isUpdating || quantity <= 1}
         >
-          <Minus className="h-3 w-3" />
+          <Minus className="h-4 w-4" />
         </Button>
         <Input
           type="number"
@@ -135,20 +166,23 @@ const CartItem = memo(
           max="99"
           value={quantity}
           onChange={(e) => onQuantityChange(item._id, parseInt(e.target.value))}
-          className="w-14 text-center"
+          className="w-16 text-center text-lg font-medium"
+          disabled={isUpdating}
         />
         <Button
           size="sm"
           variant="outline"
           onClick={() => onQuantityChange(item._id, quantity + 1)}
-          className="w-8 h-8 rounded-full p-0"
+          className="w-10 h-10 rounded-full p-0 hover:bg-primary/10 hover:text-primary transition-colors duration-300"
+          disabled={isUpdating || quantity >= 99}
         >
-          <Plus className="h-3 w-3" />
+          <Plus className="h-4 w-4" />
         </Button>
         <Button
           variant="ghost"
           onClick={() => onRemove(item._id)}
-          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-2 rounded-full ml-2"
+          className="text-red-500 hover:text-red-700 hover:bg-red-50 p-3 rounded-full ml-2 transition-colors duration-300"
+          disabled={isUpdating}
         >
           <Trash2 className="h-5 w-5" />
         </Button>
@@ -163,35 +197,44 @@ const OrderSummary = memo(
   ({
     totalPrice,
     onCheckout,
+    isLoading,
   }: {
     totalPrice: number;
     onCheckout: () => void;
+    isLoading: boolean;
   }) => (
-    <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100 sticky top-4">
-      <h2 className="text-xl font-semibold mb-4">Order Summary</h2>
-      <div className="space-y-3 mb-6">
-        <div className="flex justify-between text-gray-600">
+    <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-100 sticky top-4">
+      <h2 className="text-2xl font-bold mb-6">Order Summary</h2>
+      <div className="space-y-4 mb-8">
+        <div className="flex justify-between text-gray-700 text-lg">
           <span>Subtotal</span>
-          <span>{formatPrice(totalPrice)}</span>
+          <div className="text-right">
+            <div className="font-medium">{formatPrice(totalPrice)}</div>
+            <div className="text-sm text-gray-500">
+              All prices are for 4 pieces per item
+            </div>
+          </div>
         </div>
-        <div className="flex justify-between text-gray-600">
+        <div className="flex justify-between text-gray-700 text-lg">
           <span>Shipping</span>
-          <span>Free</span>
+          <span className="font-medium">Free</span>
         </div>
-        <div className="border-t pt-3 flex justify-between font-semibold text-lg">
+        <div className="border-t pt-4 flex justify-between font-bold text-xl">
           <span>Total</span>
           <span className="text-primary">{formatPrice(totalPrice)}</span>
         </div>
       </div>
       <Button
-        className="w-full bg-primary hover:opacity-90 text-white text-lg py-6 rounded-full transition duration-300"
+        className="w-full bg-primary hover:bg-primary/90 text-white text-lg py-7 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
         onClick={onCheckout}
+        disabled={isLoading}
       >
+        {isLoading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : null}
         Proceed to Checkout
       </Button>
       <Link
         href="/products"
-        className="mt-4 text-center block text-primary hover:opacity-80 font-medium transition duration-300"
+        className="mt-6 text-center block text-primary hover:text-primary/80 font-semibold transition-colors duration-300"
       >
         Continue Shopping
       </Link>
@@ -205,6 +248,9 @@ const CartPage = () => {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [quantities, setQuantities] = useState<Record<string, number>>({});
+  const [showRemoveDialog, setShowRemoveDialog] = useState(false);
+  const [itemToRemove, setItemToRemove] = useState<string | null>(null);
+  const [updatingItems, setUpdatingItems] = useState<Set<string>>(new Set());
 
   const {
     data: cartItems = [],
@@ -222,7 +268,11 @@ const CartPage = () => {
     retryDelay: 1000,
   });
 
-  const updateCartMutation = useMutation({
+  const updateCartMutation = useMutation<
+    any,
+    Error,
+    { itemId: string; quantity: number }
+  >({
     mutationFn: async ({
       itemId,
       quantity,
@@ -230,6 +280,7 @@ const CartPage = () => {
       itemId: string;
       quantity: number;
     }) => {
+      setUpdatingItems((prev) => new Set(prev).add(itemId));
       const response = await axios.put(
         `${BACKEND_URL}/api/cart/${itemId}`,
         { quantity },
@@ -237,17 +288,28 @@ const CartPage = () => {
       );
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success("Cart updated successfully");
+      setUpdatingItems((prev) => {
+        const next = new Set(prev);
+        next.delete(variables.itemId);
+        return next;
+      });
     },
-    onError: (error: Error) => {
+    onError: (error: Error, variables) => {
       toast.error(error.message);
+      setUpdatingItems((prev) => {
+        const next = new Set(prev);
+        next.delete(variables.itemId);
+        return next;
+      });
     },
   });
 
-  const removeItemMutation = useMutation({
+  const removeItemMutation = useMutation<void, Error, string>({
     mutationFn: async (itemId: string) => {
+      setUpdatingItems((prev) => new Set(prev).add(itemId));
       await axios.delete(
         `${BACKEND_URL}/api/cart/${itemId}`,
         await axiosHeaders()
@@ -256,9 +318,20 @@ const CartPage = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       toast.success("Item removed from cart");
+      setShowRemoveDialog(false);
+      setItemToRemove(null);
     },
     onError: () => {
       toast.error("Failed to remove item from cart");
+      setShowRemoveDialog(false);
+      setItemToRemove(null);
+    },
+    onSettled: (_, __, itemId) => {
+      setUpdatingItems((prev) => {
+        const next = new Set(prev);
+        next.delete(itemId);
+        return next;
+      });
     },
   });
 
@@ -289,14 +362,10 @@ const CartPage = () => {
     [updateCartMutation]
   );
 
-  const handleRemoveItem = useCallback(
-    (itemId: string) => {
-      if (window.confirm("Are you sure you want to remove this item?")) {
-        removeItemMutation.mutate(itemId);
-      }
-    },
-    [removeItemMutation]
-  );
+  const handleRemoveItem = useCallback((itemId: string) => {
+    setItemToRemove(itemId);
+    setShowRemoveDialog(true);
+  }, []);
 
   const totalPrice = cartItems.reduce(
     (total, item) =>
@@ -306,8 +375,8 @@ const CartPage = () => {
 
   if (isLoading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
+      <div className="container mx-auto px-6 py-12 max-w-6xl">
+        <h1 className="text-4xl font-bold mb-8">Your Cart</h1>
         <CartSkeleton />
       </div>
     );
@@ -315,24 +384,28 @@ const CartPage = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <h1 className="text-3xl font-bold mb-6">Your Cart</h1>
-        <Alert variant="destructive" className="mb-6">
-          <AlertCircle className="h-4 w-4" />
-          <AlertDescription>
+      <div className="container mx-auto px-6 py-12 max-w-6xl">
+        <h1 className="text-4xl font-bold mb-8">Your Cart</h1>
+        <Alert variant="destructive" className="mb-8">
+          <AlertCircle className="h-5 w-5" />
+          <AlertDescription className="text-lg">
             {error instanceof Error
               ? error.message
               : "An unexpected error occurred"}
           </AlertDescription>
         </Alert>
-        <div className="flex justify-center gap-4">
+        <div className="flex justify-center gap-6">
           <Button
             onClick={() => refetch()}
-            className="bg-primary hover:bg-primary/90"
+            className="bg-primary hover:bg-primary/90 text-lg px-8 py-6"
           >
             Try Again
           </Button>
-          <Button variant="outline" onClick={() => router.push("/products")}>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/products")}
+            className="text-lg px-8 py-6"
+          >
             Browse Products
           </Button>
         </div>
@@ -343,18 +416,18 @@ const CartPage = () => {
   return (
     <Suspense
       fallback={
-        <div className="container mx-auto px-4 py-8 flex justify-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        <div className="container mx-auto px-6 py-12 flex justify-center">
+          <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
       }
     >
-      <div className="container mx-auto px-4 py-8 max-w-5xl">
-        <h1 className="text-3xl font-bold mb-8">Your Cart</h1>
+      <div className="container mx-auto px-6 py-12 max-w-6xl">
+        <h1 className="text-4xl font-bold mb-10">Your Cart</h1>
         {cartItems.length === 0 ? (
           <EmptyCart />
         ) : (
-          <div className="grid lg:grid-cols-3 gap-8">
-            <div className="lg:col-span-2 space-y-4">
+          <div className="grid lg:grid-cols-3 gap-10">
+            <div className="lg:col-span-2 space-y-6">
               {cartItems.map((item) => (
                 <CartItem
                   key={item._id}
@@ -362,6 +435,7 @@ const CartPage = () => {
                   quantity={quantities[item._id] || item.quantity}
                   onQuantityChange={handleQuantityChange}
                   onRemove={handleRemoveItem}
+                  isUpdating={updatingItems.has(item._id)}
                 />
               ))}
             </div>
@@ -369,10 +443,35 @@ const CartPage = () => {
               <OrderSummary
                 totalPrice={totalPrice}
                 onCheckout={() => router.push("/checkout")}
+                isLoading={
+                  updateCartMutation.isPending || removeItemMutation.isPending
+                }
               />
             </div>
           </div>
         )}
+
+        <AlertDialog open={showRemoveDialog} onOpenChange={setShowRemoveDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Remove Item</AlertDialogTitle>
+              <AlertDialogDescription>
+                Are you sure you want to remove this item from your cart?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel>Cancel</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={() =>
+                  itemToRemove && removeItemMutation.mutate(itemToRemove)
+                }
+                className="bg-red-500 hover:bg-red-600"
+              >
+                Remove
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </Suspense>
   );

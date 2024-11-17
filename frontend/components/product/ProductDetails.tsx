@@ -9,7 +9,7 @@ import { ProductSpecifications } from "./ProductSpecifications";
 import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
-import { ShoppingCart, CreditCard } from "lucide-react";
+import { ShoppingCart, CreditCard, Tag } from "lucide-react";
 
 interface ProductDetailsProps {
   product: Product;
@@ -71,9 +71,15 @@ export default function ProductDetails({
             <span className="font-semibold">Made in:</span> {product.madeIn}
           </div>
         </div>
-        <p className="text-3xl lg:text-4xl font-bold text-primary">
-          {formatPrice(product.price)}
-        </p>
+        <div className="flex items-center p-2 bg-primary/10 rounded-xl w-fit">
+          <Tag className="w-5 h-5 mr-2 text-primary" />
+          <div className="flex flex-col">
+            <p className="text-3xl lg:text-4xl font-bold text-primary">
+              {formatPrice(product.price)}
+            </p>
+            <span className="text-sm text-primary/80">Price for 4 pieces</span>
+          </div>
+        </div>
       </div>
 
       <p className="text-gray-600 text-sm lg:text-base leading-relaxed">
