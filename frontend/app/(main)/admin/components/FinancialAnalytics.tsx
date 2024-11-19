@@ -146,6 +146,13 @@ const formatChartDate = (dateStr: string, timeframe: string) => {
   }
 };
 
+const formatYAxisTick = (value: number) => {
+  if (value === 0) return "KSh 0";
+  if (value >= 1000000) return `KSh ${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `KSh ${(value / 1000).toFixed(1)}K`;
+  return `KSh ${value}`;
+};
+
 export function FinancialAnalytics() {
   const [timeframe, setTimeframe] = useState("weekly");
 
@@ -360,10 +367,11 @@ export function FinancialAnalytics() {
                   tick={{ fontSize: 12 }}
                 />
                 <YAxis
-                  tickFormatter={(value) => formatPrice(value)}
+                  tickFormatter={formatYAxisTick}
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 12 }}
+                  width={80}
                 />
                 <Tooltip
                   content={
@@ -413,10 +421,11 @@ export function FinancialAnalytics() {
                   tick={{ fontSize: 12 }}
                 />
                 <YAxis
-                  tickFormatter={(value) => formatPrice(value)}
+                  tickFormatter={formatYAxisTick}
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 12 }}
+                  width={80}
                 />
                 <Tooltip
                   content={
@@ -486,10 +495,11 @@ export function FinancialAnalytics() {
                   tick={{ fontSize: 12 }}
                 />
                 <YAxis
-                  tickFormatter={(value) => formatPrice(value)}
+                  tickFormatter={formatYAxisTick}
                   tickLine={false}
                   axisLine={false}
                   tick={{ fontSize: 12 }}
+                  width={80}
                 />
                 <Tooltip
                   content={
