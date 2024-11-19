@@ -9,7 +9,7 @@ import { ProductSpecifications } from "./ProductSpecifications";
 import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
-import { ShoppingCart, CreditCard, Tag } from "lucide-react";
+import { ShoppingCart, CreditCard, Tag, Share2 } from "lucide-react";
 
 interface ProductDetailsProps {
   product: Product;
@@ -43,6 +43,12 @@ export default function ProductDetails({
         ).toFixed(1)
       )
     : 0;
+
+  const handleShare = () => {
+    const productUrl = window.location.href;
+    navigator.clipboard.writeText(productUrl);
+    toast.success("Product link copied to clipboard!");
+  };
 
   return (
     <div className="space-y-6">
@@ -93,23 +99,34 @@ export default function ProductDetails({
           reviewCount={product.reviews?.length || 0}
         />
       </div>
-      <div className="space-y-2">
+      <div className="flex flex-col gap-4">
+        <div className="space-y-2">
+          <Button
+            onClick={handleAddToCart}
+            variant="outline"
+            className="w-full transition-all duration-300 hover:bg-primary hover:text-primary-foreground"
+            size="lg"
+          >
+            <ShoppingCart className="w-5 h-5 mr-2" />
+            Add to Cart
+          </Button>
+          <Button
+            onClick={handleBuyNow}
+            className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110"
+            size="lg"
+          >
+            <CreditCard className="w-5 h-5 mr-2" />
+            Buy Now
+          </Button>
+        </div>
         <Button
-          onClick={handleAddToCart}
-          variant="outline"
-          className="w-full transition-all duration-300 hover:bg-primary hover:text-primary-foreground"
-          size="lg"
+          onClick={handleShare}
+          variant="ghost"
+          className="w-fit self-center text-sm"
+          size="sm"
         >
-          <ShoppingCart className="w-5 h-5 mr-2" />
-          Add to Cart
-        </Button>
-        <Button
-          onClick={handleBuyNow}
-          className="w-full bg-primary text-primary-foreground transition-all duration-300 hover:brightness-110"
-          size="lg"
-        >
-          <CreditCard className="w-5 h-5 mr-2" />
-          Buy Now
+          <Share2 className="w-4 h-4 mr-2" />
+          Share Product Link
         </Button>
       </div>
 

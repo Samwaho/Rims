@@ -48,6 +48,7 @@ const COMMON_BUTTON_STYLES =
   "bg-primary hover:bg-primary/90 text-white font-medium shadow-lg hover:shadow-xl transform hover:-translate-y-1 transition-all duration-300";
 const NAV_LINKS = [
   { href: "/", text: "Home" },
+  { href: "/orders", text: "Orders" },
   { href: "/products", text: "Products" },
 ] as const;
 
@@ -213,8 +214,9 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
 
         <div className="flex items-center gap-4">
           <div className="hidden lg:flex items-center gap-8">
-            {renderNavLink({ href: "/", text: "Home" })}
-            {renderNavLink({ href: "/products", text: "Products" })}
+            {NAV_LINKS.map((link) =>
+              loggedIn || link.href !== "/orders" ? renderNavLink(link) : null
+            )}
             {renderAuthButton()}
           </div>
 
@@ -282,8 +284,11 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
                   />
                 </div>
                 <div className="flex flex-col gap-6 px-6">
-                  {renderNavLink({ href: "/", text: "Home" })}
-                  {renderNavLink({ href: "/products", text: "Products" })}
+                  {NAV_LINKS.map((link) =>
+                    loggedIn || link.href !== "/orders"
+                      ? renderNavLink(link, true)
+                      : null
+                  )}
                 </div>
                 <DrawerFooter>{renderAuthButton(true)}</DrawerFooter>
               </DrawerContent>

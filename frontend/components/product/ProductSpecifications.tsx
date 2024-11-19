@@ -13,7 +13,7 @@ const TableHeaderContent = memo(() => (
   <TableHeader>
     <TableRow>
       <TableHead className="text-sm lg:text-base">Specification</TableHead>
-      <TableHead className="text-sm lg:text-base">Value</TableHead>
+      <TableHead className="text-sm lg:text-base">Details</TableHead>
     </TableRow>
   </TableHeader>
 ));

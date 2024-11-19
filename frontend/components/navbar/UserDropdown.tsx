@@ -74,18 +74,6 @@ export const UserDropdown = ({
             </span>
           </div>
         </DropdownMenuItem>
-        <DropdownMenuItem
-          className="cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-3 p-3 rounded-md"
-          onClick={() => onNavigate("/orders")}
-        >
-          <IoCartOutline className="h-5 w-5 text-primary" />
-          <div className="flex flex-col">
-            <span className="font-medium">Orders</span>
-            <span className="text-xs text-muted-foreground">
-              View your order history
-            </span>
-          </div>
-        </DropdownMenuItem>
         {isAdmin && (
           <DropdownMenuItem
             className="cursor-pointer hover:bg-primary/10 transition-colors flex items-center gap-3 p-3 rounded-md"
