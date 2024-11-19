@@ -139,6 +139,13 @@ const SpecificationField = memo(
 
 SpecificationField.displayName = "SpecificationField";
 
+const formatNumberWithCommas = (value: string) => {
+  const cleanValue = value.replace(/[^0-9.]/g, "");
+  const parts = cleanValue.split(".");
+  parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+  return parts.join(".");
+};
+
 export const ProductForm = memo(function ProductForm({
   form,
   onSubmit,
@@ -291,25 +298,25 @@ export const ProductForm = memo(function ProductForm({
                   <FormControl>
                     <Input
                       {...field}
-                      type="number"
-                      min="0"
-                      step="any"
+                      type="text"
                       placeholder="Enter buying price"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
-                        console.log("Raw input value:", e.target.value);
+                        const formattedValue = formatNumberWithCommas(
+                          e.target.value
+                        );
+                        e.target.value = formattedValue;
 
-                        const value =
-                          e.target.value === ""
-                            ? 0
-                            : parseFloat(e.target.value);
-
-                        console.log("Parsed value:", value);
-
-                        field.onChange(value);
+                        const numericValue =
+                          parseFloat(formattedValue.replace(/,/g, "")) || 0;
+                        field.onChange(numericValue);
                         handleFieldChange(e);
                       }}
-                      value={field.value ?? ""}
+                      value={
+                        field.value
+                          ? formatNumberWithCommas(field.value.toString())
+                          : ""
+                      }
                     />
                   </FormControl>
                   <FormMessage className="text-red-500 text-sm" />
@@ -328,17 +335,25 @@ export const ProductForm = memo(function ProductForm({
                   <FormControl>
                     <Input
                       {...field}
-                      type="number"
+                      type="text"
                       placeholder="Enter selling price"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
-                        const value = e.target.value
-                          ? Number(e.target.value)
-                          : 0;
-                        field.onChange(value);
+                        const formattedValue = formatNumberWithCommas(
+                          e.target.value
+                        );
+                        e.target.value = formattedValue;
+
+                        const numericValue =
+                          parseFloat(formattedValue.replace(/,/g, "")) || 0;
+                        field.onChange(numericValue);
                         handleFieldChange(e);
                       }}
-                      value={field.value || ""}
+                      value={
+                        field.value
+                          ? formatNumberWithCommas(field.value.toString())
+                          : ""
+                      }
                     />
                   </FormControl>
                   <FormMessage className="text-red-500 text-sm" />
