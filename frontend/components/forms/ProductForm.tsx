@@ -28,6 +28,7 @@ import {
 
 export type ProductFormValues = z.infer<typeof productSchema> & {
   images: File[];
+  buyingPrice: number;
 };
 
 export interface Specification {
@@ -281,22 +282,63 @@ export const ProductForm = memo(function ProductForm({
 
             <FormField
               control={form.control}
-              name="price"
+              name="buyingPrice"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">
-                    Price (KES) *
+                    Buying Price (KES) *
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
                       type="number"
-                      placeholder="Enter price"
+                      min="0"
+                      step="any"
+                      placeholder="Enter buying price"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
-                        field.onChange(Number(e.target.value));
+                        console.log("Raw input value:", e.target.value);
+
+                        const value =
+                          e.target.value === ""
+                            ? 0
+                            : parseFloat(e.target.value);
+
+                        console.log("Parsed value:", value);
+
+                        field.onChange(value);
                         handleFieldChange(e);
                       }}
+                      value={field.value ?? ""}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Selling Price (KES) *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      placeholder="Enter selling price"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        const value = e.target.value
+                          ? Number(e.target.value)
+                          : 0;
+                        field.onChange(value);
+                        handleFieldChange(e);
+                      }}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage className="text-red-500 text-sm" />
@@ -319,9 +361,13 @@ export const ProductForm = memo(function ProductForm({
                       placeholder="Enter stock quantity"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
-                        field.onChange(Number(e.target.value));
+                        const value = e.target.value
+                          ? Number(e.target.value)
+                          : 0;
+                        field.onChange(value);
                         handleFieldChange(e);
                       }}
+                      value={field.value || ""}
                     />
                   </FormControl>
                   <FormMessage className="text-red-500 text-sm" />

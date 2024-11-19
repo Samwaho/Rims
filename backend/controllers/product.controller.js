@@ -46,6 +46,7 @@ const formatProductResponse = async (product) => {
 
   return {
     ...product,
+    buyingPrice: Number(product.buyingPrice),
     averageRating,
     reviewCount: product.reviews?.length || 0,
     reviews: product.reviews?.map(formatReview) || [],
@@ -58,6 +59,7 @@ const validateProductData = (productData) => {
     "name",
     "description",
     "price",
+    "buyingPrice",
     "stock",
     "category",
     "size",
@@ -123,20 +125,25 @@ export const createProduct = async (req, res, next) => {
       });
     }
 
-    const missingFields = validateProductData(productData);
+    const sanitizedProductData = {
+      ...productData,
+      price: parseFloat(productData.price) || 0,
+      buyingPrice: parseFloat(productData.buyingPrice) || 0,
+      stock: parseInt(productData.stock) || 0,
+    };
+
+    const missingFields = validateProductData(sanitizedProductData);
     if (missingFields.length) {
       return res.status(400).json({
         message: `Missing required fields: ${missingFields.join(", ")}`,
-        receivedData: productData,
+        receivedData: sanitizedProductData,
       });
     }
 
     const product = new Product({
-      ...productData,
-      price: Number(productData.price),
-      stock: Number(productData.stock),
+      ...sanitizedProductData,
       images: imageUrls || [],
-      specifications: productData.specifications || [],
+      specifications: sanitizedProductData.specifications || [],
       reviews: [],
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -145,7 +152,7 @@ export const createProduct = async (req, res, next) => {
     const newProduct = await product.save();
     res.status(201).json({
       message: "Product created successfully",
-      product: formatProductResponse(newProduct.toObject()),
+      product: await formatProductResponse(newProduct.toObject()),
     });
   } catch (error) {
     console.error("Error creating product:", error);
@@ -169,6 +176,8 @@ export const updateProduct = async (req, res, next) => {
     const { productData, imageUrls } = req.body;
     const productId = req.params.id;
 
+    console.log("Received product data:", productData);
+
     if (!productData) {
       return res.status(400).json({
         message: "Product data is required",
@@ -176,7 +185,30 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
+    // Validate numeric values
+    const buyingPrice = Number(productData.buyingPrice);
+    const price = Number(productData.price);
+    const stock = Number(productData.stock);
+
+    if (isNaN(buyingPrice) || isNaN(price) || isNaN(stock)) {
+      return res.status(400).json({
+        message: "Invalid numeric values provided",
+        receivedData: { buyingPrice, price, stock },
+      });
+    }
+
+    const sanitizedProductData = {
+      ...productData,
+      price,
+      buyingPrice,
+      stock,
+    };
+
+    console.log("Sanitized product data:", sanitizedProductData);
+
     const existingProduct = await Product.findById(productId);
+    console.log("Existing product before update:", existingProduct);
+
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -188,13 +220,13 @@ export const updateProduct = async (req, res, next) => {
       : [];
 
     const updateData = {
-      ...productData,
-      price: Number(productData.price),
-      stock: Number(productData.stock),
+      ...sanitizedProductData,
       images: imageUrls || existingProduct.images,
       specifications: validSpecifications,
       updatedAt: new Date(),
     };
+
+    console.log("Final update data:", updateData);
 
     const updatedProduct = await Product.findByIdAndUpdate(
       productId,
@@ -202,13 +234,18 @@ export const updateProduct = async (req, res, next) => {
       { new: true, runValidators: true }
     ).lean();
 
+    console.log("Raw updated product:", updatedProduct);
+
     if (!updatedProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
 
+    const formattedResponse = await formatProductResponse(updatedProduct);
+    console.log("Formatted response:", formattedResponse);
+
     res.status(200).json({
       message: "Product updated successfully",
-      product: formatProductResponse(updatedProduct),
+      product: formattedResponse,
     });
   } catch (error) {
     console.error("Error updating product:", error);

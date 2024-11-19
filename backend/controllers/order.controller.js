@@ -57,17 +57,14 @@ const calculateOrderTotals = async (
       };
     } catch (error) {
       console.error("Discount validation error:", error);
-      // If discount validation fails, continue with zero discount
     }
   }
 
-  const shippingCost = 500;
   const taxRate = await getTaxRate();
-
   const taxableAmount = subtotal - discountAmount;
   const tax = taxableAmount * taxRate;
 
-  const total = subtotal - discountAmount + tax + shippingCost;
+  const total = subtotal - discountAmount + tax;
 
   return {
     subtotal,
@@ -75,7 +72,7 @@ const calculateOrderTotals = async (
     discountDetails,
     taxRate,
     tax,
-    shippingCost,
+    shippingCost: 0,
     total,
   };
 };
@@ -352,13 +349,34 @@ export const getAllOrders = async (req, res, next) => {
         .populate("products.product", "name price images")
         .sort("-orderDate")
         .skip(skip)
-        .limit(limit),
+        .limit(limit)
+        .lean()
+        .exec(),
       Order.countDocuments(query),
     ]);
 
+    const transformedOrders = orders.map((order) => {
+      if (!order.total) {
+        const subtotal =
+          order.subtotal ||
+          order.products.reduce(
+            (sum, item) => sum + (item.product?.price || 0) * item.quantity,
+            0
+          );
+        const tax = order.tax || 0;
+        const discount = order.discount || 0;
+        return {
+          ...order,
+          subtotal,
+          total: subtotal + tax - discount,
+        };
+      }
+      return order;
+    });
+
     res.status(200).json({
       message: "Orders fetched successfully",
-      orders,
+      orders: transformedOrders,
       pagination: {
         total,
         pages: Math.ceil(total / limit),

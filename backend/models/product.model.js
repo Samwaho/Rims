@@ -40,6 +40,10 @@ const productSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    buyingPrice: {
+      type: Number,
+      required: true,
+    },
     stock: {
       type: Number,
       required: true,

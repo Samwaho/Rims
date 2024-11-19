@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   Settings,
   Package,
+  TrendingUp,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -207,6 +208,20 @@ export default function AdminPage() {
                 <div>
                   <h3 className="font-medium">Orders</h3>
                   <p className="text-sm text-gray-500">Manage orders</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/admin/financial">
+            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Financial</h3>
+                  <p className="text-sm text-gray-500">Revenue analytics</p>
                 </div>
               </div>
             </Card>

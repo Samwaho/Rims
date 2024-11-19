@@ -6,10 +6,11 @@ import { toast } from "sonner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { getAuthUser } from "@/lib/actions";
-import { Loader2 } from "lucide-react";
+import { Loader2, ArrowLeft } from "lucide-react";
 import { TaxSettings } from "./components/TaxSettings";
 import { DiscountSettings } from "./components/DiscountSettings";
 import { ShippingSettings } from "./components/ShippingSettings";
+import { Button } from "@/components/ui/button";
 
 export default function AdminSettings() {
   const router = useRouter();
@@ -44,7 +45,17 @@ export default function AdminSettings() {
 
   return (
     <div className="container max-w-7xl mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Store Settings</h1>
+      <div className="flex items-center gap-4 mb-8">
+        <Button
+          variant="ghost"
+          onClick={() => router.push("/admin")}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back to Dashboard
+        </Button>
+        <h1 className="text-3xl font-bold">Store Settings</h1>
+      </div>
 
       <Card className="p-6">
         <Tabs defaultValue="tax" className="space-y-6">

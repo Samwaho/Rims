@@ -20,7 +20,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Loader2, Search, AlertCircle } from "lucide-react";
+import { Loader2, Search, AlertCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { axiosHeaders, getAuthUser } from "@/lib/actions";
 import { useRouter } from "next/navigation";
@@ -31,12 +31,22 @@ import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { Button } from "@/components/ui/button";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes
 
 interface ErrorResponse {
   message: string;
+}
+
+interface OrderResponse {
+  orders: Order[];
+  pagination: {
+    total: number;
+    pages: number;
+    currentPage: number;
+  };
 }
 
 const statusStyles = {
@@ -84,7 +94,7 @@ export default function AdminOrders() {
   } = useQuery<Order[], AxiosError<ErrorResponse>>({
     queryKey: ["admin-orders"],
     queryFn: async () => {
-      const { data } = await axios.get(
+      const { data } = await axios.get<OrderResponse>(
         `${BACKEND_URL}/api/orders/admin/all`,
         await axiosHeaders()
       );
@@ -190,6 +200,15 @@ export default function AdminOrders() {
   return (
     <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex flex-col gap-6">
+        <Button
+          variant="ghost"
+          className="w-fit flex items-center gap-2 hover:bg-gray-100"
+          onClick={() => router.push("/admin")}
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Dashboard
+        </Button>
+
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
             Order Management

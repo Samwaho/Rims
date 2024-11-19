@@ -35,7 +35,10 @@ export type Order = {
     };
     quantity: number;
   }>;
-  totalAmount: number;
+  subtotal: number;
+  tax: number;
+  discount: number;
+  total: number;
   status: string;
   orderDate: string;
   paymentStatus: string;
@@ -171,13 +174,13 @@ export const createColumns = ({
     cell: ({ row }) => <ProductsCell products={row.original.products} />,
   },
   {
-    accessorKey: "totalAmount",
+    accessorKey: "total",
     header: ({ column }) => (
       <DataTableColumnHeader column={column} title="Total Amount" />
     ),
     cell: ({ row }) => (
       <div className="font-medium text-sm">
-        {formatPrice(row.original.totalAmount || 0)}
+        {formatPrice(row.original.total || 0)}
       </div>
     ),
   },

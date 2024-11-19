@@ -15,7 +15,7 @@ export const createTaxConfig = async (req, res, next) => {
 
 export const getTaxConfigs = async (req, res, next) => {
   try {
-    const taxConfigs = await TaxConfig.find({ isActive: true });
+    const taxConfigs = await TaxConfig.find({});
     res.status(200).json(taxConfigs);
   } catch (error) {
     next(errorHandler(res, error.status || 500, error.message));

@@ -14,6 +14,7 @@ import discountRoute from "./routes/discount.route.js";
 import shippingRoute from "./routes/shipping.route.js";
 import taxRoute from "./routes/tax.route.js";
 import userRouter from "./routes/user.route.js";
+import analyticsRoute from "./routes/analytics.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -60,6 +61,7 @@ app.use("/api/orders", orderRouter);
 app.use("/api/discounts", discountRoute);
 app.use("/api/shipping", shippingRoute);
 app.use("/api/tax", taxRoute);
+app.use("/api/analytics", analyticsRoute);
 
 // Global Error Handler
 app.use((err, req, res, next) => {

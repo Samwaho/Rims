@@ -403,10 +403,6 @@ export default function OrderConfirmationPage({
                   <span>Tax ({(order.taxRate * 100).toFixed(1)}%)</span>
                   <span>{formatPrice(order.tax)}</span>
                 </div>
-                <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
-                  <span>{formatPrice(order.shippingCost)}</span>
-                </div>
                 <div className="flex justify-between font-bold text-lg pt-3 border-t">
                   <span>Total</span>
                   <span className="text-primary">

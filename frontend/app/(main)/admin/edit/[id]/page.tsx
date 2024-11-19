@@ -58,6 +58,7 @@ export default function EditProductPage({
       name: "",
       description: "",
       price: 0,
+      buyingPrice: 0,
       stock: 0,
       category: "general" as const,
       size: "",
@@ -111,16 +112,30 @@ export default function EditProductPage({
   useEffect(() => {
     if (!product) return;
 
+    console.log("Raw product data:", product);
+
     // Create dummy File objects for existing images
     const dummyFiles = product.images.map(
       (url: string) => new File([], url, { type: "image/jpeg" })
     );
 
+    // Ensure buyingPrice is always a number
+    const buyingPrice =
+      typeof product.buyingPrice === "number"
+        ? product.buyingPrice
+        : parseFloat(product.buyingPrice) || 0;
+
+    console.log("Initializing form with buyingPrice:", buyingPrice);
+
     form.reset({
       ...product,
-      images: dummyFiles, // Set the images field with dummy files
+      buyingPrice,
+      price: Number(product.price) || 0,
+      stock: Number(product.stock) || 0,
+      images: dummyFiles,
       specifications: product.specifications || [],
     });
+
     setExistingImages(product.images || []);
     setImagePreview(product.images || []);
     setIsDirty(false);
@@ -155,16 +170,54 @@ export default function EditProductPage({
           (spec) => spec && spec.name?.trim() && spec.value?.trim()
         );
 
+        // Add debug logs to see the raw values
+        console.log("Raw form data:", data);
+        console.log(
+          "Raw buyingPrice:",
+          data.buyingPrice,
+          typeof data.buyingPrice
+        );
+
+        // Ensure numeric values are properly converted and validated
+        const buyingPrice = Number(data.buyingPrice);
+        const price = Number(data.price);
+        const stock = Number(data.stock);
+
+        // Log converted values
+        console.log("Converted values:", {
+          buyingPrice,
+          price,
+          stock,
+          buyingPriceType: typeof buyingPrice,
+          priceType: typeof price,
+          stockType: typeof stock,
+        });
+
+        // Modify validation to be more specific
+        if (typeof buyingPrice !== "number" || Number.isNaN(buyingPrice)) {
+          console.error("Invalid buyingPrice:", buyingPrice);
+          throw new Error(`Invalid buying price: ${data.buyingPrice}`);
+        }
+        if (typeof price !== "number" || Number.isNaN(price)) {
+          throw new Error(`Invalid price: ${data.price}`);
+        }
+        if (typeof stock !== "number" || Number.isNaN(stock)) {
+          throw new Error(`Invalid stock: ${data.stock}`);
+        }
+
         const productData = {
           name: data.name,
           description: data.description,
-          price: Number(data.price),
-          stock: Number(data.stock),
+          price,
+          buyingPrice,
+          stock,
           category: data.category,
           size: data.size,
           madeIn: data.madeIn,
           specifications: validSpecifications,
         };
+
+        console.log("Final productData:", productData);
 
         // Use existingImages instead of form's images field
         let finalImageUrls = [...existingImages];
@@ -191,8 +244,10 @@ export default function EditProductPage({
           },
           await axiosHeaders()
         );
+
         return response.data;
       } catch (error: any) {
+        console.error("Mutation error:", error);
         throw error;
       }
     },
@@ -201,6 +256,9 @@ export default function EditProductPage({
       queryClient.invalidateQueries({ queryKey: ["product", params.id] });
       toast.success("Product updated successfully!");
       setIsDirty(false);
+
+      queryClient.refetchQueries({ queryKey: ["product", params.id] });
+
       router.push("/admin");
     },
     onError: (error: any) => {

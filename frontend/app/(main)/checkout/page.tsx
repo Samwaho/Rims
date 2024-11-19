@@ -715,29 +715,6 @@ export default function CheckoutPage() {
                         </span>
                       </div>
                     )}
-                    <div className="flex justify-between text-gray-700">
-                      <div className="flex items-center gap-2">
-                        <MapPin className="w-4 h-4 text-primary" />
-                        <span>
-                          Pickup Fee
-                          {selectedDeliveryPoint &&
-                            ` - ${
-                              deliveryPoints.find(
-                                (p) => p._id === selectedDeliveryPoint
-                              )?.name
-                            }`}
-                        </span>
-                      </div>
-                      <span
-                        className={`font-medium ${
-                          shippingCost === 0 ? "text-green-600" : ""
-                        }`}
-                      >
-                        {shippingCost === 0
-                          ? "Free"
-                          : formatPrice(shippingCost)}
-                      </span>
-                    </div>
                     {appliedDiscount && (
                       <div className="flex justify-between text-green-600">
                         <span>
