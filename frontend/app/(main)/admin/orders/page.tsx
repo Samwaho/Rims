@@ -129,9 +129,58 @@ export default function AdminOrders() {
     [refetch]
   );
 
+  const handleCostUpdate = useCallback(
+    async (orderId: string, field: string, value: number) => {
+      try {
+        await axios.patch(
+          `${BACKEND_URL}/api/orders/${orderId}/costs`,
+          { [field]: value },
+          await axiosHeaders()
+        );
+        toast.success("Cost updated successfully");
+        refetch();
+      } catch (error) {
+        const errorMessage =
+          error instanceof AxiosError
+            ? error.response?.data?.message || "Error updating cost"
+            : "Error updating cost";
+
+        toast.error(errorMessage);
+        console.error("Error updating cost:", error);
+      }
+    },
+    [refetch]
+  );
+
+  const handleDeleteOrder = useCallback(
+    async (orderId: string) => {
+      try {
+        await axios.delete(
+          `${BACKEND_URL}/api/orders/${orderId}`,
+          await axiosHeaders()
+        );
+        refetch(); // Refetch orders after deletion
+      } catch (error) {
+        const errorMessage =
+          error instanceof AxiosError
+            ? error.response?.data?.message || "Error deleting order"
+            : "Error deleting order";
+        toast.error(errorMessage);
+        console.error("Error deleting order:", error);
+        throw error;
+      }
+    },
+    [refetch]
+  );
+
   const columns = useMemo(
-    () => createColumns({ handleStatusUpdate }),
-    [handleStatusUpdate]
+    () =>
+      createColumns({
+        handleStatusUpdate,
+        handleCostUpdate,
+        handleDeleteOrder,
+      }),
+    [handleStatusUpdate, handleCostUpdate, handleDeleteOrder]
   );
 
   const table = useReactTable({

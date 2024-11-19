@@ -346,7 +346,7 @@ export const getAllOrders = async (req, res, next) => {
     const [orders, total] = await Promise.all([
       Order.find(query)
         .populate("user", "username email")
-        .populate("products.product", "name price images")
+        .populate("products.product", "name price buyingPrice images")
         .sort("-orderDate")
         .skip(skip)
         .limit(limit)
@@ -356,22 +356,24 @@ export const getAllOrders = async (req, res, next) => {
     ]);
 
     const transformedOrders = orders.map((order) => {
-      if (!order.total) {
-        const subtotal =
-          order.subtotal ||
-          order.products.reduce(
-            (sum, item) => sum + (item.product?.price || 0) * item.quantity,
-            0
-          );
-        const tax = order.tax || 0;
-        const discount = order.discount || 0;
-        return {
-          ...order,
-          subtotal,
-          total: subtotal + tax - discount,
-        };
-      }
-      return order;
+      const total = order.total;
+
+      const productCost = order.products.reduce(
+        (sum, item) => sum + (item.product?.buyingPrice || 0) * item.quantity,
+        0
+      );
+
+      const totalCosts =
+        productCost +
+        (order.tax || 0) +
+        (order.shippingCost || 0) +
+        (order.deliveryCost || 0);
+
+      return {
+        ...order,
+        total,
+        profit: total - totalCosts,
+      };
     });
 
     res.status(200).json({
@@ -419,6 +421,67 @@ export const updateShippingInfo = async (req, res, next) => {
     res.status(200).json({
       message: "Shipping information updated successfully",
       order: updatedOrder,
+    });
+  } catch (error) {
+    next(errorHandler(res, error.status || 500, error.message));
+  }
+};
+
+export const updateOrderCosts = async (req, res, next) => {
+  try {
+    const { orderId } = req.params;
+    const { shippingCost, deliveryCost } = req.body;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      throw { status: 404, message: "Order not found" };
+    }
+
+    if (shippingCost !== undefined) {
+      order.shippingCost = shippingCost;
+    }
+    if (deliveryCost !== undefined) {
+      order.deliveryCost = deliveryCost;
+    }
+
+    await order.save();
+
+    const updatedOrder = await Order.findById(orderId)
+      .populate("user", "username email")
+      .populate("products.product", "name price buyingPrice images");
+
+    res.status(200).json({
+      message: "Order costs updated successfully",
+      order: updatedOrder,
+    });
+  } catch (error) {
+    next(errorHandler(res, error.status || 500, error.message));
+  }
+};
+
+export const deleteOrder = async (req, res, next) => {
+  try {
+    const { orderId } = req.params;
+
+    const order = await Order.findById(orderId);
+    if (!order) {
+      throw { status: 404, message: "Order not found" };
+    }
+
+    if (order.status !== "cancelled") {
+      await Promise.all(
+        order.products.map((item) =>
+          Product.findByIdAndUpdate(item.product, {
+            $inc: { stock: item.quantity },
+          })
+        )
+      );
+    }
+
+    await Order.findByIdAndDelete(orderId);
+
+    res.status(200).json({
+      message: "Order deleted successfully",
     });
   } catch (error) {
     next(errorHandler(res, error.status || 500, error.message));

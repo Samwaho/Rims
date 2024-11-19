@@ -41,8 +41,6 @@ interface Order {
     type: "percentage" | "fixed";
     value: number;
   };
-  tax: number;
-  taxRate: number;
   shippingCost: number;
   total: number;
   status:
@@ -399,10 +397,12 @@ export default function OrderConfirmationPage({
                     <span>-{formatPrice(order.discount)}</span>
                   </div>
                 )}
-                <div className="flex justify-between text-gray-600">
-                  <span>Tax ({(order.taxRate * 100).toFixed(1)}%)</span>
-                  <span>{formatPrice(order.tax)}</span>
-                </div>
+                {order.shippingCost > 0 && (
+                  <div className="flex justify-between text-gray-600">
+                    <span>Shipping</span>
+                    <span>{formatPrice(order.shippingCost)}</span>
+                  </div>
+                )}
                 <div className="flex justify-between font-bold text-lg pt-3 border-t">
                   <span>Total</span>
                   <span className="text-primary">

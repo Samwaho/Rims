@@ -84,11 +84,6 @@ interface CheckoutItem {
   quantity: number;
 }
 
-interface TaxConfig {
-  rate: number;
-  name: string;
-}
-
 interface ShippingRate {
   cost: number;
   name: string;
@@ -163,14 +158,6 @@ const fetchProduct = async (productId: string): Promise<CheckoutItem> => {
     product: response.data,
     quantity: 1,
   };
-};
-
-const fetchTaxConfig = async (): Promise<TaxConfig> => {
-  const response = await axios.get(
-    `${BACKEND_URL}/api/tax`,
-    await axiosHeaders()
-  );
-  return response.data[0] || { rate: 0, name: "No Tax" };
 };
 
 const fetchShippingRate = async (
@@ -332,11 +319,6 @@ export default function CheckoutPage() {
     [items]
   );
 
-  const { data: taxConfig } = useQuery<TaxConfig>({
-    queryKey: ["tax-config"],
-    queryFn: fetchTaxConfig,
-  });
-
   const { data: deliveryPoints = [], isLoading: isLoadingDeliveryPoints } =
     useQuery<DeliveryPoint[]>({
       queryKey: ["deliveryPoints"],
@@ -388,11 +370,6 @@ export default function CheckoutPage() {
                 amount: discountAmount,
               }
             : null,
-          tax: {
-            name: taxConfig?.name,
-            rate: taxConfig?.rate,
-            amount: taxAmount,
-          },
         },
         await axiosHeaders()
       );
@@ -430,11 +407,6 @@ export default function CheckoutPage() {
   });
 
   // Memoized Values
-  const taxAmount = useMemo(() => {
-    if (!taxConfig) return 0;
-    return Math.round(subtotal * (taxConfig.rate / 100));
-  }, [subtotal, taxConfig]);
-
   const discountAmount = useMemo(() => {
     if (!appliedDiscount) return 0;
     return appliedDiscount.type === "percentage"
@@ -443,8 +415,8 @@ export default function CheckoutPage() {
   }, [appliedDiscount, subtotal]);
 
   const totalPrice = useMemo(
-    () => subtotal + taxAmount + shippingCost - discountAmount,
-    [subtotal, taxAmount, shippingCost, discountAmount]
+    () => subtotal + shippingCost - discountAmount,
+    [subtotal, shippingCost, discountAmount]
   );
 
   const backLink = useMemo(
@@ -702,19 +674,6 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
-                    {taxConfig && (
-                      <div className="flex justify-between text-gray-700">
-                        <span className="flex items-center gap-2">
-                          <Info className="w-4 h-4 text-gray-500" />
-                          <span>
-                            {taxConfig.name} ({taxConfig.rate}%)
-                          </span>
-                        </span>
-                        <span className="font-medium">
-                          {formatPrice(taxAmount)}
-                        </span>
-                      </div>
-                    )}
                     {appliedDiscount && (
                       <div className="flex justify-between text-green-600">
                         <span>

@@ -7,6 +7,8 @@ import {
   cancelOrder,
   getAllOrders,
   updateShippingInfo,
+  updateOrderCosts,
+  deleteOrder,
 } from "../controllers/order.controller.js";
 import { ensureAuthenticated, authorize } from "../middleware/middleware.js";
 
@@ -22,5 +24,8 @@ router.patch("/:orderId/cancel", cancelOrder);
 router.get("/admin/all", authorize(["admin"]), getAllOrders);
 router.patch("/:orderId/status", authorize(["admin"]), updateOrderStatus);
 router.patch("/:orderId/shipping", authorize(["admin"]), updateShippingInfo);
+router.patch("/:orderId/costs", authorize(["admin"]), updateOrderCosts);
+
+router.delete("/:orderId", authorize(["admin"]), deleteOrder);
 
 export default router;

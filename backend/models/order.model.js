@@ -54,6 +54,10 @@ const orderSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
+    deliveryCost: {
+      type: Number,
+      default: 0,
+    },
     total: {
       type: Number,
       required: true,

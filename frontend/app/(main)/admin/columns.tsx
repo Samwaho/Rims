@@ -3,15 +3,92 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
-import { Edit, Trash } from "lucide-react";
+import { Edit, Trash2, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { formatPrice } from "@/lib/utils";
 import Image from "next/image";
 import { cn } from "@/lib/utils";
+import { useState } from "react";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface CreateColumnsProps {
-  handleDelete: (productId: string) => void;
+  handleDelete: (productId: string) => Promise<void>;
 }
+
+// Add DeleteProductButton component
+const DeleteProductButton = ({
+  productId,
+  onDelete,
+}: {
+  productId: string;
+  onDelete: (productId: string) => Promise<void>;
+}) => {
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  const handleDelete = async () => {
+    setIsDeleting(true);
+    try {
+      await onDelete(productId);
+      toast.success("Product deleted successfully");
+    } catch (error) {
+      toast.error("Failed to delete product");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  return (
+    <AlertDialog>
+      <AlertDialogTrigger asChild>
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-8 w-8 sm:h-9 sm:w-9 p-0 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors duration-200"
+          title="Delete product"
+        >
+          <Trash2 className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+        </Button>
+      </AlertDialogTrigger>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Delete Product</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to delete this product? This action cannot be
+            undone.
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={handleDelete}
+            className="bg-red-500 hover:bg-red-600 text-white"
+            disabled={isDeleting}
+          >
+            {isDeleting ? (
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Deleting...
+              </div>
+            ) : (
+              "Delete"
+            )}
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+};
 
 export const createColumns = ({
   handleDelete,
@@ -93,15 +170,10 @@ export const createColumns = ({
             <Edit className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
           </Button>
         </Link>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => handleDelete(row.original._id)}
-          className="h-8 w-8 sm:h-9 sm:w-9 p-0 text-red-500 hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors duration-200"
-          title="Delete product"
-        >
-          <Trash className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-        </Button>
+        <DeleteProductButton
+          productId={row.original._id}
+          onDelete={handleDelete}
+        />
       </div>
     ),
   },
