@@ -154,7 +154,7 @@ const formatYAxisTick = (value: number) => {
 };
 
 export function FinancialAnalytics() {
-  const [timeframe, setTimeframe] = useState("weekly");
+  const [timeframe, setTimeframe] = useState("daily");
 
   const {
     data: metrics,
