@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import React, { memo, useState, useEffect, useCallback } from "react";
-import BannerIMG1 from "@/public/BannerImg1.png";
+import BannerIMG1 from "@/public/BannerImg.png";
 import BannerIMG2 from "@/public/BannerImg2.png";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
@@ -24,7 +24,17 @@ const CountdownItem = memo(
 CountdownItem.displayName = "CountdownItem";
 
 const BannerImage = memo(
-  ({ src, alt, height }: { src: any; alt: string; height: number }) => (
+  ({
+    src,
+    alt,
+    height,
+    className,
+  }: {
+    src: any;
+    alt: string;
+    height: number;
+    className: string;
+  }) => (
     <div className="hidden md:block transform hover:scale-105 transition-transform duration-300">
       <Image
         src={src}
@@ -32,7 +42,7 @@ const BannerImage = memo(
         width={400}
         height={400}
         quality={100}
-        className={`w-[200px] h-[${height}px]`}
+        className={`w-[300px] h-[${height}px] ${className}`}
       />
     </div>
   )
@@ -104,7 +114,12 @@ const Banner = memo(() => {
         </h2>
 
         <div className="grid md:grid-cols-3 gap-8 items-center justify-center">
-          <BannerImage src={BannerIMG1} alt="Premium Tires" height={200} />
+          <BannerImage
+            src={BannerIMG1}
+            alt="Premium Tires"
+            height={300}
+            className="ms-16"
+          />
 
           <div className="space-y-6 text-center">
             <div className="bg-white p-6 rounded-2xl shadow-xl border border-primary/10">
@@ -127,7 +142,12 @@ const Banner = memo(() => {
             </Link>
           </div>
 
-          <BannerImage src={BannerIMG2} alt="Luxury Wheels" height={180} />
+          <BannerImage
+            src={BannerIMG2}
+            alt="Luxury Wheels"
+            height={300}
+            className="ms-12"
+          />
         </div>
       </div>
     </section>

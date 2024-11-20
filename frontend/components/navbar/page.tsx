@@ -197,9 +197,9 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
           <Image
             src={logo}
             alt="Logo"
-            width={120}
-            height={80}
-            className="w-24 md:w-28 lg:w-32"
+            width={150}
+            height={120}
+            className="w-28 md:w-32 lg:w-36"
             priority
           />
         </Link>

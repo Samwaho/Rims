@@ -1,8 +1,8 @@
 import React, { memo } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import TiresCat from "@/public/TIresCat.png";
-import WheelsCat from "@/public/WheelsCat.png";
+import TiresCat from "@/public/TIRE.png";
+import WheelsCat from "@/public/BannerImg.png";
 
 const ArrowIcon = memo(() => (
   <svg
