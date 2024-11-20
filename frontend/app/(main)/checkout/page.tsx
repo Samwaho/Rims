@@ -351,6 +351,17 @@ export default function CheckoutPage() {
     enabled: !!selectedDeliveryPoint && subtotal > 0,
   });
 
+  const { data: activeDiscount } = useQuery({
+    queryKey: ["activeDiscount"],
+    queryFn: async () => {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discounts/active`,
+        await axiosHeaders()
+      );
+      return response.data.discount;
+    },
+  });
+
   // Mutations
   const validateDiscountMutation = useMutation({
     mutationFn: (code: string) => validateDiscount(code, subtotal),
@@ -618,6 +629,19 @@ export default function CheckoutPage() {
     [renderFormField]
   );
 
+  useEffect(() => {
+    if (activeDiscount && subtotal > 0) {
+      validateDiscount(activeDiscount.code, subtotal)
+        .then((discountData) => {
+          setAppliedDiscount(discountData);
+          toast.success("Discount automatically applied!");
+        })
+        .catch((error) => {
+          console.error("Failed to apply automatic discount:", error);
+        });
+    }
+  }, [activeDiscount, subtotal]);
+
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
@@ -662,23 +686,24 @@ export default function CheckoutPage() {
                   ))}
                   <Separator className="my-6" />
 
-                  {/* Discount Code Input */}
-                  <div className="flex gap-3">
-                    <Input
-                      placeholder="Enter discount code"
-                      value={discountCode}
-                      onChange={(e) => setDiscountCode(e.target.value)}
-                      className="flex-1 h-12"
-                    />
-                    <Button
-                      onClick={handleApplyDiscount}
-                      disabled={validateDiscountMutation.isPending}
-                      variant="outline"
-                      className="h-12 px-6 hover:bg-primary hover:text-primary-foreground"
-                    >
-                      Apply
-                    </Button>
-                  </div>
+                  {!appliedDiscount && (
+                    <div className="flex gap-3">
+                      <Input
+                        placeholder="Enter discount code"
+                        value={discountCode}
+                        onChange={(e) => setDiscountCode(e.target.value)}
+                        className="flex-1 h-12"
+                      />
+                      <Button
+                        onClick={handleApplyDiscount}
+                        disabled={validateDiscountMutation.isPending}
+                        variant="outline"
+                        className="h-12 px-6 hover:bg-primary hover:text-primary-foreground"
+                      >
+                        Apply
+                      </Button>
+                    </div>
+                  )}
 
                   {/* Price Breakdown */}
                   <div className="space-y-3 pt-2">

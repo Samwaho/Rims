@@ -5,6 +5,9 @@ import BannerIMG1 from "@/public/BannerImg.png";
 import BannerIMG2 from "@/public/BannerImg2.png";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import axios from "axios";
+import { axiosHeaders } from "@/lib/actions";
 
 const StarIcon = memo(() => <Star className="w-6 h-6 text-primary" />);
 
@@ -51,6 +54,17 @@ const BannerImage = memo(
 BannerImage.displayName = "BannerImage";
 
 const Banner = memo(() => {
+  const { data: activeDiscount } = useQuery({
+    queryKey: ["activeDiscount"],
+    queryFn: async () => {
+      const response = await axios.get(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discounts/active`,
+        await axiosHeaders()
+      );
+      return response.data.discount;
+    },
+  });
+
   const [timeLeft, setTimeLeft] = useState({
     days: 0,
     hours: 0,
@@ -59,7 +73,9 @@ const Banner = memo(() => {
   });
 
   const calculateTimeLeft = useCallback(() => {
-    const targetDate = new Date("2024-12-31T23:59:59").getTime();
+    if (!activeDiscount?.endDate) return timeLeft;
+
+    const targetDate = new Date(activeDiscount.endDate).getTime();
     const now = new Date().getTime();
     const difference = targetDate - now;
 
@@ -75,7 +91,7 @@ const Banner = memo(() => {
       minutes: Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60)),
       seconds: Math.floor((difference % (1000 * 60)) / 1000),
     };
-  }, []);
+  }, [activeDiscount]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -84,6 +100,14 @@ const Banner = memo(() => {
 
     return () => clearInterval(interval);
   }, [calculateTimeLeft]);
+
+  if (!activeDiscount) return null;
+
+  const discountTitle = activeDiscount.code
+    .split(/(?=[A-Z])/)
+    .join(" ")
+    .toLowerCase()
+    .replace(/(^|\s)\S/g, (l: string) => l.toUpperCase());
 
   const countdownItems = [
     { value: timeLeft.days, label: "Days" },
@@ -100,7 +124,7 @@ const Banner = memo(() => {
             <StarIcon />
           </span>
           <p className="text-center text-sm font-semibold text-primary tracking-wider uppercase">
-            Exclusive Holiday Deals
+            {discountTitle}
           </p>
           <span className="animate-pulse">
             <StarIcon />
@@ -109,7 +133,11 @@ const Banner = memo(() => {
 
         <h2 className="text-3xl sm:text-4xl font-bold text-center mt-2 mb-8">
           <span className="bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">
-            SAVE UP TO 40% OFF
+            SAVE UP TO{" "}
+            {activeDiscount.type === "percentage"
+              ? `${activeDiscount.value}%`
+              : `KES ${activeDiscount.value}`}{" "}
+            OFF
           </span>
         </h2>
 

@@ -16,9 +16,16 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { axiosHeaders } from "@/lib/actions";
-import { Loader2, Plus, Trash2, AlertCircle } from "lucide-react";
+import { Loader2, Plus, Trash2, AlertCircle, Edit2 } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { format } from "date-fns";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 interface DiscountCode {
   _id: string;
@@ -63,6 +70,7 @@ export function DiscountSettings() {
     maxUses: "",
     expiryDate: "",
   });
+  const [editingDiscount, setEditingDiscount] = useState<any>(null);
 
   const { data: discounts, isLoading } = useQuery({
     queryKey: ["discounts"],
@@ -120,18 +128,41 @@ export function DiscountSettings() {
 
   const toggleDiscountMutation = useMutation({
     mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
-      await axios.patch(
+      const { data } = await axios.patch(
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discounts/${id}`,
         { isActive },
         await axiosHeaders()
       );
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["discounts"] });
       toast.success("Discount status updated successfully");
     },
-    onError: () => {
-      toast.error("Failed to update discount status");
+    onError: (error: any) => {
+      console.error("Error updating discount:", error);
+      toast.error(
+        error.response?.data?.message || "Failed to update discount status"
+      );
+    },
+  });
+
+  const editDiscountMutation = useMutation({
+    mutationFn: async (discountData: any) => {
+      const { data } = await axios.patch(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/discounts/${discountData._id}`,
+        discountData,
+        await axiosHeaders()
+      );
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["discounts"] });
+      toast.success("Discount updated successfully");
+      setEditingDiscount(null);
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to update discount");
     },
   });
 
@@ -162,6 +193,29 @@ export function DiscountSettings() {
     if (window.confirm("Are you sure you want to delete this discount code?")) {
       deleteDiscountMutation.mutate(id);
     }
+  };
+
+  const handleEditSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (
+      !editingDiscount.code ||
+      !editingDiscount.value ||
+      !editingDiscount.endDate
+    ) {
+      toast.error("Please fill in all required fields");
+      return;
+    }
+
+    const discountData = {
+      ...editingDiscount,
+      value: parseFloat(editingDiscount.value),
+      minPurchase: parseFloat(editingDiscount.minPurchase) || 0,
+      maxUses: parseInt(editingDiscount.maxUses) || null,
+      endDate: new Date(editingDiscount.endDate).toISOString(),
+      usageLimit: parseInt(editingDiscount.maxUses) || null,
+    };
+
+    editDiscountMutation.mutate(discountData);
   };
 
   if (isLoading) {
@@ -309,9 +363,7 @@ export function DiscountSettings() {
             {discounts?.map((discount: DiscountCode) => (
               <div
                 key={discount._id}
-                className={`p-6 border rounded-lg transition-colors ${
-                  !discount.isActive ? "bg-muted" : "bg-card"
-                }`}
+                className="p-6 border rounded-lg transition-colors"
               >
                 <div className="flex flex-col space-y-4">
                   <div className="flex items-start justify-between">
@@ -333,6 +385,131 @@ export function DiscountSettings() {
                           })
                         }
                       />
+                      <Dialog>
+                        <DialogTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-primary hover:text-primary hover:bg-primary/10"
+                            onClick={() => setEditingDiscount(discount)}
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </Button>
+                        </DialogTrigger>
+                        <DialogContent className="sm:max-w-[425px]">
+                          <DialogHeader>
+                            <DialogTitle>Edit Discount</DialogTitle>
+                          </DialogHeader>
+                          <form
+                            onSubmit={handleEditSubmit}
+                            className="space-y-4"
+                          >
+                            <div className="space-y-2">
+                              <Label>Code</Label>
+                              <Input
+                                value={editingDiscount?.code || ""}
+                                onChange={(e) =>
+                                  setEditingDiscount({
+                                    ...editingDiscount,
+                                    code: e.target.value,
+                                  })
+                                }
+                                className="uppercase"
+                                disabled
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Type</Label>
+                              <Select
+                                value={editingDiscount?.type || "percentage"}
+                                onValueChange={(value) =>
+                                  setEditingDiscount({
+                                    ...editingDiscount,
+                                    type: value,
+                                  })
+                                }
+                              >
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="percentage">
+                                    Percentage Off
+                                  </SelectItem>
+                                  <SelectItem value="fixed">
+                                    Fixed Amount Off
+                                  </SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Value</Label>
+                              <Input
+                                type="number"
+                                value={editingDiscount?.value || ""}
+                                onChange={(e) =>
+                                  setEditingDiscount({
+                                    ...editingDiscount,
+                                    value: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Minimum Purchase</Label>
+                              <Input
+                                type="number"
+                                value={editingDiscount?.minPurchase || ""}
+                                onChange={(e) =>
+                                  setEditingDiscount({
+                                    ...editingDiscount,
+                                    minPurchase: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Maximum Uses</Label>
+                              <Input
+                                type="number"
+                                value={editingDiscount?.maxUses || ""}
+                                onChange={(e) =>
+                                  setEditingDiscount({
+                                    ...editingDiscount,
+                                    maxUses: e.target.value,
+                                  })
+                                }
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>Expiry Date</Label>
+                              <Input
+                                type="date"
+                                value={
+                                  editingDiscount?.endDate?.split("T")[0] || ""
+                                }
+                                onChange={(e) =>
+                                  setEditingDiscount({
+                                    ...editingDiscount,
+                                    endDate: e.target.value,
+                                  })
+                                }
+                                min={new Date().toISOString().split("T")[0]}
+                              />
+                            </div>
+                            <div className="flex justify-end gap-2 mt-4">
+                              <Button
+                                type="button"
+                                variant="outline"
+                                onClick={() => setEditingDiscount(null)}
+                              >
+                                Cancel
+                              </Button>
+                              <Button type="submit">Save Changes</Button>
+                            </div>
+                          </form>
+                        </DialogContent>
+                      </Dialog>
                       <Button
                         variant="ghost"
                         size="sm"

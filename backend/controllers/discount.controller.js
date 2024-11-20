@@ -145,3 +145,21 @@ export const validateDiscountCode = async ({ code, subtotal }) => {
     value: discount.value,
   };
 };
+
+export const getActiveDiscount = async (req, res, next) => {
+  try {
+    const activeDiscount = await Discount.findOne({
+      isActive: true,
+      startDate: { $lte: new Date() },
+      endDate: { $gte: new Date() },
+      $or: [{ usageLimit: { $gt: 0 } }, { usageLimit: null }],
+    }).sort("-createdAt"); // Get the most recently created active discount
+
+    res.status(200).json({
+      message: "Active discount fetched successfully",
+      discount: activeDiscount,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
