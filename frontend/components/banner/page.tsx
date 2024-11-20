@@ -123,9 +123,12 @@ const Banner = memo(() => {
           <span className="animate-pulse">
             <StarIcon />
           </span>
-          <p className="text-center text-sm font-semibold text-primary tracking-wider uppercase">
-            {discountTitle}
-          </p>
+          <div className="relative">
+            <p className="text-center text-sm font-bold text-primary tracking-wider uppercase bg-white px-4 py-2 rounded-full shadow-lg border-2 border-primary animate-bounce">
+              {discountTitle}
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-ping" />
+            </p>
+          </div>
           <span className="animate-pulse">
             <StarIcon />
           </span>
