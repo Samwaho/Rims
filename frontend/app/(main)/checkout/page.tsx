@@ -28,6 +28,7 @@ import {
   Loader2,
   Building,
   Home,
+  Truck,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -75,6 +76,8 @@ interface Product {
   _id: string;
   name: string;
   price: number;
+  shippingCost: number;
+  deliveryTime: string;
   images: string[];
 }
 
@@ -229,15 +232,28 @@ const OrderItem = React.memo(({ item }: { item: CheckoutItem }) => (
         <p className="font-semibold text-gray-900 tracking-tight">
           {item.product.name}
         </p>
-        <div>
+        <div className="space-y-0.5">
           <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
           <p className="text-xs text-gray-500">Price for 4 pieces per item</p>
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <Truck className="w-3 h-3" />
+            <span>Shipping: {formatPrice(item.product.shippingCost)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs text-gray-600">
+            <Clock className="w-3 h-3" />
+            <span>Delivery: {item.product.deliveryTime}</span>
+          </div>
         </div>
       </div>
     </div>
-    <span className="font-bold text-gray-900 tracking-tight">
-      {formatPrice(item.product.price * item.quantity)}
-    </span>
+    <div className="text-right">
+      <span className="font-bold text-gray-900 tracking-tight">
+        {formatPrice(
+          (item.product.price + item.product.shippingCost) * item.quantity
+        )}
+      </span>
+      <p className="text-xs text-gray-500">Including shipping</p>
+    </div>
   </div>
 ));
 
@@ -313,7 +329,10 @@ export default function CheckoutPage() {
   const subtotal = useMemo(
     () =>
       items.reduce(
-        (total, item) => total + item.product.price * item.quantity,
+        (total, item) =>
+          total +
+          item.product.price * item.quantity +
+          item.product.shippingCost * item.quantity,
         0
       ),
     [items]
@@ -664,15 +683,33 @@ export default function CheckoutPage() {
                   {/* Price Breakdown */}
                   <div className="space-y-3 pt-2">
                     <div className="flex justify-between text-gray-700">
-                      <span>Subtotal</span>
+                      <span>Subtotal (Items)</span>
                       <div className="text-right">
                         <span className="font-medium">
-                          {formatPrice(subtotal)}
+                          {formatPrice(
+                            items.reduce(
+                              (total, item) =>
+                                total + item.product.price * item.quantity,
+                              0
+                            )
+                          )}
                         </span>
                         <div className="text-xs text-gray-500 mt-0.5">
                           All prices are for 4 pieces per item
                         </div>
                       </div>
+                    </div>
+                    <div className="flex justify-between text-gray-700">
+                      <span>Shipping Total</span>
+                      <span className="font-medium">
+                        {formatPrice(
+                          items.reduce(
+                            (total, item) =>
+                              total + item.product.shippingCost * item.quantity,
+                            0
+                          )
+                        )}
+                      </span>
                     </div>
                     {appliedDiscount && (
                       <div className="flex justify-between text-green-600">

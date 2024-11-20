@@ -114,15 +114,15 @@ export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 export const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),
-  price: z.number().min(0, "Price must be greater than or equal to 0"),
-  buyingPrice: z
-    .number()
-    .min(0, "Buying price must be greater than or equal to 0"),
-  stock: z.number().min(0, "Stock must be greater than or equal to 0"),
-  category: z.enum(PRODUCT_CATEGORIES),
+  price: z.number().min(0, "Price must be a positive number"),
+  buyingPrice: z.number().min(0, "Buying price must be a positive number"),
+  shippingCost: z.number().min(0, "Shipping cost must be a positive number"),
+  deliveryTime: z.string().min(1, "Delivery time is required"),
+  stock: z.number().int().min(0, "Stock must be a positive integer"),
+  category: z.enum(["general", "wheels", "tyres"] as const),
   size: z.string().min(1, "Size is required"),
   madeIn: z.string().min(1, "Country of origin is required"),
-  images: z.array(z.any()),
+  images: z.any(),
   specifications: z.array(
     z.object({
       name: z.string(),

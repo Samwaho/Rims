@@ -29,6 +29,8 @@ import {
 export type ProductFormValues = z.infer<typeof productSchema> & {
   images: File[];
   buyingPrice: number;
+  shippingCost: number;
+  deliveryTime: string;
 };
 
 export interface Specification {
@@ -439,6 +441,67 @@ export const ProductForm = memo(function ProductForm({
                       ))}
                     </SelectContent>
                   </Select>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="shippingCost"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Shipping Cost (KES) *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="text"
+                      placeholder="Enter shipping cost"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        const formattedValue = formatNumberWithCommas(
+                          e.target.value
+                        );
+                        e.target.value = formattedValue;
+
+                        const numericValue =
+                          parseFloat(formattedValue.replace(/,/g, "")) || 0;
+                        field.onChange(numericValue);
+                        handleFieldChange(e);
+                      }}
+                      value={
+                        field.value
+                          ? formatNumberWithCommas(field.value.toString())
+                          : ""
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="deliveryTime"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Delivery Time *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="e.g., 2-3 business days"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
                   <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}

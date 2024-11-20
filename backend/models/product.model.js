@@ -44,6 +44,17 @@ const productSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    shippingCost: {
+      type: Number,
+      required: true,
+      min: 0,
+      default: 0,
+    },
+    deliveryTime: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     stock: {
       type: Number,
       required: true,

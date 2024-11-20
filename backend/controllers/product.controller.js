@@ -64,6 +64,8 @@ const validateProductData = (productData) => {
     "category",
     "size",
     "madeIn",
+    "shippingCost",
+    "deliveryTime",
   ];
   const missingFields = requiredFields.filter(
     (field) => !productData[field] && productData[field] !== 0
@@ -129,6 +131,7 @@ export const createProduct = async (req, res, next) => {
       ...productData,
       price: parseFloat(productData.price) || 0,
       buyingPrice: parseFloat(productData.buyingPrice) || 0,
+      shippingCost: parseFloat(productData.shippingCost) || 0,
       stock: parseInt(productData.stock) || 0,
     };
 
@@ -185,15 +188,22 @@ export const updateProduct = async (req, res, next) => {
       });
     }
 
-    // Validate numeric values
-    const buyingPrice = Number(productData.buyingPrice);
-    const price = Number(productData.price);
-    const stock = Number(productData.stock);
+    // Validate numeric values with default to 0 if invalid
+    const buyingPrice = Number(productData.buyingPrice) || 0;
+    const price = Number(productData.price) || 0;
+    const stock = Number(productData.stock) || 0;
+    const shippingCost = Number(productData.shippingCost) || 0;
 
-    if (isNaN(buyingPrice) || isNaN(price) || isNaN(stock)) {
+    // Validate all numeric values
+    if (
+      isNaN(buyingPrice) ||
+      isNaN(price) ||
+      isNaN(stock) ||
+      isNaN(shippingCost)
+    ) {
       return res.status(400).json({
         message: "Invalid numeric values provided",
-        receivedData: { buyingPrice, price, stock },
+        receivedData: { buyingPrice, price, stock, shippingCost },
       });
     }
 
@@ -202,13 +212,13 @@ export const updateProduct = async (req, res, next) => {
       price,
       buyingPrice,
       stock,
+      shippingCost,
+      deliveryTime: productData.deliveryTime || "2-3 business days", // Add default value
     };
 
     console.log("Sanitized product data:", sanitizedProductData);
 
     const existingProduct = await Product.findById(productId);
-    console.log("Existing product before update:", existingProduct);
-
     if (!existingProduct) {
       return res.status(404).json({ message: "Product not found" });
     }
@@ -226,6 +236,13 @@ export const updateProduct = async (req, res, next) => {
       updatedAt: new Date(),
     };
 
+    // Additional validation to ensure no NaN values
+    Object.keys(updateData).forEach((key) => {
+      if (typeof updateData[key] === "number" && isNaN(updateData[key])) {
+        updateData[key] = 0; // Set default value for any NaN numeric fields
+      }
+    });
+
     console.log("Final update data:", updateData);
 
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -233,8 +250,6 @@ export const updateProduct = async (req, res, next) => {
       updateData,
       { new: true, runValidators: true }
     ).lean();
-
-    console.log("Raw updated product:", updatedProduct);
 
     if (!updatedProduct) {
       return res.status(404).json({ message: "Product not found" });

@@ -19,6 +19,11 @@ const orderSchema = new mongoose.Schema(
           required: true,
           min: 1,
         },
+        shippingCost: {
+          type: Number,
+          required: true,
+          default: 0,
+        },
       },
     ],
     subtotal: {
@@ -39,24 +44,10 @@ const orderSchema = new mongoose.Schema(
       },
       value: Number,
     },
-    tax: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
-    taxRate: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
     shippingCost: {
       type: Number,
       required: true,
       min: 0,
-    },
-    deliveryCost: {
-      type: Number,
-      default: 0,
     },
     total: {
       type: Number,

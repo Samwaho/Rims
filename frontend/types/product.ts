@@ -21,6 +21,9 @@ export interface Product {
   name: string;
   description: string;
   price: number;
+  buyingPrice: number;
+  shippingCost: number;
+  deliveryTime: string;
   stock: number;
   category: "general" | "wheels" | "tyres";
   size: string;

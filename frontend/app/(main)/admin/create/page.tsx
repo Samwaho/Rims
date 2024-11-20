@@ -39,6 +39,9 @@ export default function CreateProductPage() {
       madeIn: "",
       images: [],
       specifications: [],
+      buyingPrice: 0,
+      shippingCost: 0,
+      deliveryTime: "",
     },
   });
 
@@ -62,6 +65,9 @@ export default function CreateProductPage() {
             specifications: data.specifications.filter(
               (spec) => spec.name.trim() && spec.value.trim()
             ),
+            buyingPrice: Number(data.buyingPrice),
+            shippingCost: Number(data.shippingCost),
+            deliveryTime: data.deliveryTime,
           },
           imageUrls: data.images,
         },

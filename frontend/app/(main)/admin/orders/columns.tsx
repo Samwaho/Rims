@@ -64,7 +64,6 @@ export type Order = {
     quantity: number;
   }>;
   subtotal: number;
-  tax: number;
   discount: number;
   shippingCost: number;
   deliveryCost: number;
@@ -158,10 +157,12 @@ const ProductsCell = memo(({ products }: { products: Order["products"] }) => (
               </div>
             </TooltipTrigger>
             <TooltipContent>
-              <p>{item.product?.name || "Deleted Product"}</p>
-              <p className="text-sm text-muted-foreground">
-                Quantity: {item.quantity}
-              </p>
+              <div className="space-y-1">
+                <p>{item.product?.name || "Deleted Product"}</p>
+                <p className="text-sm text-muted-foreground">
+                  Quantity: {item.quantity}
+                </p>
+              </div>
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
@@ -382,7 +383,7 @@ const FinancialDetails = memo(
       value: number
     ) => Promise<void>;
   }) => {
-    const [taxRate, setTaxRate] = useState(16); // Default to 16%
+    const [taxRate, setTaxRate] = useState(16); // Default to 16% for admin view only
 
     // Fetch tax rate when component mounts
     useEffect(() => {
@@ -556,7 +557,7 @@ const DeleteOrderButton = memo(
 );
 DeleteOrderButton.displayName = "DeleteOrderButton";
 
-// Update the columns definition to include delete action
+// Update the columns definition to include delivery information
 export const createColumns = ({
   handleStatusUpdate,
   handleCostUpdate,

@@ -27,6 +27,8 @@ interface OrderProduct {
     name: string;
     price: number;
     images: string[];
+    shippingCost: number;
+    deliveryTime: string;
   };
   quantity: number;
 }
@@ -67,6 +69,7 @@ interface Order {
     note?: string;
     timestamp: string;
   }>;
+  trackingNumber?: string;
 }
 
 const ORDER_STATUS = {
@@ -170,21 +173,84 @@ const OrderProduct = memo(
             sizes="(max-width: 640px) 80px, 64px"
           />
         </div>
-        <div>
+        <div className="space-y-1">
           <p className="font-medium text-gray-900 hover:text-primary transition-colors duration-200">
             {item.product?.name || "Product Not Found"}
           </p>
-          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+          <p className="text-sm text-gray-600">
+            Quantity: {item.quantity} {item.quantity > 1 ? "sets" : "set"} (4
+            pieces per set)
+          </p>
+          <div className="flex flex-col text-xs text-gray-500 mt-1">
+            <div className="flex items-center gap-1">
+              <Truck className="w-3 h-3" />
+              <span>
+                Shipping: {formatPrice(item.product?.shippingCost || 0)} per set
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Clock className="w-3 h-3" />
+              <span>
+                Delivery Time: {item.product?.deliveryTime || "Contact support"}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
-      <span className="font-semibold text-primary ml-24 sm:ml-0">
-        {formatPrice((item.product?.price || 0) * item.quantity)}
-      </span>
+      <div className="text-right">
+        <span className="font-semibold text-primary">
+          {formatPrice(item.product?.price || 0)} per set
+        </span>
+        <p className="text-sm font-medium text-gray-900">
+          Total: {formatPrice((item.product?.price || 0) * item.quantity)}
+        </p>
+        {item.product?.shippingCost > 0 && (
+          <p className="text-xs text-gray-500">
+            + {formatPrice((item.product?.shippingCost || 0) * item.quantity)}{" "}
+            shipping
+          </p>
+        )}
+      </div>
     </div>
   )
 );
 
 OrderProduct.displayName = "OrderProduct";
+
+const StatusHistory = memo(
+  ({ history }: { history?: Order["statusHistory"] }) => {
+    if (!history?.length) return null;
+
+    return (
+      <div className="mt-4 border-t pt-4">
+        <h4 className="font-medium text-gray-700 mb-3">Status History</h4>
+        <div className="space-y-3">
+          {history.map((item, index) => (
+            <div key={index} className="flex items-start space-x-3 text-sm">
+              <div className="w-32 flex-shrink-0 text-gray-500">
+                {format(new Date(item.timestamp), "MMM dd, HH:mm")}
+              </div>
+              <div>
+                <span className="font-medium text-gray-900 capitalize">
+                  {item.status.replace("_", " ")}
+                </span>
+                {item.note && (
+                  <p className="text-gray-600 mt-0.5">{item.note}</p>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+);
+
+StatusHistory.displayName = "StatusHistory";
+
+const isAxiosError = (error: any): error is import("axios").AxiosError => {
+  return error.isAxiosError === true;
+};
 
 export default function OrderConfirmationPage({
   params,
@@ -202,6 +268,7 @@ export default function OrderConfirmationPage({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${params.orderId}`,
         await axiosHeaders()
       );
+      console.log("Order data:", response.data.order);
       return response.data.order;
     },
   });
@@ -217,11 +284,22 @@ export default function OrderConfirmationPage({
         <div className="max-w-3xl mx-auto">
           <Alert variant="destructive">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>Error Loading Order</AlertTitle>
             <AlertDescription>
-              Failed to load order details. Please try again later.
+              {isAxiosError(error)
+                ? error.response?.status === 404
+                  ? "Order not found. Please check the order ID and try again."
+                  : error.response?.status === 403
+                  ? "You don't have permission to view this order."
+                  : "Failed to load order details. Please try again later."
+                : "An unexpected error occurred. Please try again later."}
             </AlertDescription>
           </Alert>
+          <div className="mt-4 text-center">
+            <Link href="/orders">
+              <Button variant="outline">Return to Orders</Button>
+            </Link>
+          </div>
         </div>
       </div>
     );
@@ -287,6 +365,34 @@ export default function OrderConfirmationPage({
                   <p className="text-gray-600 capitalize">
                     {order.paymentMethod}
                   </p>
+                </div>
+              )}
+              <div>
+                <p className="font-semibold mb-1 text-gray-700">
+                  Payment Status
+                </p>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
+                  ${
+                    order.paymentStatus === "completed"
+                      ? "bg-green-100 text-green-800"
+                      : order.paymentStatus === "pending"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : order.paymentStatus === "failed"
+                      ? "bg-red-100 text-red-800"
+                      : "bg-gray-100 text-gray-800"
+                  }`}
+                >
+                  {order.paymentStatus.charAt(0).toUpperCase() +
+                    order.paymentStatus.slice(1)}
+                </span>
+              </div>
+              {order.trackingNumber && (
+                <div>
+                  <p className="font-semibold mb-1 text-gray-700">
+                    Tracking Number
+                  </p>
+                  <p className="text-gray-600">{order.trackingNumber}</p>
                 </div>
               )}
             </div>
@@ -356,6 +462,7 @@ export default function OrderConfirmationPage({
           <CardContent>
             <div className="space-y-6">
               <OrderTimeline status={order.status} />
+              <StatusHistory history={order.statusHistory} />
             </div>
           </CardContent>
         </Card>
@@ -376,8 +483,22 @@ export default function OrderConfirmationPage({
 
               <div className="border-t pt-4 mt-6 space-y-3">
                 <div className="flex justify-between text-gray-600">
-                  <span>Subtotal</span>
-                  <span>{formatPrice(order.subtotal)}</span>
+                  <span>Subtotal (Items)</span>
+                  <div className="text-right">
+                    <span className="font-medium">
+                      {formatPrice(order.subtotal)}
+                    </span>
+                    <div className="text-xs text-gray-500">
+                      Price for sets of 4 pieces
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-between text-gray-600">
+                  <div className="flex items-center gap-2">
+                    <Truck className="w-4 h-4" />
+                    <span>Total Shipping</span>
+                  </div>
+                  <span>{formatPrice(order.shippingCost)}</span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between text-green-600">
@@ -397,17 +518,46 @@ export default function OrderConfirmationPage({
                     <span>-{formatPrice(order.discount)}</span>
                   </div>
                 )}
-                {order.shippingCost > 0 && (
-                  <div className="flex justify-between text-gray-600">
-                    <span>Shipping</span>
-                    <span>{formatPrice(order.shippingCost)}</span>
-                  </div>
-                )}
                 <div className="flex justify-between font-bold text-lg pt-3 border-t">
                   <span>Total</span>
-                  <span className="text-primary">
-                    {formatPrice(order.total)}
-                  </span>
+                  <div className="text-right">
+                    <span className="text-primary">
+                      {formatPrice(order.total)}
+                    </span>
+                    <div className="text-xs font-normal text-gray-500">
+                      Including shipping
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border border-gray-100">
+                <div className="flex items-center gap-2 text-gray-700 mb-2">
+                  <Clock className="w-5 h-5 text-primary" />
+                  <h4 className="font-medium">Delivery Information</h4>
+                </div>
+                <div className="space-y-3">
+                  {order.products.map((item, index) => (
+                    <div key={index} className="text-sm">
+                      <div className="flex justify-between text-gray-900 font-medium">
+                        <span>{item.product.name}</span>
+                        <span>
+                          {item.quantity} {item.quantity > 1 ? "sets" : "set"}
+                        </span>
+                      </div>
+                      <div className="flex justify-between text-gray-600 mt-1">
+                        <span>Estimated Delivery:</span>
+                        <span>
+                          {item.product.deliveryTime ||
+                            "Contact support for details"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  <p className="text-xs text-gray-500 mt-2">
+                    * Delivery times are estimated and may vary based on
+                    location and availability
+                  </p>
                 </div>
               </div>
             </div>

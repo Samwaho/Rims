@@ -9,7 +9,14 @@ import { ProductSpecifications } from "./ProductSpecifications";
 import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
-import { ShoppingCart, CreditCard, Tag, Share2 } from "lucide-react";
+import {
+  ShoppingCart,
+  CreditCard,
+  Tag,
+  Share2,
+  Truck,
+  Clock,
+} from "lucide-react";
 
 interface ProductDetailsProps {
   product: Product;
@@ -68,7 +75,7 @@ export default function ProductDetails({
         </div>
       </div>
 
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-4">
         <div className="flex items-center gap-8 text-sm lg:text-base">
           <div>
             <span className="font-semibold">Size:</span> {product.size}
@@ -77,15 +84,30 @@ export default function ProductDetails({
             <span className="font-semibold">Made in:</span> {product.madeIn}
           </div>
         </div>
-        <div className="flex items-center p-2.5 sm:p-4 bg-gray-200 rounded-xl w-fit relative backdrop-blur-sm">
-          <Tag className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-foreground" />
-          <div className="flex flex-col">
-            <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
-              {formatPrice(product.price)}
-            </p>
-            <span className="text-[10px] sm:text-xs lg:text-sm text-foreground/80">
-              Price for 4 pieces
-            </span>
+
+        {/* Price and Shipping Information */}
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="flex items-center p-2.5 sm:p-4 bg-gray-200 rounded-xl w-fit relative backdrop-blur-sm">
+            <Tag className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-foreground" />
+            <div className="flex flex-col">
+              <p className="text-xl sm:text-2xl lg:text-3xl font-bold text-foreground tracking-tight">
+                {formatPrice(product.price)}
+              </p>
+              <span className="text-[10px] sm:text-xs lg:text-sm text-foreground/80">
+                Price for 4 pieces
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Truck className="w-4 h-4" />
+              <span>Shipping: {formatPrice(product.shippingCost)}</span>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Clock className="w-4 h-4" />
+              <span>Delivery Time: {product.deliveryTime}</span>
+            </div>
           </div>
         </div>
       </div>

@@ -60,19 +60,12 @@ const calculateOrderTotals = async (
     }
   }
 
-  const taxRate = await getTaxRate();
-  const taxableAmount = subtotal - discountAmount;
-  const tax = taxableAmount * taxRate;
-
-  const total = subtotal - discountAmount + tax;
+  const total = subtotal - discountAmount;
 
   return {
     subtotal,
     discount: discountAmount,
     discountDetails,
-    taxRate,
-    tax,
-    shippingCost: 0,
     total,
   };
 };
@@ -94,9 +87,12 @@ const processDirectPurchase = async (
   await updateProductStock(product._id, quantity);
 
   const subtotal = product.price * quantity;
+  const shippingCost = product.shippingCost * quantity;
+
   return {
     orderProducts: [orderProduct],
     ...(await calculateOrderTotals(subtotal, shippingDetails, discountCode)),
+    shippingCost,
   };
 };
 
@@ -112,6 +108,7 @@ const processCartPurchase = async (
   }
 
   let subtotal = 0;
+  let shippingCost = 0;
   const orderProducts = [];
 
   for (const item of cart.items) {
@@ -119,6 +116,7 @@ const processCartPurchase = async (
     await validateProduct(product, quantity);
 
     subtotal += product.price * quantity;
+    shippingCost += (product.shippingCost || 0) * quantity;
     orderProducts.push({ product: product._id, quantity });
     await updateProductStock(product._id, quantity);
   }
@@ -128,6 +126,7 @@ const processCartPurchase = async (
   return {
     orderProducts,
     ...(await calculateOrderTotals(subtotal, shippingDetails, discountCode)),
+    shippingCost,
   };
 };
 
@@ -168,10 +167,8 @@ export const createOrder = async (req, res, next) => {
       subtotal: orderData.subtotal,
       discount: orderData.discount,
       discountDetails: orderData.discountDetails,
-      tax: orderData.tax,
-      taxRate: orderData.taxRate,
       shippingCost: orderData.shippingCost,
-      total: orderData.total,
+      total: orderData.total + orderData.shippingCost,
       status: "pending",
       paymentMethod,
       paymentDetails,
@@ -181,7 +178,10 @@ export const createOrder = async (req, res, next) => {
 
     const populatedOrder = await Order.findById(order._id)
       .populate("user", "username email")
-      .populate("products.product", "name price images")
+      .populate(
+        "products.product",
+        "name price images shippingCost deliveryTime"
+      )
       .lean();
 
     res.status(201).json({
@@ -217,7 +217,10 @@ export const getOrderById = async (req, res, next) => {
 
     const order = await Order.findById(orderId)
       .populate("user", "username email")
-      .populate("products.product", "name price images");
+      .populate(
+        "products.product",
+        "name price images shippingCost deliveryTime"
+      );
 
     if (!order) {
       throw { status: 404, message: "Order not found" };

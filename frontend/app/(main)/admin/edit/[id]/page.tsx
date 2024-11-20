@@ -59,6 +59,8 @@ export default function EditProductPage({
       description: "",
       price: 0,
       buyingPrice: 0,
+      shippingCost: 0,
+      deliveryTime: "",
       stock: 0,
       category: "general" as const,
       size: "",
@@ -119,17 +121,27 @@ export default function EditProductPage({
       (url: string) => new File([], url, { type: "image/jpeg" })
     );
 
-    // Ensure buyingPrice is always a number
+    // Ensure numeric values are properly converted
     const buyingPrice =
       typeof product.buyingPrice === "number"
         ? product.buyingPrice
         : parseFloat(product.buyingPrice) || 0;
+    const shippingCost =
+      typeof product.shippingCost === "number"
+        ? product.shippingCost
+        : parseFloat(product.shippingCost) || 0;
 
-    console.log("Initializing form with buyingPrice:", buyingPrice);
+    console.log("Initializing form with values:", {
+      buyingPrice,
+      shippingCost,
+      deliveryTime: product.deliveryTime,
+    });
 
     form.reset({
       ...product,
       buyingPrice,
+      shippingCost,
+      deliveryTime: product.deliveryTime || "",
       price: Number(product.price) || 0,
       stock: Number(product.stock) || 0,
       images: dummyFiles,
@@ -172,37 +184,29 @@ export default function EditProductPage({
 
         // Add debug logs to see the raw values
         console.log("Raw form data:", data);
-        console.log(
-          "Raw buyingPrice:",
-          data.buyingPrice,
-          typeof data.buyingPrice
-        );
 
         // Ensure numeric values are properly converted and validated
         const buyingPrice = Number(data.buyingPrice);
         const price = Number(data.price);
         const stock = Number(data.stock);
+        const shippingCost = Number(data.shippingCost);
 
         // Log converted values
         console.log("Converted values:", {
           buyingPrice,
           price,
           stock,
-          buyingPriceType: typeof buyingPrice,
-          priceType: typeof price,
-          stockType: typeof stock,
+          shippingCost,
+          deliveryTime: data.deliveryTime,
         });
 
-        // Modify validation to be more specific
-        if (typeof buyingPrice !== "number" || Number.isNaN(buyingPrice)) {
-          console.error("Invalid buyingPrice:", buyingPrice);
-          throw new Error(`Invalid buying price: ${data.buyingPrice}`);
-        }
-        if (typeof price !== "number" || Number.isNaN(price)) {
-          throw new Error(`Invalid price: ${data.price}`);
-        }
-        if (typeof stock !== "number" || Number.isNaN(stock)) {
-          throw new Error(`Invalid stock: ${data.stock}`);
+        // Validate numeric values
+        if (
+          [buyingPrice, price, stock, shippingCost].some(
+            (val) => typeof val !== "number" || Number.isNaN(val)
+          )
+        ) {
+          throw new Error("Invalid numeric values provided");
         }
 
         const productData = {
@@ -210,6 +214,8 @@ export default function EditProductPage({
           description: data.description,
           price,
           buyingPrice,
+          shippingCost,
+          deliveryTime: data.deliveryTime,
           stock,
           category: data.category,
           size: data.size,
