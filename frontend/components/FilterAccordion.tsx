@@ -1,4 +1,4 @@
-import React, { memo, useMemo } from "react";
+import React, { memo, useMemo, useState, useEffect } from "react";
 import {
   Accordion,
   AccordionItem,
@@ -12,6 +12,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/utils";
 import { Product } from "@/types/product";
 import { PRODUCT_TYPES } from "@/lib/utils";
+import {
+  ListFilter,
+  CircleDot,
+  Gauge,
+  Ruler,
+  DollarSign,
+  X,
+} from "lucide-react";
 
 interface FilterAccordionProps {
   isLoading: boolean;
@@ -52,9 +60,19 @@ const FilterItem = memo(
     checked: boolean;
     onChange: () => void;
   }) => (
-    <Label className="flex items-center gap-2 font-normal cursor-pointer capitalize">
-      <Checkbox checked={checked} onCheckedChange={onChange} />
-      {label}
+    <Label className="flex items-center gap-2 text-sm px-2 py-1.5 hover:bg-gray-50 cursor-pointer rounded transition-colors duration-150">
+      <Checkbox
+        checked={checked}
+        onCheckedChange={onChange}
+        className="h-4 w-4 transition-all duration-200"
+      />
+      <span
+        className={`text-sm ${
+          checked ? "text-gray-900 font-medium" : "text-gray-600"
+        }`}
+      >
+        {label}
+      </span>
     </Label>
   )
 );
@@ -99,6 +117,7 @@ export const FilterAccordion: React.FC<FilterAccordionProps> = memo(
     onFilterChange,
     onPriceRangeChange,
   }) => {
+    const [isOpen, setIsOpen] = useState(false);
     const uniqueSizes = useMemo(
       () => Array.from(new Set(products.map((product) => product.size))),
       [products]
@@ -106,92 +125,204 @@ export const FilterAccordion: React.FC<FilterAccordionProps> = memo(
 
     const categories = ["general", "wheels", "tyres"];
 
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent) => {
+        const target = event.target as HTMLElement;
+        if (!target.closest(".filter-accordion")) {
+          setIsOpen(false);
+        }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+      return () =>
+        document.removeEventListener("mousedown", handleClickOutside);
+    }, []);
+
+    const getActiveFiltersCount = (
+      filters: FilterAccordionProps["filters"]
+    ) => {
+      let count = 0;
+      if (filters.size.length > 0) count += filters.size.length;
+      if (filters.category.length > 0) count += filters.category.length;
+      if (filters.productType.length > 0) count += filters.productType.length;
+      if (filters.priceRange) count += 1;
+      return count;
+    };
+
     return (
-      <Accordion type="single" collapsible className="w-full">
-        <AccordionItem value="size">
-          <AccordionTrigger className="text-base font-medium">
-            Size
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="grid gap-2">
-              {isLoading ? (
-                <LoadingSkeleton count={5} />
-              ) : (
-                uniqueSizes.map((size) => (
-                  <FilterItem
-                    key={size}
-                    label={size}
-                    checked={filters.size.includes(size)}
-                    onChange={() => onFilterChange("size", size)}
-                  />
-                ))
-              )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="category">
-          <AccordionTrigger className="text-base font-medium">
-            Category
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="grid gap-2">
-              {isLoading ? (
-                <LoadingSkeleton count={3} />
-              ) : (
-                categories.map((category) => (
-                  <FilterItem
-                    key={category}
-                    label={category}
-                    checked={filters.category.includes(category)}
-                    onChange={() => onFilterChange("category", category)}
-                  />
-                ))
-              )}
-            </div>
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="price">
-          <AccordionTrigger className="text-base font-medium">
-            Price Range
-          </AccordionTrigger>
-          <AccordionContent>
-            {isLoading ? (
-              <Skeleton className="h-10 w-full" />
-            ) : (
-              <PriceRangeContent
-                priceRange={filters.priceRange}
-                maxPrice={maxPrice}
-                onPriceRangeChange={onPriceRangeChange}
-              />
+      <div className="relative inline-block filter-accordion">
+        <button
+          className={`
+            px-4 py-2 text-sm font-medium text-gray-700 bg-white border rounded-lg
+            hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-primary/20
+            transition-colors duration-200
+            ${isOpen ? "bg-gray-50 ring-2 ring-primary/20" : ""}
+          `}
+          onClick={() => setIsOpen(!isOpen)}
+        >
+          <span className="flex items-center gap-2">
+            <ListFilter className="h-4 w-4" />
+            Filter Products
+            {getActiveFiltersCount(filters) > 0 && (
+              <span className="inline-flex items-center justify-center w-5 h-5 text-xs font-medium text-white bg-primary rounded-full">
+                {getActiveFiltersCount(filters)}
+              </span>
             )}
-          </AccordionContent>
-        </AccordionItem>
-        <AccordionItem value="productType">
-          <AccordionTrigger className="text-base font-medium">
-            Product Type
-          </AccordionTrigger>
-          <AccordionContent>
-            <div className="grid gap-2">
-              {isLoading ? (
-                <LoadingSkeleton count={3} />
-              ) : (
-                PRODUCT_TYPES.map((type) => (
-                  <FilterItem
-                    key={type}
-                    label={
-                      type === "oem"
-                        ? "OEM"
-                        : type.charAt(0).toUpperCase() + type.slice(1)
-                    }
-                    checked={filters.productType.includes(type)}
-                    onChange={() => onFilterChange("productType", type)}
-                  />
-                ))
-              )}
+          </span>
+        </button>
+
+        {isOpen && (
+          <div
+            className="fixed inset-0 bg-black/30 z-40 transition-opacity duration-200"
+            onClick={() => setIsOpen(false)}
+          />
+        )}
+
+        {isOpen && (
+          <div className="absolute right-0 mt-2 z-50 w-[280px] transform transition-all duration-200 ease-out">
+            <div className="bg-white rounded-lg shadow-lg border overflow-hidden">
+              <div className="p-3 border-b flex items-center justify-between bg-gray-50">
+                <span className="text-sm font-medium text-gray-700 flex items-center gap-2">
+                  <ListFilter className="h-4 w-4" />
+                  Filter Products
+                </span>
+                <button
+                  onClick={() => setIsOpen(false)}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+
+              <div className="max-h-[calc(100vh-200px)] overflow-y-auto">
+                <Accordion type="multiple" className="w-full">
+                  <div className="p-2 border-b flex items-center justify-between">
+                    <span className="text-xs text-gray-500">
+                      {getActiveFiltersCount(filters) > 0
+                        ? `${getActiveFiltersCount(filters)} active`
+                        : "No active filters"}
+                    </span>
+                  </div>
+
+                  <div className="max-h-[400px] overflow-y-auto">
+                    <AccordionItem
+                      value="category"
+                      className="px-2 py-1 border-b"
+                    >
+                      <AccordionTrigger className="text-sm py-2 hover:no-underline">
+                        <span className="text-gray-700 flex items-center gap-2">
+                          <CircleDot className="h-4 w-4" />
+                          General Category
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2">
+                        <div className="grid gap-1">
+                          {isLoading ? (
+                            <LoadingSkeleton count={3} />
+                          ) : (
+                            categories.map((category) => (
+                              <FilterItem
+                                key={category}
+                                label={category}
+                                checked={filters.category.includes(category)}
+                                onChange={() =>
+                                  onFilterChange("category", category)
+                                }
+                              />
+                            ))
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem
+                      value="productType"
+                      className="px-2 py-1 border-b"
+                    >
+                      <AccordionTrigger className="text-sm py-2 hover:no-underline">
+                        <span className="text-gray-700 flex items-center gap-2">
+                          <Gauge className="h-4 w-4" />
+                          Wheels Category
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2">
+                        <div className="grid gap-3 pt-2">
+                          {isLoading ? (
+                            <LoadingSkeleton count={3} />
+                          ) : (
+                            PRODUCT_TYPES.map((type) => (
+                              <FilterItem
+                                key={type}
+                                label={
+                                  type === "oem"
+                                    ? "OEM (Original Equipment Manufacturer)"
+                                    : type.charAt(0).toUpperCase() +
+                                      type.slice(1)
+                                }
+                                checked={filters.productType.includes(type)}
+                                onChange={() =>
+                                  onFilterChange("productType", type)
+                                }
+                              />
+                            ))
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="size" className="px-2 py-1 border-b">
+                      <AccordionTrigger className="text-sm py-2 hover:no-underline">
+                        <span className="text-gray-700 flex items-center gap-2">
+                          <Ruler className="h-4 w-4" />
+                          Size
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2">
+                        <div className="grid gap-3 pt-2">
+                          {isLoading ? (
+                            <LoadingSkeleton count={5} />
+                          ) : (
+                            uniqueSizes.map((size) => (
+                              <FilterItem
+                                key={size}
+                                label={size}
+                                checked={filters.size.includes(size)}
+                                onChange={() => onFilterChange("size", size)}
+                              />
+                            ))
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+
+                    <AccordionItem value="price" className="px-2 py-1 border-b">
+                      <AccordionTrigger className="text-sm py-2 hover:no-underline">
+                        <span className="text-gray-700 flex items-center gap-2">
+                          <DollarSign className="h-4 w-4" />
+                          Price Range
+                        </span>
+                      </AccordionTrigger>
+                      <AccordionContent className="pb-2">
+                        <div className="pt-4">
+                          {isLoading ? (
+                            <Skeleton className="h-10 w-full" />
+                          ) : (
+                            <PriceRangeContent
+                              priceRange={filters.priceRange}
+                              maxPrice={maxPrice}
+                              onPriceRangeChange={onPriceRangeChange}
+                            />
+                          )}
+                        </div>
+                      </AccordionContent>
+                    </AccordionItem>
+                  </div>
+                </Accordion>
+              </div>
             </div>
-          </AccordionContent>
-        </AccordionItem>
-      </Accordion>
+          </div>
+        )}
+      </div>
     );
   }
 );

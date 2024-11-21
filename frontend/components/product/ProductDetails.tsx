@@ -82,39 +82,17 @@ export default function ProductDetails({
   return (
     <div className="space-y-6">
       <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <h1 className="text-2xl lg:text-3xl font-bold">{product.name}</h1>
-          <Badge
-            variant="outline"
-            className={`ml-2 ${
-              product.stock > 0
-                ? "bg-green-100 text-green-800"
-                : "bg-red-100 text-red-800"
-            }`}
-          >
-            {product.stock > 0 ? "In Stock" : "Out of Stock"}
-          </Badge>
-        </div>
+        <h1 className="text-2xl lg:text-3xl font-bold">{product.name}</h1>
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-8 text-sm lg:text-base">
-            <div>
-              <span className="font-semibold">Size:</span> {product.size}
-            </div>
-            <div>
-              <span className="font-semibold">Made in:</span> {product.madeIn}
-            </div>
+        <div className="flex items-center gap-8 text-sm lg:text-base">
+          <div>
+            <span className="font-semibold">Size:</span> {product.size}
           </div>
-          <Badge
-            variant="outline"
-            className={`font-medium ${getProductTypeBadgeColor(
-              product.productType
-            )}`}
-          >
-            {formatProductType(product.productType)}
-          </Badge>
+          <div>
+            <span className="font-semibold">Made in:</span> {product.madeIn}
+          </div>
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -126,8 +104,8 @@ export default function ProductDetails({
             <span>Delivery Time: {product.deliveryTime}</span>
           </div>
         </div>
-        {/* Price and Shipping Information */}
-        <div className="flex flex-col sm:flex-row gap-4">
+        {/* Price and Badge Information */}
+        <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center p-2.5 sm:p-4 bg-gray-200 rounded-xl w-fit relative backdrop-blur-sm">
             <Tag className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-foreground" />
             <div className="flex flex-col">
@@ -138,6 +116,24 @@ export default function ProductDetails({
                 Price for 4 pieces
               </span>
             </div>
+          </div>
+          <div className="flex gap-2">
+            <Badge
+              variant="outline"
+              className={`${getProductTypeBadgeColor(product.productType)}`}
+            >
+              {formatProductType(product.productType)} Wheel
+            </Badge>
+            <Badge
+              variant="outline"
+              className={`${
+                product.stock > 0
+                  ? "bg-green-100 text-green-800"
+                  : "bg-red-100 text-red-800"
+              }`}
+            >
+              {product.stock > 0 ? "In Stock" : "Out of Stock"}
+            </Badge>
           </div>
         </div>
       </div>

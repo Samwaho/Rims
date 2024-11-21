@@ -96,7 +96,7 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground" />
-              <span>Delivery Time: {product.deliveryTime}</span>
+              <span>Delivery: {product.deliveryTime}</span>
             </p>
           </div>
         </div>
