@@ -4,6 +4,8 @@ import mongoose from "mongoose";
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import passport from "./config/passport.config.js";
+import "./instrument.js";
+import * as Sentry from "@sentry/node";
 
 // Route imports
 import authRouter from "./routes/auth.route.js";
@@ -23,6 +25,16 @@ dotenv.config();
 const app = express();
 const PORT = process.env.SERVER_PORT || 3001;
 const MONGODB_URI = process.env.MONGODB_URI;
+
+Sentry.setupExpressErrorHandler(app);
+
+// Optional fallthrough error handler
+app.use(function onError(err, req, res, next) {
+  // The error id is attached to `res.sentry` to be returned
+  // and optionally displayed to the user for support.
+  res.statusCode = 500;
+  res.end(res.sentry + "\n");
+});
 
 // Add this after dotenv.config()
 console.log("Google OAuth credentials loaded:", {
