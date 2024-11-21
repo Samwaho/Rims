@@ -66,6 +66,7 @@ const validateProductData = (productData) => {
     "madeIn",
     "shippingCost",
     "deliveryTime",
+    "productType",
   ];
   const missingFields = requiredFields.filter(
     (field) => !productData[field] && productData[field] !== 0

@@ -63,6 +63,7 @@ export default function EditProductPage({
       deliveryTime: "",
       stock: 0,
       category: "general" as const,
+      productType: "oem" as const,
       size: "",
       madeIn: "",
       images: [],
@@ -135,6 +136,7 @@ export default function EditProductPage({
       buyingPrice,
       shippingCost,
       deliveryTime: product.deliveryTime,
+      productType: product.productType,
     });
 
     form.reset({
@@ -146,6 +148,7 @@ export default function EditProductPage({
       stock: Number(product.stock) || 0,
       images: dummyFiles,
       specifications: product.specifications || [],
+      productType: product.productType || "oem",
     });
 
     setExistingImages(product.images || []);
@@ -198,6 +201,7 @@ export default function EditProductPage({
           stock,
           shippingCost,
           deliveryTime: data.deliveryTime,
+          productType: data.productType,
         });
 
         // Validate numeric values
@@ -221,6 +225,7 @@ export default function EditProductPage({
           size: data.size,
           madeIn: data.madeIn,
           specifications: validSpecifications,
+          productType: data.productType,
         };
 
         console.log("Final productData:", productData);

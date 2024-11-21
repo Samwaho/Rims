@@ -10,9 +10,10 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ProductsHeader } from "@/components/products/ProductsHeader";
 import { useProducts } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
-import { Product, FilterState } from "@/types/product";
+import { Product, FilterState, ProductCategory } from "@/types/product";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { PRODUCT_TYPES } from "@/lib/utils";
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -32,9 +33,10 @@ const ProductsPage = () => {
   const [filters, setFilters] = useState<FilterState>({
     size: [],
     category: searchParams.get("category")
-      ? [searchParams.get("category") as "wheels" | "tyres"]
+      ? [searchParams.get("category") as ProductCategory]
       : [],
     priceRange: undefined,
+    productType: [],
   });
 
   const debouncedSearchTerm = useDebounce(searchTerm, 300);
@@ -63,20 +65,26 @@ const ProductsPage = () => {
   const filteredProducts = useMemo(() => {
     return products
       .filter((product: Product) => {
-        const { size, category, price, name } = product;
+        const { size, category, price, name, productType } = product;
         const {
           size: sizeFilters,
           category: categoryFilters,
           priceRange,
+          productType: typeFilters,
         } = filters;
 
         const categoryMatch =
           categoryFilters.length === 0 ||
-          categoryFilters.includes(category as "general" | "wheels" | "tyres");
+          categoryFilters.includes("general") ||
+          categoryFilters.includes(category);
+
+        const typeMatch =
+          typeFilters.length === 0 || typeFilters.includes(productType);
 
         return (
           (sizeFilters.length === 0 || sizeFilters.includes(size)) &&
           categoryMatch &&
+          typeMatch &&
           (!priceRange || (price >= priceRange[0] && price <= priceRange[1])) &&
           name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())
         );
@@ -101,6 +109,7 @@ const ProductsPage = () => {
       size: [],
       category: [],
       priceRange: undefined,
+      productType: [],
     });
     setSearchTerm("");
   };
@@ -144,21 +153,31 @@ const ProductsPage = () => {
                 size: filters.size,
                 category: filters.category,
                 priceRange: filters.priceRange as [number, number] | undefined,
+                productType: filters.productType,
               }}
               products={products as Product[]}
               maxPrice={maxPrice}
-              onFilterChange={(type: "size" | "category", value: string) => {
+              onFilterChange={(
+                type: "size" | "category" | "productType",
+                value: string
+              ) => {
                 setFilters((prev) => {
                   if (type === "category") {
-                    const categoryValue = value as
-                      | "general"
-                      | "wheels"
-                      | "tyres";
+                    const categoryValue = value as ProductCategory;
                     return {
                       ...prev,
                       category: prev.category.includes(categoryValue)
                         ? prev.category.filter((item) => item !== categoryValue)
                         : [...prev.category, categoryValue],
+                    };
+                  }
+                  if (type === "productType") {
+                    const typeValue = value as (typeof PRODUCT_TYPES)[number];
+                    return {
+                      ...prev,
+                      productType: prev.productType.includes(typeValue)
+                        ? prev.productType.filter((item) => item !== typeValue)
+                        : [...prev.productType, typeValue],
                     };
                   }
                   return {

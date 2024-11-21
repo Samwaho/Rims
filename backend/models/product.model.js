@@ -25,6 +25,8 @@ const reviewSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
+const PRODUCT_TYPES = ["oem", "aftermarket", "alloy"];
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -104,6 +106,12 @@ const productSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+    productType: {
+      type: String,
+      required: true,
+      enum: PRODUCT_TYPES,
+      default: "original",
+    },
   },
   { timestamps: true }
 );
@@ -124,3 +132,5 @@ productSchema.methods.calculateAverageRating = function () {
 const Product = mongoose.model("Product", productSchema);
 
 export default Product;
+
+export { PRODUCT_TYPES };

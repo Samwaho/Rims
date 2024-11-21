@@ -17,7 +17,7 @@ import {
 import * as z from "zod";
 import { productSchema } from "@/lib/utils";
 import { memo, useEffect } from "react";
-import { PRODUCT_CATEGORIES } from "@/lib/utils";
+import { PRODUCT_CATEGORIES, PRODUCT_TYPES } from "@/lib/utils";
 import {
   Select,
   SelectTrigger,
@@ -31,6 +31,7 @@ export type ProductFormValues = z.infer<typeof productSchema> & {
   buyingPrice: number;
   shippingCost: number;
   deliveryTime: string;
+  productType: string;
 };
 
 export interface Specification {
@@ -437,6 +438,36 @@ export const ProductForm = memo(function ProductForm({
                       {PRODUCT_CATEGORIES.map((category) => (
                         <SelectItem key={category} value={category}>
                           {category}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="productType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Product Type *
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 bg-white">
+                        <SelectValue placeholder="Select product type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PRODUCT_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
                         </SelectItem>
                       ))}
                     </SelectContent>

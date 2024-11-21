@@ -42,6 +42,7 @@ export default function CreateProductPage() {
       buyingPrice: 0,
       shippingCost: 0,
       deliveryTime: "",
+      productType: "oem",
     },
   });
 
@@ -68,6 +69,7 @@ export default function CreateProductPage() {
             buyingPrice: Number(data.buyingPrice),
             shippingCost: Number(data.shippingCost),
             deliveryTime: data.deliveryTime,
+            productType: data.productType,
           },
           imageUrls: data.images,
         },

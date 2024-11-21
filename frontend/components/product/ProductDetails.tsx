@@ -16,7 +16,29 @@ import {
   Share2,
   Truck,
   Clock,
+  Box,
 } from "lucide-react";
+
+// Helper function to format product type with null check
+const formatProductType = (type: string | undefined) => {
+  if (!type) return "N/A";
+  if (type.toLowerCase() === "oem") return "OEM";
+  return type.charAt(0).toUpperCase() + type.slice(1);
+};
+
+// Helper function to get badge color based on product type
+const getProductTypeBadgeColor = (type: string | undefined) => {
+  switch (type?.toLowerCase()) {
+    case "oem":
+      return "bg-blue-100 text-blue-800 border-blue-200";
+    case "aftermarket":
+      return "bg-amber-100 text-amber-800 border-amber-200";
+    case "alloy":
+      return "bg-purple-100 text-purple-800 border-purple-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
 
 interface ProductDetailsProps {
   product: Product;
@@ -76,13 +98,23 @@ export default function ProductDetails({
       </div>
 
       <div className="flex flex-col gap-4">
-        <div className="flex items-center gap-8 text-sm lg:text-base">
-          <div>
-            <span className="font-semibold">Size:</span> {product.size}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-8 text-sm lg:text-base">
+            <div>
+              <span className="font-semibold">Size:</span> {product.size}
+            </div>
+            <div>
+              <span className="font-semibold">Made in:</span> {product.madeIn}
+            </div>
           </div>
-          <div>
-            <span className="font-semibold">Made in:</span> {product.madeIn}
-          </div>
+          <Badge
+            variant="outline"
+            className={`font-medium ${getProductTypeBadgeColor(
+              product.productType
+            )}`}
+          >
+            {formatProductType(product.productType)}
+          </Badge>
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">

@@ -111,6 +111,8 @@ export const PRODUCT_CATEGORIES = ["tyres", "wheels", "general"] as const;
 
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
+export const PRODUCT_TYPES = ["oem", "aftermarket", "alloy"] as const;
+
 export const productSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),
@@ -129,6 +131,7 @@ export const productSchema = z.object({
       value: z.string(),
     })
   ),
+  productType: z.enum(PRODUCT_TYPES),
 });
 
 // Add order-related schemas

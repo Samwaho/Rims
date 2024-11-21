@@ -11,6 +11,7 @@ import { Slider } from "@/components/ui/slider";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/utils";
 import { Product } from "@/types/product";
+import { PRODUCT_TYPES } from "@/lib/utils";
 
 interface FilterAccordionProps {
   isLoading: boolean;
@@ -18,10 +19,14 @@ interface FilterAccordionProps {
     size: string[];
     category: string[];
     priceRange?: [number, number];
+    productType: string[];
   };
   products: Product[];
   maxPrice: number;
-  onFilterChange: (type: "size" | "category", value: string) => void;
+  onFilterChange: (
+    type: "size" | "category" | "productType",
+    value: string
+  ) => void;
   onPriceRangeChange: (value: [number, number]) => void;
 }
 
@@ -159,6 +164,31 @@ export const FilterAccordion: React.FC<FilterAccordionProps> = memo(
                 onPriceRangeChange={onPriceRangeChange}
               />
             )}
+          </AccordionContent>
+        </AccordionItem>
+        <AccordionItem value="productType">
+          <AccordionTrigger className="text-base font-medium">
+            Product Type
+          </AccordionTrigger>
+          <AccordionContent>
+            <div className="grid gap-2">
+              {isLoading ? (
+                <LoadingSkeleton count={3} />
+              ) : (
+                PRODUCT_TYPES.map((type) => (
+                  <FilterItem
+                    key={type}
+                    label={
+                      type === "oem"
+                        ? "OEM"
+                        : type.charAt(0).toUpperCase() + type.slice(1)
+                    }
+                    checked={filters.productType.includes(type)}
+                    onChange={() => onFilterChange("productType", type)}
+                  />
+                ))
+              )}
+            </div>
           </AccordionContent>
         </AccordionItem>
       </Accordion>
