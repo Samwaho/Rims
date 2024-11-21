@@ -21,7 +21,8 @@ export const dynamic = "force-dynamic";
 
 const ProductsPage = () => {
   const { ref, inView } = useInView({
-    threshold: 0.1,
+    threshold: 0,
+    rootMargin: "100px",
     triggerOnce: false,
   });
 

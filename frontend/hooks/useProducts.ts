@@ -19,6 +19,7 @@ export const useProducts = (searchTerm: string = "") => {
         {
           params: {
             page: pageParam,
+            limit: 12,
             search: searchTerm,
           },
         }
@@ -29,5 +30,7 @@ export const useProducts = (searchTerm: string = "") => {
       lastPage.currentPage < lastPage.totalPages
         ? lastPage.currentPage + 1
         : undefined,
+    staleTime: 1000 * 60 * 5, // Cache for 5 minutes
+    refetchOnWindowFocus: false,
   });
 };

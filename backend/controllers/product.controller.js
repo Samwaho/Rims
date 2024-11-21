@@ -79,11 +79,22 @@ export const getProducts = async (req, res, next) => {
   try {
     const page = parseInt(req.query.page) || 1;
     const limit = parseInt(req.query.limit) || 12;
+    const search = req.query.search || "";
     const skip = (page - 1) * limit;
 
+    // Add search query condition
+    const searchQuery = search
+      ? {
+          $or: [
+            { name: { $regex: search, $options: "i" } },
+            { description: { $regex: search, $options: "i" } },
+          ],
+        }
+      : {};
+
     const [products, total] = await Promise.all([
-      Product.find().sort({ createdAt: -1 }).skip(skip).limit(limit),
-      Product.countDocuments(),
+      Product.find(searchQuery).sort({ createdAt: -1 }).skip(skip).limit(limit),
+      Product.countDocuments(searchQuery),
     ]);
 
     const productsWithStats = await Promise.all(
