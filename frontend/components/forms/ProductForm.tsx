@@ -271,7 +271,7 @@ export const ProductForm = memo(function ProductForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">
-                    Made In *
+                    Origin *
                   </FormLabel>
                   <FormControl>
                     <Input

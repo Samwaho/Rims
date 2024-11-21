@@ -197,7 +197,17 @@ export default function AdminOrders() {
       columnFilters,
       globalFilter: debouncedSearch,
     },
-    globalFilterFn: "includesString",
+    globalFilterFn: (row, columnId, filterValue) => {
+      const searchValue = filterValue.toLowerCase();
+      const user = row.original.user;
+
+      // Search in name, username, and email
+      return (
+        (user.name?.toLowerCase() || "").includes(searchValue) ||
+        user.username.toLowerCase().includes(searchValue) ||
+        user.email.toLowerCase().includes(searchValue)
+      );
+    },
   });
 
   const viewOptions = useMemo(
@@ -266,7 +276,7 @@ export default function AdminOrders() {
             <div className="relative w-full sm:w-[300px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />
               <Input
-                placeholder="Search by customer..."
+                placeholder="Search by name or email..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-9 w-full"

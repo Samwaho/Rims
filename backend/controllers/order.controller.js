@@ -197,13 +197,22 @@ export const getUserOrders = async (req, res, next) => {
   try {
     const userId = validateUser(req);
     const orders = await Order.find({ user: userId })
-      .populate("user", "username email")
+      .populate("user", "username email firstName lastName")
       .populate("products.product", "name price images")
-      .sort("-orderDate");
+      .sort("-orderDate")
+      .lean();
+
+    const transformedOrders = orders.map((order) => ({
+      ...order,
+      user: {
+        ...order.user,
+        name: `${order.user.firstName} ${order.user.lastName}`.trim(),
+      },
+    }));
 
     res.status(200).json({
       message: "Orders fetched successfully",
-      orders,
+      orders: transformedOrders,
     });
   } catch (error) {
     next(error);
@@ -216,11 +225,12 @@ export const getOrderById = async (req, res, next) => {
     const { orderId } = req.params;
 
     const order = await Order.findById(orderId)
-      .populate("user", "username email")
+      .populate("user", "username email firstName lastName")
       .populate(
         "products.product",
         "name price images shippingCost deliveryTime"
-      );
+      )
+      .lean();
 
     if (!order) {
       throw { status: 404, message: "Order not found" };
@@ -230,9 +240,17 @@ export const getOrderById = async (req, res, next) => {
       throw { status: 403, message: "Unauthorized to access this order" };
     }
 
+    const transformedOrder = {
+      ...order,
+      user: {
+        ...order.user,
+        name: `${order.user.firstName} ${order.user.lastName}`.trim(),
+      },
+    };
+
     res.status(200).json({
       message: "Order fetched successfully",
-      order,
+      order: transformedOrder,
     });
   } catch (error) {
     next(errorHandler(res, error.status || 500, error.message));
@@ -348,7 +366,7 @@ export const getAllOrders = async (req, res, next) => {
 
     const [orders, total] = await Promise.all([
       Order.find(query)
-        .populate("user", "username email")
+        .populate("user", "username email firstName lastName")
         .populate("products.product", "name price buyingPrice images")
         .sort("-orderDate")
         .skip(skip)
@@ -360,7 +378,6 @@ export const getAllOrders = async (req, res, next) => {
 
     const transformedOrders = orders.map((order) => {
       const total = order.total;
-
       const productCost = order.products.reduce(
         (sum, item) => sum + (item.product?.buyingPrice || 0) * item.quantity,
         0
@@ -372,8 +389,14 @@ export const getAllOrders = async (req, res, next) => {
         (order.shippingCost || 0) +
         (order.deliveryCost || 0);
 
+      const user = {
+        ...order.user,
+        name: `${order.user.firstName} ${order.user.lastName}`.trim(),
+      };
+
       return {
         ...order,
+        user,
         total,
         profit: total - totalCosts,
       };

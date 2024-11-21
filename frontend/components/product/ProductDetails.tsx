@@ -84,7 +84,16 @@ export default function ProductDetails({
             <span className="font-semibold">Made in:</span> {product.madeIn}
           </div>
         </div>
-
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Truck className="w-4 h-4" />
+            <span>Shipping: {formatPrice(product.shippingCost)}</span>
+          </div>
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <Clock className="w-4 h-4" />
+            <span>Delivery Time: {product.deliveryTime}</span>
+          </div>
+        </div>
         {/* Price and Shipping Information */}
         <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex items-center p-2.5 sm:p-4 bg-gray-200 rounded-xl w-fit relative backdrop-blur-sm">
@@ -96,17 +105,6 @@ export default function ProductDetails({
               <span className="text-[10px] sm:text-xs lg:text-sm text-foreground/80">
                 Price for 4 pieces
               </span>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-2">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Truck className="w-4 h-4" />
-              <span>Shipping: {formatPrice(product.shippingCost)}</span>
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Clock className="w-4 h-4" />
-              <span>Delivery Time: {product.deliveryTime}</span>
             </div>
           </div>
         </div>

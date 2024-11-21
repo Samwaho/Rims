@@ -53,6 +53,7 @@ export type Order = {
   user: {
     username: string;
     email: string;
+    name: string;
   };
   products: Array<{
     product: {
@@ -115,7 +116,7 @@ const CustomerCell = memo(
         <TooltipTrigger>
           <div className="space-y-1.5">
             <p className="font-medium text-sm truncate max-w-[120px] md:max-w-[180px] lg:max-w-[250px]">
-              {user.username}
+              {user.name || user.username}
             </p>
             <p className="text-xs text-muted-foreground truncate max-w-[120px] md:max-w-[180px] lg:max-w-[250px]">
               {user.email}
@@ -127,7 +128,7 @@ const CustomerCell = memo(
         </TooltipTrigger>
         <TooltipContent>
           <div className="space-y-1">
-            <p className="font-medium">{user.username}</p>
+            <p className="font-medium">{user.name || user.username}</p>
             <p className="text-sm">{user.email}</p>
             <p className="text-xs text-muted-foreground">
               Ordered on: {formatDate(orderDate)}

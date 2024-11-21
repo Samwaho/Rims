@@ -5,7 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatPrice } from "@/lib/utils";
-import { ShoppingCart, CreditCard, Tag } from "lucide-react";
+import { ShoppingCart, CreditCard, Tag, Clock } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
@@ -14,7 +14,14 @@ import type { Product } from "@/types/product";
 interface ProductCardProps {
   product: Pick<
     Product,
-    "_id" | "name" | "size" | "madeIn" | "category" | "price" | "images"
+    | "_id"
+    | "name"
+    | "size"
+    | "madeIn"
+    | "category"
+    | "price"
+    | "images"
+    | "deliveryTime"
   >;
   onAddToCart: () => void;
 }
@@ -72,7 +79,7 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
                 {formatPrice(product.price)}
               </p>
               <span className="text-[8px] sm:text-[10px] lg:text-xs text-foreground/80">
-                Price for 4 pieces
+                Price for a set of 4 pieces
               </span>
             </div>
           </div>
@@ -81,11 +88,15 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
               {product.name}
             </h3>
             <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
-              <span className="font-medium text-foreground">Made in</span>
+              <span className="font-medium text-foreground">Origin</span>
               <span className="inline-flex items-center">
                 <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary/40 mr-1.5 sm:mr-2"></span>
                 {product.madeIn}
               </span>
+            </p>
+            <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
+              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground" />
+              <span>Delivery Time: {product.deliveryTime}</span>
             </p>
           </div>
         </div>

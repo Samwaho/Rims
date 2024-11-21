@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import React, { memo, useState, useEffect, useCallback } from "react";
-import BannerIMG1 from "@/public/BannerImg.png";
+import BannerIMG1 from "@/public/rim.png";
 import BannerIMG2 from "@/public/BannerImg2.png";
 import Link from "next/link";
 import { Star, ArrowRight } from "lucide-react";

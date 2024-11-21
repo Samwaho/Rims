@@ -194,6 +194,7 @@ const ProductsPage = () => {
                           category: product.category,
                           price: product.price,
                           images: product.images,
+                          deliveryTime: product.deliveryTime,
                         }}
                         onAddToCart={() =>
                           addToCartMutation.mutate({

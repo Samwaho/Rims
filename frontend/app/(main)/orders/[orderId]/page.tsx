@@ -489,7 +489,7 @@ export default function OrderConfirmationPage({
                       {formatPrice(order.subtotal)}
                     </span>
                     <div className="text-xs text-gray-500">
-                      Price for sets of 4 pieces
+                      Price for a set of 4 pieces
                     </div>
                   </div>
                 </div>
