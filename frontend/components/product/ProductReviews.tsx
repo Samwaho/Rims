@@ -80,7 +80,7 @@ export default function ProductReviews({
   useEffect(() => {
     if (isAuthenticated && user?._id && product.reviews) {
       const hasReviewed = product.reviews.some(
-        (review) => review.userId === user._id
+        (review) => review.user === user._id
       );
       setUserHasReviewed(hasReviewed);
     }
@@ -253,7 +253,7 @@ export default function ProductReviews({
           )
           .map((review) => (
             <div
-              key={review.id}
+              key={review._id}
               className="flex space-x-4 bg-white p-6 rounded-lg shadow-sm border border-gray-100 hover:shadow-md transition-shadow"
             >
               <Avatar className="w-12 h-12">
@@ -278,7 +278,7 @@ export default function ProductReviews({
                 <div className="flex items-center mb-3">
                   {Array.from({ length: 5 }).map((_, i) => (
                     <StarIcon
-                      key={`review-star-${review.id}-${i}`}
+                      key={`review-star-${review._id}-${i}`}
                       className={`w-4 h-4 ${
                         i < review.rating ? "text-yellow-400" : "text-gray-300"
                       }`}
