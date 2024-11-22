@@ -90,9 +90,11 @@ export default function ProductDetails({
           <div>
             <span className="font-semibold">Size:</span> {product.size}
           </div>
-          <div>
-            <span className="font-semibold">Made in:</span> {product.madeIn}
-          </div>
+          {product.madeIn && (
+            <div>
+              <span className="font-semibold">Origin:</span> {product.madeIn}
+            </div>
+          )}
         </div>
         <div className="flex flex-col gap-2">
           <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -105,7 +107,7 @@ export default function ProductDetails({
           </div>
         </div>
         {/* Price and Badge Information */}
-        <div className="flex flex-wrap items-center gap-4">
+        <div className="flex flex-col gap-4">
           <div className="flex items-center p-2.5 sm:p-4 bg-gray-200 rounded-xl w-fit relative backdrop-blur-sm">
             <Tag className="w-4 h-4 sm:w-5 sm:h-5 mr-2 sm:mr-3 text-foreground" />
             <div className="flex flex-col">
@@ -122,7 +124,7 @@ export default function ProductDetails({
               variant="outline"
               className={`${getProductTypeBadgeColor(product.productType)}`}
             >
-              {formatProductType(product.productType)} Wheel
+              {formatProductType(product.productType)} Wheels
             </Badge>
             <Badge
               variant="outline"

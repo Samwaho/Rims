@@ -63,7 +63,6 @@ const validateProductData = (productData) => {
     "stock",
     "category",
     "size",
-    "madeIn",
     "shippingCost",
     "deliveryTime",
     "productType",

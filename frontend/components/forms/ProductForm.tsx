@@ -149,6 +149,29 @@ const formatNumberWithCommas = (value: string) => {
   return parts.join(".");
 };
 
+const WHEEL_SPECIFICATIONS: Specification[] = [
+  { name: "Brand", value: "" },
+  { name: "Model", value: "" },
+  { name: "Wheel Diameter", value: "" },
+  { name: "Wheel Width", value: "" },
+  { name: "Offset", value: "" },
+  { name: "Hub Bore", value: "" },
+  { name: "Bolt Pattern", value: "" },
+  { name: "Wheel Material", value: "" },
+  { name: "Color", value: "" },
+];
+
+const TYRE_SPECIFICATIONS: Specification[] = [
+  { name: "Brand", value: "" },
+  { name: "Model", value: "" },
+  { name: "Size", value: "" },
+  { name: "Load index", value: "" },
+  { name: "Traction", value: "" },
+  { name: "Tread wear", value: "" },
+  { name: "Speed index", value: "" },
+  { name: "Tyre type", value: "" },
+];
+
 export const ProductForm = memo(function ProductForm({
   form,
   onSubmit,
@@ -175,7 +198,11 @@ export const ProductForm = memo(function ProductForm({
 
   const addSpecification = () => {
     const currentSpecs = form.getValues("specifications") || [];
-    form.setValue("specifications", [...currentSpecs, { name: "", value: "" }]);
+    const newSpec = { name: "", value: "" };
+    form.setValue("specifications", [...currentSpecs, newSpec], {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
     setIsDirty?.(true);
   };
 
@@ -183,7 +210,11 @@ export const ProductForm = memo(function ProductForm({
     const currentSpecs = form.getValues("specifications");
     form.setValue(
       "specifications",
-      currentSpecs.filter((_, i) => i !== index)
+      currentSpecs.filter((_, i) => i !== index),
+      {
+        shouldDirty: true,
+        shouldTouch: true,
+      }
     );
     setIsDirty?.(true);
   };
@@ -191,6 +222,21 @@ export const ProductForm = memo(function ProductForm({
   const handleFieldChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
+    setIsDirty?.(true);
+  };
+
+  const loadTemplateSpecifications = (category: string) => {
+    let templateSpecs: Specification[] = [];
+    if (category === "wheels") {
+      templateSpecs = [...WHEEL_SPECIFICATIONS];
+    } else if (category === "tyres") {
+      templateSpecs = [...TYRE_SPECIFICATIONS];
+    }
+
+    form.setValue("specifications", templateSpecs, {
+      shouldDirty: true,
+      shouldTouch: true,
+    });
     setIsDirty?.(true);
   };
 
@@ -272,12 +318,12 @@ export const ProductForm = memo(function ProductForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">
-                    Origin *
+                    Origin
                   </FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Enter country of origin"
+                      placeholder="Enter country of origin (optional)"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
                         field.onChange(e);
@@ -426,7 +472,11 @@ export const ProductForm = memo(function ProductForm({
                     Category *
                   </FormLabel>
                   <Select
-                    onValueChange={field.onChange}
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      loadTemplateSpecifications(value);
+                      setIsDirty?.(true);
+                    }}
                     defaultValue={field.value}
                   >
                     <FormControl>
@@ -585,22 +635,38 @@ export const ProductForm = memo(function ProductForm({
                 className="text-sm hover:bg-primary/10 transition-colors border-primary/20"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Specification
+                Add Custom Specification
               </Button>
             </div>
 
             <div className="space-y-4">
-              {form.watch("specifications").map((spec, index) => (
+              {form.watch("specifications")?.map((spec, index) => (
                 <SpecificationField
-                  key={index}
+                  key={`spec-${index}`}
                   spec={spec}
                   index={index}
                   onNameChange={(value) => {
-                    form.setValue(`specifications.${index}.name`, value);
+                    const currentSpecs = [...form.getValues("specifications")];
+                    currentSpecs[index] = {
+                      ...currentSpecs[index],
+                      name: value,
+                    };
+                    form.setValue("specifications", currentSpecs, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
                     setIsDirty?.(true);
                   }}
                   onValueChange={(value) => {
-                    form.setValue(`specifications.${index}.value`, value);
+                    const currentSpecs = [...form.getValues("specifications")];
+                    currentSpecs[index] = {
+                      ...currentSpecs[index],
+                      value: value,
+                    };
+                    form.setValue("specifications", currentSpecs, {
+                      shouldDirty: true,
+                      shouldTouch: true,
+                    });
                     setIsDirty?.(true);
                   }}
                   onRemove={() => removeSpecification(index)}

@@ -87,13 +87,15 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
             <h3 className="text-sm sm:text-base font-bold line-clamp-1 group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
-              <span className="font-medium text-foreground">Origin</span>
-              <span className="inline-flex items-center">
-                <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary/40 mr-1.5 sm:mr-2"></span>
-                {product.madeIn}
-              </span>
-            </p>
+            {product.madeIn && (
+              <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
+                <span className="font-medium text-foreground">Origin</span>
+                <span className="inline-flex items-center">
+                  <span className="w-1 h-1 sm:w-1.5 sm:h-1.5 rounded-full bg-primary/40 mr-1.5 sm:mr-2"></span>
+                  {product.madeIn}
+                </span>
+              </p>
+            )}
             <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
               <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground" />
               <span>Delivery: {product.deliveryTime}</span>

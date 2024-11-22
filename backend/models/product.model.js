@@ -83,7 +83,6 @@ const productSchema = new mongoose.Schema(
     },
     madeIn: {
       type: String,
-      required: true,
     },
     specifications: [
       {
