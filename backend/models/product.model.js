@@ -27,6 +27,8 @@ const reviewSchema = new mongoose.Schema(
 
 const PRODUCT_TYPES = ["oem", "aftermarket", "alloy"];
 
+const PRODUCT_CONDITIONS = ["new", "used"];
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -111,6 +113,11 @@ const productSchema = new mongoose.Schema(
       enum: PRODUCT_TYPES,
       default: "original",
     },
+    condition: {
+      type: String,
+      enum: PRODUCT_CONDITIONS,
+      default: "new",
+    },
   },
   { timestamps: true }
 );
@@ -132,4 +139,4 @@ const Product = mongoose.model("Product", productSchema);
 
 export default Product;
 
-export { PRODUCT_TYPES };
+export { PRODUCT_TYPES, PRODUCT_CONDITIONS };

@@ -17,7 +17,11 @@ import {
 import * as z from "zod";
 import { productSchema } from "@/lib/utils";
 import { memo, useEffect } from "react";
-import { PRODUCT_CATEGORIES, PRODUCT_TYPES } from "@/lib/utils";
+import {
+  PRODUCT_CATEGORIES,
+  PRODUCT_TYPES,
+  PRODUCT_CONDITIONS,
+} from "@/lib/utils";
 import {
   Select,
   SelectTrigger,
@@ -32,6 +36,7 @@ export type ProductFormValues = z.infer<typeof productSchema> & {
   shippingCost: number;
   deliveryTime: string;
   productType: string;
+  condition: string;
 };
 
 export interface Specification {
@@ -583,6 +588,44 @@ export const ProductForm = memo(function ProductForm({
                       }}
                     />
                   </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="condition"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Condition
+                  </FormLabel>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(
+                        value === "not_specified" ? undefined : value
+                      );
+                      setIsDirty?.(true);
+                    }}
+                    value={field.value || "not_specified"}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 bg-white">
+                        <SelectValue placeholder="Select product condition (optional)" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="not_specified">
+                        Not specified
+                      </SelectItem>
+                      {PRODUCT_CONDITIONS.map((condition) => (
+                        <SelectItem key={condition} value={condition}>
+                          {condition === "new" ? "New" : "Slightly Used"}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}

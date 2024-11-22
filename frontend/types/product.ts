@@ -51,6 +51,7 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   priceDetails?: PriceDetails;
+  condition?: string;
 }
 
 // Product filter state with precise types

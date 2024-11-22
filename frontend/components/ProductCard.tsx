@@ -22,6 +22,7 @@ interface ProductCardProps {
     | "price"
     | "images"
     | "deliveryTime"
+    | "condition"
   >;
   onAddToCart: () => void;
 }
@@ -87,6 +88,13 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
             <h3 className="text-sm sm:text-base font-bold line-clamp-1 group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
+            <div className="flex items-center gap-2">
+              {product.condition && (
+                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                  {product.condition === "new" ? "New" : "Slightly Used"}
+                </span>
+              )}
+            </div>
             {product.madeIn && (
               <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
                 <span className="font-medium text-foreground">Origin</span>

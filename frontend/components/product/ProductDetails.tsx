@@ -26,6 +26,12 @@ const formatProductType = (type: string | undefined) => {
   return type.charAt(0).toUpperCase() + type.slice(1);
 };
 
+// Helper function to format product condition
+const formatProductCondition = (condition: string | undefined) => {
+  if (!condition) return "New";
+  return condition.charAt(0).toUpperCase() + condition.slice(1);
+};
+
 // Helper function to get badge color based on product type
 const getProductTypeBadgeColor = (type: string | undefined) => {
   switch (type?.toLowerCase()) {
@@ -35,6 +41,18 @@ const getProductTypeBadgeColor = (type: string | undefined) => {
       return "bg-amber-100 text-amber-800 border-amber-200";
     case "alloy":
       return "bg-purple-100 text-purple-800 border-purple-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
+
+// Helper function for condition badge color
+const getConditionBadgeColor = (condition: string) => {
+  switch (condition?.toLowerCase()) {
+    case "new":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "used":
+      return "bg-amber-100 text-amber-800 border-amber-200";
     default:
       return "bg-gray-100 text-gray-800 border-gray-200";
   }
@@ -124,8 +142,16 @@ export default function ProductDetails({
               variant="outline"
               className={`${getProductTypeBadgeColor(product.productType)}`}
             >
-              {formatProductType(product.productType)} Wheels
+              {formatProductType(product.productType)} Wheel
             </Badge>
+            {typeof product.condition === "string" && product.condition && (
+              <Badge
+                variant="outline"
+                className={`${getConditionBadgeColor(product.condition)}`}
+              >
+                {product.condition === "new" ? "New" : "Slightly Used"}
+              </Badge>
+            )}
             <Badge
               variant="outline"
               className={`${

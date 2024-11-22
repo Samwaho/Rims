@@ -115,8 +115,6 @@ export default function EditProductPage({
   useEffect(() => {
     if (!product) return;
 
-    console.log("Raw product data:", product);
-
     // Create dummy File objects for existing images
     const dummyFiles = product.images.map(
       (url: string) => new File([], url, { type: "image/jpeg" })
@@ -132,13 +130,6 @@ export default function EditProductPage({
         ? product.shippingCost
         : parseFloat(product.shippingCost) || 0;
 
-    console.log("Initializing form with values:", {
-      buyingPrice,
-      shippingCost,
-      deliveryTime: product.deliveryTime,
-      productType: product.productType,
-    });
-
     form.reset({
       ...product,
       buyingPrice,
@@ -149,6 +140,7 @@ export default function EditProductPage({
       images: dummyFiles,
       specifications: product.specifications || [],
       productType: product.productType || "oem",
+      condition: product.condition || undefined,
     });
 
     setExistingImages(product.images || []);
@@ -185,33 +177,10 @@ export default function EditProductPage({
           (spec) => spec && spec.name?.trim() && spec.value?.trim()
         );
 
-        // Add debug logs to see the raw values
-        console.log("Raw form data:", data);
-
-        // Ensure numeric values are properly converted and validated
         const buyingPrice = Number(data.buyingPrice);
         const price = Number(data.price);
         const stock = Number(data.stock);
         const shippingCost = Number(data.shippingCost);
-
-        // Log converted values
-        console.log("Converted values:", {
-          buyingPrice,
-          price,
-          stock,
-          shippingCost,
-          deliveryTime: data.deliveryTime,
-          productType: data.productType,
-        });
-
-        // Validate numeric values
-        if (
-          [buyingPrice, price, stock, shippingCost].some(
-            (val) => typeof val !== "number" || Number.isNaN(val)
-          )
-        ) {
-          throw new Error("Invalid numeric values provided");
-        }
 
         const productData = {
           name: data.name,
@@ -226,11 +195,9 @@ export default function EditProductPage({
           madeIn: data.madeIn,
           specifications: validSpecifications,
           productType: data.productType,
+          condition: data.condition || undefined,
         };
 
-        console.log("Final productData:", productData);
-
-        // Use existingImages instead of form's images field
         let finalImageUrls = [...existingImages];
 
         if (newImages.length > 0) {
