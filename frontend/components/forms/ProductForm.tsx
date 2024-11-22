@@ -603,12 +603,10 @@ export const ProductForm = memo(function ProductForm({
                   </FormLabel>
                   <Select
                     onValueChange={(value) => {
-                      field.onChange(
-                        value === "not_specified" ? undefined : value
-                      );
+                      field.onChange(value === "unspecified" ? null : value);
                       setIsDirty?.(true);
                     }}
-                    value={field.value || "not_specified"}
+                    value={field.value || "unspecified"}
                   >
                     <FormControl>
                       <SelectTrigger className="h-11 bg-white">
@@ -616,14 +614,9 @@ export const ProductForm = memo(function ProductForm({
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="not_specified">
-                        Not specified
-                      </SelectItem>
-                      {PRODUCT_CONDITIONS.map((condition) => (
-                        <SelectItem key={condition} value={condition}>
-                          {condition === "new" ? "New" : "Slightly Used"}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="unspecified">Not specified</SelectItem>
+                      <SelectItem value="new">New</SelectItem>
+                      <SelectItem value="used">Slightly Used</SelectItem>
                     </SelectContent>
                   </Select>
                   <FormMessage className="text-red-500 text-sm" />
