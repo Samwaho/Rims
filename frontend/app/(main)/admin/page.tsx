@@ -41,6 +41,7 @@ import { createColumns } from "./columns";
 import { DataTablePagination } from "@/components/ui/data-table/pagination";
 import { DataTableViewOptions } from "@/components/ui/data-table/view-options";
 import { Card } from "@/components/ui/card";
+import { useNewOrders } from "@/hooks/useNewOrders";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -57,6 +58,8 @@ export default function AdminPage() {
     isError,
     refetch,
   } = useProducts(debouncedSearch);
+
+  const { data: newOrdersCount = 0 } = useNewOrders();
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -200,7 +203,12 @@ export default function AdminPage() {
           </Link>
 
           <Link href="/admin/orders">
-            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer relative">
+              {newOrdersCount > 0 && (
+                <span className="absolute top-2 right-2 px-2 py-0.5 text-xs font-medium bg-primary text-primary-foreground rounded-full">
+                  {newOrdersCount} new
+                </span>
+              )}
               <div className="flex items-center gap-3">
                 <div className="p-2 bg-blue-100 rounded-lg">
                   <ShoppingBag className="h-5 w-5 text-blue-600" />
