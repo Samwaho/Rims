@@ -130,6 +130,7 @@ const shippingSchema = z.object({
     city: z.string().min(1, "City is required"),
     subCounty: z.string().min(1, "Sub County is required"),
     estateName: z.string().min(1, "Estate name is required"),
+    roadName: z.string().min(1, "Road/Street name is required"),
     apartmentName: z.string().optional(),
     houseNumber: z.string().min(1, "House number is required"),
     contactNumber: z.string().regex(/^\+254\d{9}$/, {
@@ -219,40 +220,46 @@ const fetchDeliveryPoints = async (): Promise<DeliveryPoint[]> => {
 
 // Components
 const OrderItem = React.memo(({ item }: { item: CheckoutItem }) => (
-  <div className="flex justify-between items-center bg-gray-50/80 p-5 rounded-xl hover:bg-gray-100/90 transition-all duration-300 border border-gray-100">
-    <div className="flex items-center gap-5">
-      <div className="w-20 h-20 relative rounded-lg overflow-hidden shadow-sm">
+  <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50/80 p-3 sm:p-5 rounded-xl hover:bg-gray-100/90 transition-all duration-300 border border-gray-100 gap-4 sm:gap-5">
+    <div className="flex items-start sm:items-center gap-3 sm:gap-5 w-full sm:w-auto">
+      <div className="w-16 h-16 sm:w-20 sm:h-20 relative rounded-lg overflow-hidden shadow-sm flex-shrink-0">
         <img
           src={item.product.images[0]}
           alt={item.product.name}
           className="object-cover w-full h-full transform hover:scale-110 transition-transform duration-300"
         />
       </div>
-      <div className="space-y-1">
-        <p className="font-semibold text-gray-900 tracking-tight">
+      <div className="space-y-1 flex-1">
+        <p className="font-semibold text-gray-900 tracking-tight text-sm sm:text-base break-words">
           {item.product.name}
         </p>
         <div className="space-y-0.5">
-          <p className="text-sm text-gray-600">Quantity: {item.quantity}</p>
+          <p className="text-xs sm:text-sm text-gray-600">
+            Quantity: {item.quantity}
+          </p>
           <p className="text-xs text-gray-500">Price for 4 pieces per item</p>
           <div className="flex items-center gap-2 text-xs text-gray-600">
-            <Truck className="w-3 h-3" />
-            <span>Shipping: {formatPrice(item.product.shippingCost)}</span>
+            <Truck className="w-3 h-3 flex-shrink-0" />
+            <span className="break-words">
+              Shipping: {formatPrice(item.product.shippingCost)}
+            </span>
           </div>
           <div className="flex items-center gap-2 text-xs text-gray-600">
-            <Clock className="w-3 h-3" />
-            <span>Delivery: {item.product.deliveryTime}</span>
+            <Clock className="w-3 h-3 flex-shrink-0" />
+            <span className="break-words">
+              Delivery: {item.product.deliveryTime}
+            </span>
           </div>
         </div>
       </div>
     </div>
-    <div className="text-right">
-      <span className="font-bold text-gray-900 tracking-tight">
-        {formatPrice(
-          (item.product.price + item.product.shippingCost) * item.quantity
-        )}
+    <div className="text-right w-full sm:w-auto">
+      <span className="font-bold text-gray-900 tracking-tight text-sm sm:text-base">
+        {formatPrice(item.product.price * item.quantity)}
       </span>
-      <p className="text-xs text-gray-500">Including shipping</p>
+      <p className="text-xs text-gray-500">
+        + {formatPrice(item.product.shippingCost * item.quantity)} shipping
+      </p>
     </div>
   </div>
 ));
@@ -260,24 +267,24 @@ const OrderItem = React.memo(({ item }: { item: CheckoutItem }) => (
 OrderItem.displayName = "OrderItem";
 
 const CheckoutProgress = ({ step }: { step: number }) => (
-  <div className="mb-10">
+  <div className="mb-6 sm:mb-10">
     <div className="flex justify-between mb-3">
       <span
-        className={`text-sm font-medium transition-colors duration-300 ${
+        className={`text-xs sm:text-sm font-medium transition-colors duration-300 ${
           step >= 1 ? "text-primary" : "text-gray-400"
         }`}
       >
         Delivery
       </span>
       <span
-        className={`text-sm font-medium transition-colors duration-300 ${
+        className={`text-xs sm:text-sm font-medium transition-colors duration-300 ${
           step >= 2 ? "text-primary" : "text-gray-400"
         }`}
       >
         Payment
       </span>
       <span
-        className={`text-sm font-medium transition-colors duration-300 ${
+        className={`text-xs sm:text-sm font-medium transition-colors duration-300 ${
           step >= 3 ? "text-primary" : "text-gray-400"
         }`}
       >
@@ -286,7 +293,7 @@ const CheckoutProgress = ({ step }: { step: number }) => (
     </div>
     <Progress
       value={(step / 3) * 100}
-      className="h-2.5 rounded-full bg-gray-100"
+      className="h-2 sm:h-2.5 rounded-full bg-gray-100"
     />
   </div>
 );
@@ -388,6 +395,7 @@ export default function CheckoutPage() {
             city: form.getValues("shippingDetails.city"),
             subCounty: form.getValues("shippingDetails.subCounty"),
             estateName: form.getValues("shippingDetails.estateName"),
+            roadName: form.getValues("shippingDetails.roadName"),
             apartmentName: form.getValues("shippingDetails.apartmentName"),
             houseNumber: form.getValues("shippingDetails.houseNumber"),
             contactNumber: form.getValues("shippingDetails.contactNumber"),
@@ -512,6 +520,7 @@ export default function CheckoutPage() {
         city: "",
         subCounty: "",
         estateName: "",
+        roadName: "",
         apartmentName: "",
         houseNumber: "",
         contactNumber: "+254",
@@ -546,12 +555,12 @@ export default function CheckoutPage() {
             </FormLabel>
             <FormControl>
               <div className="relative">
-                <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-5 w-5" />
+                <Icon className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 h-4 w-4 sm:h-5 sm:w-5" />
                 <Input
                   {...field}
                   type={type}
                   placeholder={placeholder}
-                  className="h-11 pl-10"
+                  className="h-10 sm:h-11 pl-10 text-sm sm:text-base"
                 />
               </div>
             </FormControl>
@@ -568,11 +577,13 @@ export default function CheckoutPage() {
       <Form {...form}>
         <Card className="border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
           <CardHeader className="border-b border-gray-100">
-            <CardTitle className="flex items-center gap-2 text-xl">
-              <MapPin className="w-5 h-5 text-primary" />
+            <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+              <MapPin className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
               Shipping Details
             </CardTitle>
-            <CardDescription>Enter your delivery information</CardDescription>
+            <CardDescription className="text-sm">
+              Enter your delivery information
+            </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-6">
@@ -596,6 +607,13 @@ export default function CheckoutPage() {
                 label: "Estate Name",
                 placeholder: "e.g., Kileleshwa",
                 icon: Home,
+              })}
+
+              {renderFormField({
+                name: "roadName",
+                label: "Road/Street Name",
+                placeholder: "e.g., Moi Avenue",
+                icon: MapPin,
               })}
 
               {renderFormField({
@@ -645,60 +663,66 @@ export default function CheckoutPage() {
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
-        <Loader2 className="h-14 w-14 animate-spin text-primary" />
+        <Loader2 className="h-10 w-10 sm:h-14 sm:w-14 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50/50 py-14 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50/50 py-8 sm:py-14 px-3 sm:px-6 lg:px-8">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center mb-10">
+        <div className="flex items-center mb-6 sm:mb-10">
           <Link
             href={backLink}
             className="flex items-center text-gray-600 hover:text-gray-900 transition-colors duration-300"
           >
-            <ArrowLeft className="w-5 h-5 mr-2" />
-            {productId ? "Back to Product" : "Back to Cart"}
+            <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+            <span className="text-sm sm:text-base">
+              {productId ? "Back to Product" : "Back to Cart"}
+            </span>
           </Link>
-          <h1 className="text-3xl font-bold text-center flex-1 mr-8 tracking-tight">
+          <h1 className="text-xl sm:text-3xl font-bold text-center flex-1 mr-8 tracking-tight">
             Secure Checkout
           </h1>
         </div>
 
         <CheckoutProgress step={checkoutStep} />
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
-          <div className="space-y-8">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-10">
+          <div className="space-y-6 sm:space-y-8">
             {/* Shipping Section */}
             {renderShippingFields()}
 
             {/* Order Summary */}
             <Card className="h-fit border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
               <CardHeader className="border-b border-gray-100">
-                <CardTitle className="text-xl">Order Summary</CardTitle>
-                <CardDescription>Review your items</CardDescription>
+                <CardTitle className="text-lg sm:text-xl">
+                  Order Summary
+                </CardTitle>
+                <CardDescription className="text-sm">
+                  Review your items
+                </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
-                <div className="space-y-5">
+                <div className="space-y-4 sm:space-y-5">
                   {items.map((item) => (
                     <OrderItem key={item._id} item={item} />
                   ))}
-                  <Separator className="my-6" />
+                  <Separator className="my-4 sm:my-6" />
 
                   {!appliedDiscount && (
-                    <div className="flex gap-3">
+                    <div className="flex gap-2 sm:gap-3">
                       <Input
                         placeholder="Enter discount code"
                         value={discountCode}
                         onChange={(e) => setDiscountCode(e.target.value)}
-                        className="flex-1 h-12"
+                        className="flex-1 h-10 sm:h-12 text-sm"
                       />
                       <Button
                         onClick={handleApplyDiscount}
                         disabled={validateDiscountMutation.isPending}
                         variant="outline"
-                        className="h-12 px-6 hover:bg-primary hover:text-primary-foreground"
+                        className="h-10 sm:h-12 px-4 sm:px-6 text-sm hover:bg-primary hover:text-primary-foreground"
                       >
                         Apply
                       </Button>
@@ -707,7 +731,7 @@ export default function CheckoutPage() {
 
                   {/* Price Breakdown */}
                   <div className="space-y-3 pt-2">
-                    <div className="flex justify-between text-gray-700">
+                    <div className="flex justify-between text-gray-700 text-sm">
                       <span>Subtotal (Items)</span>
                       <div className="text-right">
                         <span className="font-medium">
@@ -724,7 +748,7 @@ export default function CheckoutPage() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-between text-gray-700">
+                    <div className="flex justify-between text-gray-700 text-sm">
                       <span>Shipping Total</span>
                       <span className="font-medium">
                         {formatPrice(
@@ -737,7 +761,7 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                     {appliedDiscount && (
-                      <div className="flex justify-between text-green-600">
+                      <div className="flex justify-between text-green-600 text-sm">
                         <span>
                           Discount ({appliedDiscount.code}
                           {appliedDiscount.type === "percentage"
@@ -751,9 +775,14 @@ export default function CheckoutPage() {
                       </div>
                     )}
                     <Separator className="my-4" />
-                    <div className="flex justify-between font-bold text-xl text-gray-900">
+                    <div className="flex justify-between font-bold text-lg sm:text-xl text-gray-900">
                       <span>Total</span>
-                      <span>{formatPrice(totalPrice)}</span>
+                      <div className="text-right">
+                        <span>{formatPrice(totalPrice)}</span>
+                        <div className="text-xs font-normal text-gray-500">
+                          Including shipping
+                        </div>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -764,8 +793,10 @@ export default function CheckoutPage() {
           {/* Payment Options */}
           <Card className="h-fit border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="border-b border-gray-100">
-              <CardTitle className="text-xl">Payment Method</CardTitle>
-              <CardDescription>
+              <CardTitle className="text-lg sm:text-xl">
+                Payment Method
+              </CardTitle>
+              <CardDescription className="text-sm">
                 Choose your preferred payment option below
               </CardDescription>
             </CardHeader>
@@ -778,31 +809,31 @@ export default function CheckoutPage() {
                 }}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2 mb-8">
+                <TabsList className="grid w-full grid-cols-2 mb-6 sm:mb-8">
                   <TabsTrigger
                     value="mpesa"
-                    className="data-[state=active]:bg-green-50 py-3"
+                    className="data-[state=active]:bg-green-50 py-2 sm:py-3 text-sm"
                   >
-                    <PhoneIcon className="w-5 h-5 mr-2" />
+                    <PhoneIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Mpesa
                   </TabsTrigger>
                   <TabsTrigger
                     value="bank"
-                    className="data-[state=active]:bg-blue-50 py-3"
+                    className="data-[state=active]:bg-blue-50 py-2 sm:py-3 text-sm"
                   >
-                    <CreditCard className="w-5 h-5 mr-2" />
+                    <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                     Bank Transfer
                   </TabsTrigger>
                 </TabsList>
                 <TabsContent value="mpesa">
-                  <div className="space-y-8">
-                    <div className="flex items-center justify-center bg-green-50 p-8 rounded-xl border border-green-100">
-                      <PhoneIcon className="w-14 h-14 text-green-600 mr-5" />
+                  <div className="space-y-6 sm:space-y-8">
+                    <div className="flex flex-col sm:flex-row items-center justify-center bg-green-50 p-6 sm:p-8 rounded-xl border border-green-100 text-center sm:text-left gap-4 sm:gap-5">
+                      <PhoneIcon className="w-12 h-12 sm:w-14 sm:h-14 text-green-600" />
                       <div>
-                        <h3 className="font-semibold text-green-800 text-xl mb-1">
+                        <h3 className="font-semibold text-green-800 text-lg sm:text-xl mb-1">
                           Pay with Mpesa
                         </h3>
-                        <p className="text-green-600">
+                        <p className="text-green-600 text-sm">
                           Fast and secure mobile payment
                         </p>
                       </div>

@@ -37,7 +37,15 @@ interface Order {
   taxRate: number;
   shippingCost: number;
   total: number;
-  status: "pending" | "processing" | "shipped" | "delivered" | "cancelled";
+  status:
+    | "pending"
+    | "order_submitted"
+    | "processing"
+    | "in_transit"
+    | "shipped"
+    | "under_clearance"
+    | "out_for_delivery"
+    | "delivered";
   orderDate: string;
   paymentMethod: "mpesa" | "bank";
   paymentStatus: "pending" | "completed" | "failed" | "refunded";
@@ -46,6 +54,7 @@ interface Order {
     city: string;
     subCounty: string;
     estateName: string;
+    roadName: string;
     apartmentName?: string;
     houseNumber: string;
     contactNumber: string;
@@ -61,11 +70,14 @@ interface Order {
 }
 
 const statusStyles = {
-  delivered: "bg-green-100 text-green-800 border border-green-200",
-  cancelled: "bg-red-100 text-red-800 border border-red-200",
   pending: "bg-yellow-100 text-yellow-800 border border-yellow-200",
+  order_submitted: "bg-yellow-100 text-yellow-800 border border-yellow-200",
   processing: "bg-blue-100 text-blue-800 border border-blue-200",
+  in_transit: "bg-orange-100 text-orange-800 border border-orange-200",
   shipped: "bg-purple-100 text-purple-800 border border-purple-200",
+  under_clearance: "bg-indigo-100 text-indigo-800 border border-indigo-200",
+  out_for_delivery: "bg-teal-100 text-teal-800 border border-teal-200",
+  delivered: "bg-green-100 text-green-800 border border-green-200",
 } as const;
 
 const paymentStatusStyles = {
@@ -74,16 +86,26 @@ const paymentStatusStyles = {
   pending: "bg-yellow-100 text-yellow-800 border border-yellow-200",
 } as const;
 
-const OrderStatusBadge = memo(({ status }: { status: string }) => (
-  <div
-    className={`px-2.5 py-1.5 text-xs sm:text-sm rounded-full font-medium whitespace-nowrap transition-all duration-200 ${
-      statusStyles[status as keyof typeof statusStyles] ||
-      statusStyles.processing
-    }`}
-  >
-    {status.charAt(0).toUpperCase() + status.slice(1)}
-  </div>
-));
+const OrderStatusBadge = memo(({ status }: { status: string }) => {
+  const displayStatus =
+    status === "pending"
+      ? "Order Submitted"
+      : status
+          .split("_")
+          .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+          .join(" ");
+
+  return (
+    <div
+      className={`px-2.5 py-1.5 text-xs sm:text-sm rounded-full font-medium whitespace-nowrap transition-all duration-200 ${
+        statusStyles[status as keyof typeof statusStyles] ||
+        statusStyles.processing
+      }`}
+    >
+      {displayStatus}
+    </div>
+  );
+});
 OrderStatusBadge.displayName = "OrderStatusBadge";
 
 const PaymentStatusBadge = memo(({ status }: { status: string }) => (
@@ -123,75 +145,81 @@ const EmptyOrdersCard = memo(() => (
 ));
 EmptyOrdersCard.displayName = "EmptyOrdersCard";
 
-const OrderCard = memo(({ order }: { order: Order }) => (
-  <Link href={`/orders/${order._id}`} className="block">
-    <Card className="hover:shadow-lg transition-all duration-300 border-gray-200/80 cursor-pointer">
-      <CardHeader className="p-4 sm:p-5">
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between sm:items-center">
-          <div>
-            <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
-              <Package className="w-5 h-5 text-gray-500" />
-              Order #{order._id.slice(-8)}
-            </CardTitle>
-            <CardDescription className="text-sm mt-1">
-              Placed on {formatDate(order.orderDate)}
-            </CardDescription>
-          </div>
-          <div className="flex flex-wrap gap-2.5">
-            <OrderStatusBadge status={order.status} />
-            <PaymentStatusBadge status={order.paymentStatus} />
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent className="p-4 sm:p-5 border-t border-gray-100">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="space-y-1.5 text-sm sm:text-base text-gray-600 flex-1">
-            <div className="font-medium">
-              {order.products.length} item
-              {order.products.length !== 1 ? "s" : ""}
+const OrderCard = memo(({ order }: { order: Order }) => {
+  const displayStatus =
+    order.status === "pending" ? "order_submitted" : order.status;
+
+  return (
+    <Link href={`/orders/${order._id}`} className="block">
+      <Card className="hover:shadow-lg transition-all duration-300 border-gray-200/80 cursor-pointer">
+        <CardHeader className="p-4 sm:p-5">
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-0 sm:justify-between sm:items-center">
+            <div>
+              <CardTitle className="text-base sm:text-lg md:text-xl flex items-center gap-2">
+                <Package className="w-5 h-5 text-gray-500" />
+                Order #{order._id.slice(-8)}
+              </CardTitle>
+              <CardDescription className="text-sm mt-1">
+                Placed on {formatDate(order.orderDate)}
+              </CardDescription>
             </div>
-            {order.shippingDetails ? (
-              <div className="space-y-0.5">
-                <div className="text-gray-500 flex items-start gap-1">
-                  <span className="font-medium">Delivery to:</span>
-                  {order.shippingDetails.estateName},{" "}
-                  {order.shippingDetails.city}
+            <div className="flex flex-wrap gap-2.5">
+              <OrderStatusBadge status={displayStatus} />
+              <PaymentStatusBadge status={order.paymentStatus} />
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="p-4 sm:p-5 border-t border-gray-100">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div className="space-y-1.5 text-sm sm:text-base text-gray-600 flex-1">
+              <div className="font-medium">
+                {order.products.length} item
+                {order.products.length !== 1 ? "s" : ""}
+              </div>
+              {order.shippingDetails ? (
+                <div className="space-y-0.5">
+                  <div className="text-gray-500 flex items-start gap-1">
+                    <span className="font-medium">Delivery to:</span>
+                    {order.shippingDetails.estateName},{" "}
+                    {order.shippingDetails.roadName},{" "}
+                    {order.shippingDetails.city}
+                  </div>
+                  {order.shippingDetails.apartmentName && (
+                    <div className="text-gray-500 pl-[72px]">
+                      {order.shippingDetails.apartmentName}, Unit{" "}
+                      {order.shippingDetails.houseNumber}
+                    </div>
+                  )}
                 </div>
-                {order.shippingDetails.apartmentName && (
-                  <div className="text-gray-500 pl-[72px]">
-                    {order.shippingDetails.apartmentName}, Unit{" "}
-                    {order.shippingDetails.houseNumber}
+              ) : order.deliveryPoint ? (
+                <div className="text-gray-500 flex items-center gap-1">
+                  <span className="font-medium">Delivery Point:</span>
+                  {order.deliveryPoint.name}
+                </div>
+              ) : null}
+            </div>
+            <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6">
+              <div className="flex flex-col items-end">
+                <div className="text-base sm:text-lg font-bold text-gray-900">
+                  {formatPrice(order.total)}
+                </div>
+                {order.discount > 0 && (
+                  <div className="text-xs sm:text-sm font-medium text-green-600">
+                    Saved {formatPrice(order.discount)}
                   </div>
                 )}
               </div>
-            ) : order.deliveryPoint ? (
-              <div className="text-gray-500 flex items-center gap-1">
-                <span className="font-medium">Delivery Point:</span>
-                {order.deliveryPoint.name}
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <Eye className="w-4 h-4" />
+                View Details
               </div>
-            ) : null}
-          </div>
-          <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-4 sm:gap-6">
-            <div className="flex flex-col items-end">
-              <div className="text-base sm:text-lg font-bold text-gray-900">
-                {formatPrice(order.total)}
-              </div>
-              {order.discount > 0 && (
-                <div className="text-xs sm:text-sm font-medium text-green-600">
-                  Saved {formatPrice(order.discount)}
-                </div>
-              )}
-            </div>
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <Eye className="w-4 h-4" />
-              View Details
             </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
-  </Link>
-));
+        </CardContent>
+      </Card>
+    </Link>
+  );
+});
 OrderCard.displayName = "OrderCard";
 
 export default function OrdersPage() {

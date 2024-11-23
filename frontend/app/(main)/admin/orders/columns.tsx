@@ -84,11 +84,13 @@ export type Order = {
 
 const STATUS_COLORS = {
   pending: "bg-yellow-500/90 hover:bg-yellow-500",
+  order_submitted: "bg-yellow-500/90 hover:bg-yellow-500",
   processing: "bg-blue-500/90 hover:bg-blue-500",
   in_transit: "bg-orange-500/90 hover:bg-orange-500",
   shipped: "bg-purple-500/90 hover:bg-purple-500",
+  under_clearance: "bg-indigo-500/90 hover:bg-indigo-500",
+  out_for_delivery: "bg-teal-500/90 hover:bg-teal-500",
   delivered: "bg-green-500/90 hover:bg-green-500",
-  cancelled: "bg-primary/90 hover:bg-primary",
 } as const;
 
 const getStatusColor = (status: string): string => {
@@ -182,24 +184,29 @@ const StatusSelect = memo(
     status: string;
     orderId: string;
     onUpdate: (orderId: string, value: string) => Promise<void>;
-  }) => (
-    <Select
-      defaultValue={status}
-      onValueChange={(value) => onUpdate(orderId, value)}
-    >
-      <SelectTrigger className="w-[130px] md:w-[150px] h-9">
-        <SelectValue placeholder="Update status" />
-      </SelectTrigger>
-      <SelectContent>
-        <SelectItem value="pending">Pending</SelectItem>
-        <SelectItem value="processing">Processing</SelectItem>
-        <SelectItem value="in_transit">In Transit</SelectItem>
-        <SelectItem value="shipped">Shipped</SelectItem>
-        <SelectItem value="delivered">Delivered</SelectItem>
-        <SelectItem value="cancelled">Cancelled</SelectItem>
-      </SelectContent>
-    </Select>
-  )
+  }) => {
+    const currentStatus = status === "pending" ? "order_submitted" : status;
+
+    return (
+      <Select
+        defaultValue={currentStatus}
+        onValueChange={(value) => onUpdate(orderId, value)}
+      >
+        <SelectTrigger className="w-[130px] md:w-[150px] h-9">
+          <SelectValue placeholder="Update status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="order_submitted">Order Submitted</SelectItem>
+          <SelectItem value="processing">Processing</SelectItem>
+          <SelectItem value="in_transit">In Transit</SelectItem>
+          <SelectItem value="shipped">Shipped</SelectItem>
+          <SelectItem value="under_clearance">Under Clearance</SelectItem>
+          <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
+          <SelectItem value="delivered">Delivered</SelectItem>
+        </SelectContent>
+      </Select>
+    );
+  }
 );
 StatusSelect.displayName = "StatusSelect";
 

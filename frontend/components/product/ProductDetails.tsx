@@ -142,7 +142,7 @@ export default function ProductDetails({
               variant="outline"
               className={`${getProductTypeBadgeColor(product.productType)}`}
             >
-              {formatProductType(product.productType)} Wheel
+              {formatProductType(product.productType)} Wheels
             </Badge>
             {typeof product.condition === "string" && product.condition && (
               <Badge

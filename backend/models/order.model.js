@@ -57,14 +57,15 @@ const orderSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: [
-        "pending",
+        "order_submitted",
         "processing",
         "in_transit",
         "shipped",
+        "under_clearance",
+        "out_for_delivery",
         "delivered",
-        "cancelled",
       ],
-      default: "pending",
+      default: "order_submitted",
     },
     paymentMethod: {
       type: String,
@@ -89,6 +90,10 @@ const orderSchema = new mongoose.Schema(
         required: true,
       },
       estateName: {
+        type: String,
+        required: true,
+      },
+      roadName: {
         type: String,
         required: true,
       },

@@ -12,6 +12,7 @@ import {
   Clock,
   ArrowLeft,
   Truck,
+  FileCheck,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -47,11 +48,13 @@ interface Order {
   total: number;
   status:
     | "pending"
+    | "order_submitted"
     | "processing"
     | "in_transit"
     | "shipped"
-    | "delivered"
-    | "cancelled";
+    | "under_clearance"
+    | "out_for_delivery"
+    | "delivered";
   orderDate: string;
   paymentMethod: "mpesa" | "bank";
   paymentStatus: "pending" | "completed" | "failed" | "refunded";
@@ -60,6 +63,7 @@ interface Order {
     city: string;
     subCounty: string;
     estateName: string;
+    roadName: string;
     apartmentName?: string;
     houseNumber: string;
     contactNumber: string;
@@ -74,10 +78,16 @@ interface Order {
 
 const ORDER_STATUS = {
   pending: {
-    icon: Clock,
+    icon: Package,
     color: "text-yellow-500",
     bgColor: "bg-yellow-50",
-    text: "Order Pending",
+    text: "Order Submitted",
+  },
+  order_submitted: {
+    icon: Package,
+    color: "text-yellow-500",
+    bgColor: "bg-yellow-50",
+    text: "Order Submitted",
   },
   processing: {
     icon: Package,
@@ -97,33 +107,55 @@ const ORDER_STATUS = {
     bgColor: "bg-purple-50",
     text: "Shipped",
   },
+  under_clearance: {
+    icon: FileCheck,
+    color: "text-indigo-500",
+    bgColor: "bg-indigo-50",
+    text: "Under Clearance",
+  },
+  out_for_delivery: {
+    icon: Truck,
+    color: "text-teal-500",
+    bgColor: "bg-teal-50",
+    text: "Out for Delivery",
+  },
   delivered: {
     icon: CheckCircle,
     color: "text-green-500",
     bgColor: "bg-green-50",
     text: "Delivered",
   },
-  cancelled: {
-    icon: Clock,
-    color: "text-red-500",
-    bgColor: "bg-red-50",
-    text: "Cancelled",
-  },
 } as const;
 
-const getOrderStatus = (status: Order["status"]) => ORDER_STATUS[status];
+const getOrderStatus = (status: Order["status"]) => {
+  if (status === "pending") {
+    return ORDER_STATUS.order_submitted;
+  }
+  return ORDER_STATUS[status];
+};
 
 const OrderTimeline = memo(({ status }: { status: Order["status"] }) => {
-  const steps = ["pending", "processing", "in_transit", "shipped", "delivered"];
-  const currentIndex = steps.indexOf(status);
+  const steps = [
+    "order_submitted",
+    "processing",
+    "in_transit",
+    "shipped",
+    "under_clearance",
+    "out_for_delivery",
+    "delivered",
+  ];
+
+  const currentStatus = status === "pending" ? "order_submitted" : status;
+  const currentIndex = steps.indexOf(currentStatus);
 
   return (
     <div className="relative">
       <div className="absolute left-6 sm:left-8 top-0 h-full w-0.5 bg-gray-200" />
       {steps.map((step, index) => {
         const isCompleted = currentIndex >= index;
-        const StatusIcon = ORDER_STATUS[step as Order["status"]].icon;
-        const { color, bgColor } = ORDER_STATUS[step as Order["status"]];
+        const StatusIcon = ORDER_STATUS[step as keyof typeof ORDER_STATUS].icon;
+        const { color, bgColor } =
+          ORDER_STATUS[step as keyof typeof ORDER_STATUS];
 
         return (
           <div
@@ -145,7 +177,7 @@ const OrderTimeline = memo(({ status }: { status: Order["status"] }) => {
                   isCompleted ? "text-gray-900" : "text-gray-500"
                 }`}
               >
-                {ORDER_STATUS[step as Order["status"]].text}
+                {ORDER_STATUS[step as keyof typeof ORDER_STATUS].text}
               </h3>
             </div>
           </div>
@@ -273,10 +305,16 @@ export default function OrderConfirmationPage({
     },
   });
 
-  const StatusComponent = useMemo(
-    () => (order ? getOrderStatus(order.status) : null),
-    [order?.status]
-  );
+  console.log("Order:", order);
+  console.log("Is Loading:", isLoading);
+  console.log("Error:", error);
+
+  const StatusComponent = useMemo(() => {
+    if (!order) return null;
+    const displayStatus =
+      order.status === "pending" ? "order_submitted" : order.status;
+    return getOrderStatus(displayStatus as Order["status"]);
+  }, [order?.status]);
 
   if (error) {
     return (
@@ -421,6 +459,12 @@ export default function OrderConfirmationPage({
                 <p className="text-gray-600 mb-1">Estate Name</p>
                 <p className="font-medium text-gray-900">
                   {order.shippingDetails?.estateName || "N/A"}
+                </p>
+              </div>
+              <div>
+                <p className="text-gray-600 mb-1">Road/Street Name</p>
+                <p className="font-medium text-gray-900">
+                  {order.shippingDetails?.roadName || "N/A"}
                 </p>
               </div>
               {order.shippingDetails?.apartmentName && (

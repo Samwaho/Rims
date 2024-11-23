@@ -146,6 +146,7 @@ export const createOrder = async (req, res, next) => {
       !shippingDetails?.city ||
       !shippingDetails?.subCounty ||
       !shippingDetails?.estateName ||
+      !shippingDetails?.roadName ||
       !shippingDetails?.houseNumber ||
       !shippingDetails?.contactNumber
     ) {
@@ -169,7 +170,7 @@ export const createOrder = async (req, res, next) => {
       discountDetails: orderData.discountDetails,
       shippingCost: orderData.shippingCost,
       total: orderData.total + orderData.shippingCost,
-      status: "pending",
+      status: "order_submitted",
       paymentMethod,
       paymentDetails,
       paymentStatus: "pending",
@@ -267,13 +268,15 @@ export const updateOrderStatus = async (req, res, next) => {
     }
 
     const validStatuses = [
-      "pending",
+      "order_submitted",
       "processing",
       "in_transit",
       "shipped",
+      "under_clearance",
+      "out_for_delivery",
       "delivered",
-      "cancelled",
     ];
+
     if (!validStatuses.includes(status)) {
       throw { status: 400, message: "Invalid status value" };
     }
@@ -281,16 +284,6 @@ export const updateOrderStatus = async (req, res, next) => {
     const order = await Order.findById(orderId);
     if (!order) {
       throw { status: 404, message: "Order not found" };
-    }
-
-    if (status === "cancelled" && order.status !== "cancelled") {
-      await Promise.all(
-        order.products.map((item) =>
-          Product.findByIdAndUpdate(item.product, {
-            $inc: { stock: item.quantity },
-          })
-        )
-      );
     }
 
     order.status = status;
