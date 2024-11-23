@@ -395,6 +395,13 @@ export const getAllOrders = async (req, res, next) => {
       };
     });
 
+    if (orders.length > 0) {
+      await Order.updateMany(
+        { _id: { $in: orders.map((order) => order._id) } },
+        { $set: { viewed: true } }
+      );
+    }
+
     res.status(200).json({
       message: "Orders fetched successfully",
       orders: transformedOrders,
@@ -504,5 +511,31 @@ export const deleteOrder = async (req, res, next) => {
     });
   } catch (error) {
     next(errorHandler(res, error.status || 500, error.message));
+  }
+};
+
+export const getNewOrdersCount = async (req, res, next) => {
+  try {
+    const count = await Order.countDocuments({ viewed: false });
+    res.status(200).json({ count });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const markOrdersAsViewed = async (req, res, next) => {
+  try {
+    const { orderIds } = req.body;
+
+    await Order.updateMany(
+      { _id: { $in: orderIds } },
+      { $set: { viewed: true } }
+    );
+
+    res.status(200).json({
+      message: "Orders marked as viewed successfully",
+    });
+  } catch (error) {
+    next(error);
   }
 };

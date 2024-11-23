@@ -131,6 +131,10 @@ const orderSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
+    viewed: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );

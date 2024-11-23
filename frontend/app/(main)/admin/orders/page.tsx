@@ -1,6 +1,6 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import axios, { AxiosError } from "axios";
 import {
   flexRender,
@@ -32,6 +32,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { Button } from "@/components/ui/button";
+import { useNewOrders } from "@/hooks/useNewOrders";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 const STALE_TIME = 1000 * 60 * 5; // 5 minutes
@@ -102,7 +103,7 @@ export default function AdminOrders() {
     },
     retry: 1,
     staleTime: STALE_TIME,
-    refetchOnWindowFocus: false,
+    refetchOnWindowFocus: true,
     enabled: isAuthChecked,
   });
 
@@ -245,6 +246,46 @@ export default function AdminOrders() {
     </div>
   );
 
+  const { data: newOrdersCount = 0 } = useNewOrders();
+
+  const queryClient = useQueryClient();
+
+  const markOrdersAsViewed = async (orderIds: string[]) => {
+    try {
+      await axios.post(
+        `${BACKEND_URL}/api/orders/mark-viewed`,
+        { orderIds },
+        await axiosHeaders()
+      );
+
+      // Invalidate the queries to refresh the data
+      queryClient.invalidateQueries({ queryKey: ["new-orders-count"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+    } catch (error) {
+      console.error("Error marking orders as viewed:", error);
+    }
+  };
+
+  const handleMarkAsViewed = () => {
+    const unviewedOrders = orders
+      .filter((order) => !order.viewed)
+      .map((order) => order._id);
+
+    if (unviewedOrders.length > 0) {
+      markOrdersAsViewed(unviewedOrders);
+    }
+  };
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Refresh both the orders list and new orders count
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["new-orders-count"] });
+    }, 10000); // Check every 10 seconds
+
+    return () => clearInterval(interval);
+  }, [queryClient]);
+
   if (!isAuthChecked) return renderLoadingState();
 
   if (error) {
@@ -269,9 +310,26 @@ export default function AdminOrders() {
         </Button>
 
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
-            Order Management
-          </h1>
+          <div className="flex items-center gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-gray-900 to-gray-600 bg-clip-text text-transparent">
+              Order Management
+            </h1>
+            {newOrdersCount > 0 && (
+              <>
+                <div className="flex items-center justify-center px-2.5 py-0.5 rounded-full text-sm font-medium bg-primary text-primary-foreground">
+                  {newOrdersCount} new
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleMarkAsViewed}
+                  className="ml-2"
+                >
+                  Mark all as viewed
+                </Button>
+              </>
+            )}
+          </div>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4 w-full sm:w-auto">
             <div className="relative w-full sm:w-[300px]">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-500" />

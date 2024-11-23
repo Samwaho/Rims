@@ -432,8 +432,13 @@ export default function CheckoutPage() {
           : "Order placed successfully! Please complete the bank transfer using the provided details.";
 
       toast.success(successMessage);
+
+      // Invalidate both queries to refresh the data
       queryClient.invalidateQueries({ queryKey: ["cart"] });
       queryClient.invalidateQueries({ queryKey: ["user-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      queryClient.invalidateQueries({ queryKey: ["new-orders-count"] });
+
       router.push(`/orders/${orderId}`);
     },
     onError: (error: any) => {
