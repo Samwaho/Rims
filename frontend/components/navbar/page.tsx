@@ -63,13 +63,18 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user } = useUser();
 
-  // Handle scroll effect
+  // Handle scroll effect with blur
   useEffect(() => {
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const scrolled = window.scrollY > 20;
+      setIsScrolled(scrolled);
+      document.body.style.overflow = scrolled ? "auto" : "unset";
     };
     window.addEventListener("scroll", handleScroll);
-    return () => window.removeEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      document.body.style.overflow = "unset";
+    };
   }, []);
 
   const handleSearch = useCallback(
@@ -185,8 +190,8 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
     <nav
       className={`sticky top-0 z-50 transition-all duration-300 ${
         isScrolled
-          ? "bg-white/95 backdrop-blur-lg shadow-md"
-          : "bg-white/90 backdrop-blur-md border-b border-gray-100"
+          ? "bg-white/80 backdrop-blur-xl shadow-lg"
+          : "bg-white/90 backdrop-blur-sm border-b border-gray-100"
       }`}
     >
       <div className="max-w-[2000px] mx-auto flex items-center justify-between py-4 px-4 md:px-8 lg:px-12 xl:px-20">

@@ -88,7 +88,7 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
             <h3 className="text-sm sm:text-base font-bold line-clamp-1 group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
-            <p className="text-xs sm:text-sm text-muted-foreground">
+            <p className="text-sm sm:text-base font-semibold w-full">
               Size: {product.size}
             </p>
             <div className="flex items-center gap-2">
@@ -107,8 +107,7 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
                 </span>
               </p>
             )}
-            <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
-              <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-foreground" />
+            <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2 whitespace-nowrap">
               <span>Delivery: {product.deliveryTime}</span>
             </p>
           </div>
