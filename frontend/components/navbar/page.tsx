@@ -197,9 +197,9 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
           <Image
             src={logo}
             alt="Logo"
-            width={150}
-            height={120}
-            className="w-28 md:w-32 lg:w-36"
+            width={100}
+            height={100}
+            className="w-16 md:w-20 lg:w-24"
             priority
           />
         </Link>
@@ -267,9 +267,9 @@ const Navbar = ({ initialLoggedIn, isAdmin }: NavbarProps) => {
                     <Image
                       src={logo}
                       alt="Logo"
-                      width={120}
-                      height={80}
-                      className="w-24 md:w-28"
+                      width={100}
+                      height={100}
+                      className="w-16 md:w-20"
                       priority
                     />
                     <DrawerClose asChild>
