@@ -29,6 +29,9 @@ import {
   Building,
   Home,
   Truck,
+  Globe,
+  Shield,
+  Lock,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -312,13 +315,7 @@ export default function CheckoutPage() {
   }, []);
 
   // State
-  const [paymentMethod, setPaymentMethod] = useState("mpesa");
-  const [mpesaNumber, setMpesaNumber] = useState("+254");
-  const [bankDetails, setBankDetails] = useState({
-    accountNumber: "",
-    bankName: "",
-    accountHolder: "",
-  });
+  const [paymentMethod, setPaymentMethod] = useState("pesapal");
   const [formErrors, setFormErrors] = useState<string[]>([]);
   const [discountCode, setDiscountCode] = useState("");
   const [appliedDiscount, setAppliedDiscount] = useState<Discount | null>(null);
@@ -384,68 +381,52 @@ export default function CheckoutPage() {
 
   const createOrderMutation = useMutation({
     mutationFn: async () => {
-      const response = await axios.post(
-        `${BACKEND_URL}/api/orders`,
+      // First initiate Pesapal payment
+      const pesapalResponse = await axios.post(
+        `${BACKEND_URL}/api/payments/pesapal/initiate`,
         {
-          ...(productId ? { productId, quantity: 1 } : {}),
-          paymentMethod,
-          paymentDetails:
-            paymentMethod === "mpesa" ? { mpesaNumber } : bankDetails,
-          shippingDetails: {
-            city: form.getValues("shippingDetails.city"),
-            subCounty: form.getValues("shippingDetails.subCounty"),
-            estateName: form.getValues("shippingDetails.estateName"),
-            roadName: form.getValues("shippingDetails.roadName"),
-            apartmentName: form.getValues("shippingDetails.apartmentName"),
-            houseNumber: form.getValues("shippingDetails.houseNumber"),
-            contactNumber: form.getValues("shippingDetails.contactNumber"),
+          amount: totalPrice,
+          description: `Order for ${items.length} items`,
+          email: "customer@example.com",
+          orderData: {
+            ...(productId ? { productId, quantity: 1 } : {}),
+            paymentMethod: "pesapal",
+            paymentDetails: {},
+            shippingDetails: {
+              city: form.getValues("shippingDetails.city"),
+              subCounty: form.getValues("shippingDetails.subCounty"),
+              estateName: form.getValues("shippingDetails.estateName"),
+              roadName: form.getValues("shippingDetails.roadName"),
+              apartmentName: form.getValues("shippingDetails.apartmentName"),
+              houseNumber: form.getValues("shippingDetails.houseNumber"),
+              contactNumber: form.getValues("shippingDetails.contactNumber"),
+            },
+            discount: appliedDiscount
+              ? {
+                  code: appliedDiscount.code,
+                  type: appliedDiscount.type,
+                  value: appliedDiscount.value,
+                  amount: discountAmount,
+                }
+              : null,
           },
-          discount: appliedDiscount
-            ? {
-                code: appliedDiscount.code,
-                type: appliedDiscount.type,
-                value: appliedDiscount.value,
-                amount: discountAmount,
-              }
-            : null,
         },
         await axiosHeaders()
       );
 
-      // Send confirmation email
-      try {
-        await sendOrderConfirmationEmail(
-          response.data.order.user.email,
-          response.data.order
-        );
-      } catch (emailError) {
-        console.error("Failed to send confirmation email:", emailError);
-        // Don't throw the error as we don't want to affect the order creation
-      }
-
-      return response.data.order._id;
+      return pesapalResponse.data.redirectUrl;
     },
-    onSuccess: (orderId) => {
-      const successMessage =
-        paymentMethod === "mpesa"
-          ? "Order placed successfully! Please check your phone for payment prompts."
-          : "Order placed successfully! Please complete the bank transfer using the provided details.";
-
-      toast.success(successMessage);
-
-      // Invalidate both queries to refresh the data
-      queryClient.invalidateQueries({ queryKey: ["cart"] });
-      queryClient.invalidateQueries({ queryKey: ["user-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
-      queryClient.invalidateQueries({ queryKey: ["new-orders-count"] });
-
-      router.push(`/orders/${orderId}`);
+    onSuccess: (redirectUrl) => {
+      if (redirectUrl) {
+        window.location.href = redirectUrl;
+      }
     },
     onError: (error: any) => {
       toast.error(
         error.response?.data?.message ||
           "Failed to process order. Please try again."
       );
+      setShowConfirmation(false);
     },
   });
 
@@ -484,13 +465,7 @@ export default function CheckoutPage() {
     const errors: string[] = [];
 
     try {
-      if (paymentMethod === "mpesa") {
-        mpesaNumberSchema.parse(mpesaNumber);
-      } else {
-        bankDetailsSchema.parse(bankDetails);
-      }
-
-      // Validate shipping details
+      // Only validate shipping details since we're using Pesapal
       shippingSchema.parse(form.getValues());
     } catch (error) {
       if (error instanceof z.ZodError) {
@@ -715,25 +690,6 @@ export default function CheckoutPage() {
                   ))}
                   <Separator className="my-4 sm:my-6" />
 
-                  {!appliedDiscount && (
-                    <div className="flex gap-2 sm:gap-3">
-                      <Input
-                        placeholder="Enter discount code"
-                        value={discountCode}
-                        onChange={(e) => setDiscountCode(e.target.value)}
-                        className="flex-1 h-10 sm:h-12 text-sm"
-                      />
-                      <Button
-                        onClick={handleApplyDiscount}
-                        disabled={validateDiscountMutation.isPending}
-                        variant="outline"
-                        className="h-10 sm:h-12 px-4 sm:px-6 text-sm hover:bg-primary hover:text-primary-foreground"
-                      >
-                        Apply
-                      </Button>
-                    </div>
-                  )}
-
                   {/* Price Breakdown */}
                   <div className="space-y-3 pt-2">
                     <div className="flex justify-between text-gray-700 text-sm">
@@ -798,174 +754,120 @@ export default function CheckoutPage() {
           {/* Payment Options */}
           <Card className="h-fit border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="border-b border-gray-100">
-              <CardTitle className="text-lg sm:text-xl">
+              <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
+                <Globe className="w-5 h-5 text-primary" />
                 Payment Method
               </CardTitle>
               <CardDescription className="text-sm">
-                Choose your preferred payment option below
+                Secure payment via Pesapal
               </CardDescription>
             </CardHeader>
             <CardContent className="pt-6">
-              <Tabs
-                value={paymentMethod}
-                onValueChange={(value) => {
-                  setPaymentMethod(value);
-                  setCheckoutStep(2);
-                }}
-                className="w-full"
-              >
-                <TabsList className="grid w-full grid-cols-2 mb-6 sm:mb-8">
-                  <TabsTrigger
-                    value="mpesa"
-                    className="data-[state=active]:bg-green-50 py-2 sm:py-3 text-sm"
-                  >
-                    <PhoneIcon className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    Mpesa
-                  </TabsTrigger>
-                  <TabsTrigger
-                    value="bank"
-                    className="data-[state=active]:bg-blue-50 py-2 sm:py-3 text-sm"
-                  >
-                    <CreditCard className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                    Bank Transfer
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="mpesa">
-                  <div className="space-y-6 sm:space-y-8">
-                    <div className="flex flex-col sm:flex-row items-center justify-center bg-green-50 p-6 sm:p-8 rounded-xl border border-green-100 text-center sm:text-left gap-4 sm:gap-5">
-                      <PhoneIcon className="w-12 h-12 sm:w-14 sm:h-14 text-green-600" />
-                      <div>
-                        <h3 className="font-semibold text-green-800 text-lg sm:text-xl mb-1">
-                          Pay with Mpesa
-                        </h3>
-                        <p className="text-green-600 text-sm">
-                          Fast and secure mobile payment
-                        </p>
-                      </div>
+              <div className="space-y-6">
+                {/* Pesapal Payment Info Card */}
+                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-6 sm:p-8 border border-primary/20">
+                  <div className="flex flex-col items-center text-center space-y-4">
+                    <div className="bg-white p-4 rounded-full shadow-md">
+                      <Globe className="w-12 h-12 sm:w-16 sm:h-16 text-primary" />
                     </div>
-                    <div className="space-y-3">
-                      <Label htmlFor="mpesa-number" className="text-gray-700">
-                        Mpesa Number
-                      </Label>
-                      <Input
-                        id="mpesa-number"
-                        placeholder="+254712345678"
-                        value={mpesaNumber}
-                        onChange={(e) =>
-                          setMpesaNumber(formatMpesaNumber(e.target.value))
-                        }
-                        className="text-lg h-12"
-                        maxLength={13}
-                      />
-                      <p className="text-sm text-gray-500">
-                        Enter your Mpesa number in international format
+                    <div>
+                      <h3 className="font-semibold text-primary text-lg sm:text-xl mb-2">
+                        Pay Securely with Pesapal
+                      </h3>
+                      <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+                        You'll be redirected to Pesapal's secure payment
+                        platform to complete your purchase
                       </p>
                     </div>
                   </div>
-                  {formErrors.length > 0 && (
-                    <div className="mt-6 p-4 bg-red-50 rounded-xl border border-red-100">
-                      {formErrors.map((error, index) => (
-                        <p key={index} className="text-red-600 text-sm">
-                          {error}
-                        </p>
-                      ))}
+                </div>
+
+                {/* Payment Methods Supported */}
+                <div className="space-y-4">
+                  <h4 className="text-sm font-medium text-primary-foreground">
+                    Supported Payment Methods:
+                  </h4>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="flex flex-col items-center justify-center bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors">
+                      <CreditCard className="w-6 h-6 text-primary mb-2" />
+                      <span className="text-xs text-muted-foreground">
+                        Credit Card
+                      </span>
                     </div>
-                  )}
-                </TabsContent>
-                <TabsContent value="bank">
-                  <div className="space-y-8">
-                    <div className="flex items-center justify-center bg-blue-50 p-8 rounded-xl border border-blue-100">
-                      <CreditCard className="w-14 h-14 text-blue-600 mr-5" />
-                      <div>
-                        <h3 className="font-semibold text-blue-800 text-xl mb-1">
-                          Bank Transfer
-                        </h3>
-                        <p className="text-blue-600">
-                          Secure bank-to-bank transfer
-                        </p>
-                      </div>
+                    <div className="flex flex-col items-center justify-center bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors">
+                      <PhoneIcon className="w-6 h-6 text-primary mb-2" />
+                      <span className="text-xs text-muted-foreground">
+                        M-PESA
+                      </span>
                     </div>
-                    <div className="grid gap-5">
-                      <div className="space-y-3">
-                        <Label htmlFor="account-name" className="text-gray-700">
-                          Account Holder Name
-                        </Label>
-                        <Input
-                          id="account-name"
-                          placeholder="Enter the name on your account"
-                          value={bankDetails.accountHolder}
-                          onChange={(e) =>
-                            setBankDetails({
-                              ...bankDetails,
-                              accountHolder: e.target.value,
-                            })
-                          }
-                          className="h-12"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label
-                          htmlFor="account-number"
-                          className="text-gray-700"
-                        >
-                          Account Number
-                        </Label>
-                        <Input
-                          id="account-number"
-                          placeholder="Enter your account number"
-                          value={bankDetails.accountNumber}
-                          onChange={(e) =>
-                            setBankDetails({
-                              ...bankDetails,
-                              accountNumber: e.target.value,
-                            })
-                          }
-                          className="h-12"
-                        />
-                      </div>
-                      <div className="space-y-3">
-                        <Label htmlFor="bank-name" className="text-gray-700">
-                          Bank Name
-                        </Label>
-                        <Input
-                          id="bank-name"
-                          placeholder="Enter your bank name"
-                          value={bankDetails.bankName}
-                          onChange={(e) =>
-                            setBankDetails({
-                              ...bankDetails,
-                              bankName: e.target.value,
-                            })
-                          }
-                          className="h-12"
-                        />
-                      </div>
+                    <div className="flex flex-col items-center justify-center bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors">
+                      <Building className="w-6 h-6 text-primary mb-2" />
+                      <span className="text-xs text-muted-foreground">
+                        Bank Transfer
+                      </span>
+                    </div>
+                    <div className="flex flex-col items-center justify-center bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors">
+                      <Globe className="w-6 h-6 text-primary mb-2" />
+                      <span className="text-xs text-muted-foreground">
+                        Other Methods
+                      </span>
                     </div>
                   </div>
-                </TabsContent>
-              </Tabs>
+                </div>
+
+                {/* Security Features */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                  <div className="flex items-start gap-3 bg-background p-4 rounded-lg border border-border hover:border-primary/50 transition-colors">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Shield className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-sm text-primary-foreground mb-1">
+                        Secure Payment
+                      </h5>
+                      <p className="text-xs text-muted-foreground">
+                        Your payment information is encrypted
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 bg-background p-4 rounded-lg border border-border hover:border-primary/50 transition-colors">
+                    <div className="bg-primary/10 p-2 rounded-full">
+                      <Lock className="w-5 h-5 text-primary" />
+                    </div>
+                    <div>
+                      <h5 className="font-medium text-sm text-primary-foreground mb-1">
+                        Safe & Protected
+                      </h5>
+                      <p className="text-xs text-muted-foreground">
+                        Your data is protected at all times
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
               <Button
-                className="w-full h-12 text-lg font-medium"
+                className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300"
                 onClick={handlePayment}
                 disabled={createOrderMutation.isPending}
               >
                 {createOrderMutation.isPending ? (
-                  <div className="flex items-center">
+                  <div className="flex items-center justify-center">
                     <Loader2 className="h-5 w-5 animate-spin mr-3" />
                     Processing...
                   </div>
                 ) : (
-                  <>
-                    <CheckCircle className="w-5 h-5 mr-2" />
-                    Pay {formatPrice(totalPrice)}
-                  </>
+                  <div className="flex items-center justify-center">
+                    <Globe className="w-5 h-5 mr-2" />
+                    Pay Securely {formatPrice(totalPrice)}
+                  </div>
                 )}
               </Button>
-              <p className="text-sm text-gray-500 text-center">
-                By clicking Pay, you agree to our Terms and Conditions
-              </p>
+              <div className="flex items-center justify-center gap-2 text-sm text-gray-500">
+                <Lock className="w-4 h-4" />
+                <span>Secured by Pesapal</span>
+              </div>
             </CardFooter>
           </Card>
         </div>
@@ -974,40 +876,32 @@ export default function CheckoutPage() {
         <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
           <AlertDialogContent className="max-w-md">
             <AlertDialogHeader>
-              <AlertDialogTitle>Confirm Your Order</AlertDialogTitle>
-              <AlertDialogDescription>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <Globe className="w-5 h-5 text-primary" />
+                Confirm Your Order
+              </AlertDialogTitle>
+              <AlertDialogDescription className="text-muted-foreground">
                 You're about to place an order for {formatPrice(totalPrice)}.
-                All prices are for 4 pieces per item.
-                {paymentMethod === "mpesa"
-                  ? " You'll receive an Mpesa prompt on your phone."
-                  : " Please ensure your bank details are correct."}
+                You'll be redirected to Pesapal's secure payment platform to
+                complete your payment.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="p-4 bg-muted rounded-lg my-4">
-              <div className="space-y-2">
+            <div className="p-4 bg-primary/5 rounded-lg my-4 border border-primary/20">
+              <div className="space-y-3">
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-primary-foreground">
                     Total Items:
                   </span>
-                  <span className="font-medium">{items.length}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Delivery Point:
-                  </span>
-                  <span className="font-medium">
-                    {
-                      getSelectedPoint(deliveryPoints, selectedDeliveryPoint)
-                        ?.name
-                    }
+                  <span className="font-medium text-primary">
+                    {items.length}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-sm text-muted-foreground">
-                    Payment Method:
+                  <span className="text-sm text-primary-foreground">
+                    Total Amount:
                   </span>
-                  <span className="font-medium capitalize">
-                    {paymentMethod}
+                  <span className="font-medium text-primary">
+                    {formatPrice(totalPrice)}
                   </span>
                 </div>
               </div>
@@ -1016,24 +910,22 @@ export default function CheckoutPage() {
               <Button
                 variant="outline"
                 onClick={() => setShowConfirmation(false)}
+                className="border-primary/20 text-primary hover:bg-primary/5"
               >
                 Cancel
               </Button>
               <Button
-                onClick={() => {
-                  setShowConfirmation(false);
-                  createOrderMutation.mutate();
-                }}
-                className="ml-2"
+                onClick={() => createOrderMutation.mutate()}
+                className="ml-2 bg-primary hover:bg-primary/90"
                 disabled={createOrderMutation.isPending}
               >
                 {createOrderMutation.isPending ? (
                   <div className="flex items-center">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
                     Processing...
                   </div>
                 ) : (
-                  "Confirm Order"
+                  "Proceed to Payment"
                 )}
               </Button>
             </AlertDialogFooter>

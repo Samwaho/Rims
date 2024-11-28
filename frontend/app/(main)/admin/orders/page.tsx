@@ -30,7 +30,7 @@ import { DataTableViewOptions } from "@/components/ui/data-table/view-options";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
 import { Card, CardContent } from "@/components/ui/card";
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback, memo } from "react";
 import { Button } from "@/components/ui/button";
 import { useNewOrders } from "@/hooks/useNewOrders";
 
@@ -286,6 +286,95 @@ export default function AdminOrders() {
     return () => clearInterval(interval);
   }, [queryClient]);
 
+  const checkPesapalStatus = async (orderId: string, trackingId: string) => {
+    try {
+      const response = await axios.get(
+        `${BACKEND_URL}/api/payments/pesapal/status/${trackingId}`,
+        await axiosHeaders()
+      );
+
+      if (response.data.status === "COMPLETED") {
+        // Update order status if payment is completed
+        await axios.patch(
+          `${BACKEND_URL}/api/orders/${orderId}/payment-status`,
+          { status: "completed" },
+          await axiosHeaders()
+        );
+
+        // Refetch orders to update the UI
+        queryClient.invalidateQueries({ queryKey: ["admin-orders"] });
+      }
+    } catch (error) {
+      console.error("Error checking Pesapal status:", error);
+    }
+  };
+
+  const PesapalStatusCheck = memo(({ order }: { order: Order }) => {
+    const [isChecking, setIsChecking] = useState(false);
+
+    const handleCheck = async () => {
+      if (!order.paymentDetails?.pesapalTrackingId) return;
+
+      setIsChecking(true);
+      try {
+        await checkPesapalStatus(
+          order._id,
+          order.paymentDetails.pesapalTrackingId
+        );
+        toast.success("Payment status checked successfully");
+      } catch (error) {
+        toast.error("Failed to check payment status");
+      } finally {
+        setIsChecking(false);
+      }
+    };
+
+    if (order.paymentStatus === "completed") return null;
+
+    return (
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={handleCheck}
+        disabled={isChecking || !order.paymentDetails?.pesapalTrackingId}
+        className="ml-2"
+      >
+        {isChecking ? (
+          <Loader2 className="h-4 w-4 animate-spin" />
+        ) : (
+          "Check Payment"
+        )}
+      </Button>
+    );
+  });
+
+  useEffect(() => {
+    const checkPendingPayments = async () => {
+      const pendingOrders = orders.filter(
+        (order) =>
+          order.paymentStatus === "pending" &&
+          order.paymentDetails?.pesapalTrackingId
+      );
+
+      for (const order of pendingOrders) {
+        if (order.paymentDetails?.pesapalTrackingId) {
+          await checkPesapalStatus(
+            order._id,
+            order.paymentDetails.pesapalTrackingId
+          );
+        }
+      }
+    };
+
+    // Check pending payments every 5 minutes
+    const interval = setInterval(checkPendingPayments, 5 * 60 * 1000);
+
+    // Initial check
+    checkPendingPayments();
+
+    return () => clearInterval(interval);
+  }, [orders]);
+
   if (!isAuthChecked) return renderLoadingState();
 
   if (error) {
@@ -376,6 +465,9 @@ export default function AdminOrders() {
                           {flexRender(
                             cell.column.columnDef.cell,
                             cell.getContext()
+                          )}
+                          {cell.column.id === "payment" && (
+                            <PesapalStatusCheck order={row.original} />
                           )}
                         </TableCell>
                       ))}

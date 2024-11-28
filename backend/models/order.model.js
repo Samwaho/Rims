@@ -69,7 +69,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["mpesa", "bank"],
+      enum: ["pesapal"],
       required: true,
     },
     paymentStatus: {
@@ -79,6 +79,7 @@ const orderSchema = new mongoose.Schema(
     },
     paymentDetails: {
       type: mongoose.Schema.Types.Mixed,
+      pesapalTrackingId: String,
     },
     shippingDetails: {
       city: {

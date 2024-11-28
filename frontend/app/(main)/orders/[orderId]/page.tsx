@@ -13,6 +13,7 @@ import {
   ArrowLeft,
   Truck,
   FileCheck,
+  Globe,
 } from "lucide-react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -56,9 +57,11 @@ interface Order {
     | "out_for_delivery"
     | "delivered";
   orderDate: string;
-  paymentMethod: "mpesa" | "bank";
+  paymentMethod: "pesapal";
   paymentStatus: "pending" | "completed" | "failed" | "refunded";
-  paymentDetails?: any;
+  paymentDetails?: {
+    pesapalTrackingId?: string;
+  };
   shippingDetails: {
     city: string;
     subCounty: string;
@@ -190,61 +193,68 @@ const OrderTimeline = memo(({ status }: { status: Order["status"] }) => {
 OrderTimeline.displayName = "OrderTimeline";
 
 const OrderProduct = memo(
-  ({ item, index }: { item: OrderProduct; index: number }) => (
-    <div
-      key={item.product?._id || index}
-      className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200"
-    >
-      <div className="flex items-center space-x-4 w-full sm:w-auto mb-4 sm:mb-0">
-        <div className="w-20 h-20 sm:w-16 sm:h-16 relative rounded-md overflow-hidden">
-          <Image
-            src={item.product?.images?.[0] || "/images/placeholder-product.png"}
-            alt={item.product?.name || "Product"}
-            fill
-            className="object-cover transition-transform duration-200 hover:scale-105"
-            sizes="(max-width: 640px) 80px, 64px"
-          />
-        </div>
-        <div className="space-y-1">
-          <p className="font-medium text-gray-900 hover:text-primary transition-colors duration-200">
-            {item.product?.name || "Product Not Found"}
-          </p>
-          <p className="text-sm text-gray-600">
-            Quantity: {item.quantity} {item.quantity > 1 ? "sets" : "set"} (4
-            pieces per set)
-          </p>
-          <div className="flex flex-col text-xs text-gray-500 mt-1">
-            <div className="flex items-center gap-1">
-              <Truck className="w-3 h-3" />
-              <span>
-                Shipping: {formatPrice(item.product?.shippingCost || 0)} per set
-              </span>
-            </div>
-            <div className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />
-              <span>
-                Delivery Time: {item.product?.deliveryTime || "Contact support"}
-              </span>
+  ({ item, index }: { item: OrderProduct; index: number }) => {
+    console.log("Product shipping cost:", item.product?.shippingCost);
+    return (
+      <div
+        key={item.product?._id || index}
+        className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gray-50 hover:bg-gray-100 p-4 rounded-lg transition-colors duration-200"
+      >
+        <div className="flex items-center space-x-4 w-full sm:w-auto mb-4 sm:mb-0">
+          <div className="w-20 h-20 sm:w-16 sm:h-16 relative rounded-md overflow-hidden">
+            <Image
+              src={
+                item.product?.images?.[0] || "/images/placeholder-product.png"
+              }
+              alt={item.product?.name || "Product"}
+              fill
+              className="object-cover transition-transform duration-200 hover:scale-105"
+              sizes="(max-width: 640px) 80px, 64px"
+            />
+          </div>
+          <div className="space-y-1">
+            <p className="font-medium text-gray-900 hover:text-primary transition-colors duration-200">
+              {item.product?.name || "Product Not Found"}
+            </p>
+            <p className="text-sm text-gray-600">
+              Quantity: {item.quantity} {item.quantity > 1 ? "sets" : "set"} (4
+              pieces per set)
+            </p>
+            <div className="flex flex-col text-xs text-gray-500 mt-1">
+              <div className="flex items-center gap-1">
+                <Truck className="w-3 h-3" />
+                <span>
+                  Shipping: {formatPrice(item.product?.shippingCost || 0)} per
+                  set
+                </span>
+              </div>
+              <div className="flex items-center gap-1">
+                <Clock className="w-3 h-3" />
+                <span>
+                  Delivery Time:{" "}
+                  {item.product?.deliveryTime || "Contact support"}
+                </span>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div className="text-right">
-        <span className="font-semibold text-primary">
-          {formatPrice(item.product?.price || 0)} per set
-        </span>
-        <p className="text-sm font-medium text-gray-900">
-          Total: {formatPrice((item.product?.price || 0) * item.quantity)}
-        </p>
-        {item.product?.shippingCost > 0 && (
-          <p className="text-xs text-gray-500">
-            + {formatPrice((item.product?.shippingCost || 0) * item.quantity)}{" "}
-            shipping
+        <div className="text-right">
+          <span className="font-semibold text-primary">
+            {formatPrice(item.product?.price || 0)} per set
+          </span>
+          <p className="text-sm font-medium text-gray-900">
+            Total: {formatPrice((item.product?.price || 0) * item.quantity)}
           </p>
-        )}
+          {item.product?.shippingCost > 0 && (
+            <p className="text-xs text-gray-500">
+              + {formatPrice((item.product?.shippingCost || 0) * item.quantity)}{" "}
+              shipping
+            </p>
+          )}
+        </div>
       </div>
-    </div>
-  )
+    );
+  }
 );
 
 OrderProduct.displayName = "OrderProduct";
@@ -284,6 +294,21 @@ const isAxiosError = (error: any): error is import("axios").AxiosError => {
   return error.isAxiosError === true;
 };
 
+const getPaymentStatusStyles = (status: Order["paymentStatus"]) => {
+  switch (status) {
+    case "completed":
+      return "bg-green-100 text-green-800";
+    case "pending":
+      return "bg-yellow-100 text-yellow-800";
+    case "failed":
+      return "bg-red-100 text-red-800";
+    case "refunded":
+      return "bg-gray-100 text-gray-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+};
+
 export default function OrderConfirmationPage({
   params,
 }: {
@@ -300,7 +325,15 @@ export default function OrderConfirmationPage({
         `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/orders/${params.orderId}`,
         await axiosHeaders()
       );
-      console.log("Order data:", response.data.order);
+      console.log("Raw order data:", response.data.order);
+      console.log("Shipping cost:", response.data.order.shippingCost);
+      console.log(
+        "Products shipping costs:",
+        response.data.order.products.map((p: OrderProduct) => ({
+          name: p.product.name,
+          shippingCost: p.product.shippingCost,
+        }))
+      );
       return response.data.order;
     },
   });
@@ -358,6 +391,12 @@ export default function OrderConfirmationPage({
 
   if (!order || !StatusComponent || !order.shippingDetails) return null;
 
+  console.log("Total shipping cost:", order.shippingCost);
+  console.log(
+    "Individual product shipping costs:",
+    order.products.map((p) => p.product.shippingCost)
+  );
+
   const orderDate = new Date(order.orderDate);
 
   return (
@@ -400,30 +439,31 @@ export default function OrderConfirmationPage({
                   <p className="font-semibold mb-1 text-gray-700">
                     Payment Method
                   </p>
-                  <p className="text-gray-600 capitalize">
-                    {order.paymentMethod}
-                  </p>
+                  <div className="flex items-center gap-2 text-gray-600">
+                    <Globe className="w-4 h-4 text-primary" />
+                    <p className="capitalize">Pesapal</p>
+                  </div>
                 </div>
               )}
               <div>
                 <p className="font-semibold mb-1 text-gray-700">
                   Payment Status
                 </p>
-                <span
-                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium
-                  ${
-                    order.paymentStatus === "completed"
-                      ? "bg-green-100 text-green-800"
-                      : order.paymentStatus === "pending"
-                      ? "bg-yellow-100 text-yellow-800"
-                      : order.paymentStatus === "failed"
-                      ? "bg-red-100 text-red-800"
-                      : "bg-gray-100 text-gray-800"
-                  }`}
-                >
-                  {order.paymentStatus.charAt(0).toUpperCase() +
-                    order.paymentStatus.slice(1)}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getPaymentStatusStyles(
+                      order.paymentStatus
+                    )}`}
+                  >
+                    {order.paymentStatus.charAt(0).toUpperCase() +
+                      order.paymentStatus.slice(1)}
+                  </span>
+                  {order.paymentDetails?.pesapalTrackingId && (
+                    <span className="text-xs text-gray-500">
+                      (ID: {order.paymentDetails.pesapalTrackingId})
+                    </span>
+                  )}
+                </div>
               </div>
               {order.trackingNumber && (
                 <div>
@@ -542,7 +582,16 @@ export default function OrderConfirmationPage({
                     <Truck className="w-4 h-4" />
                     <span>Total Shipping</span>
                   </div>
-                  <span>{formatPrice(order.shippingCost)}</span>
+                  <span>
+                    {formatPrice(order.shippingCost)}
+                    <span className="text-xs text-gray-500">
+                      (Individual:{" "}
+                      {order.products
+                        .map((p) => formatPrice(p.product.shippingCost))
+                        .join(", ")}
+                      )
+                    </span>
+                  </span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between text-green-600">

@@ -50,3 +50,20 @@ export const getTaxRate = async (county) => {
 
   return taxConfig?.rate || 0.16; // Default to 16% if no config found
 };
+
+export const deleteTaxConfig = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const taxConfig = await TaxConfig.findByIdAndDelete(id);
+
+    if (!taxConfig) {
+      throw { status: 404, message: "Tax configuration not found" };
+    }
+
+    res.status(200).json({
+      message: "Tax configuration deleted successfully",
+    });
+  } catch (error) {
+    next(errorHandler(res, error.status || 500, error.message));
+  }
+};

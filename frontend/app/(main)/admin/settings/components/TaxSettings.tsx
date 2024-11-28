@@ -9,7 +9,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { axiosHeaders } from "@/lib/actions";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Pencil, Trash2 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface TaxConfig {
   _id: string;
@@ -21,6 +32,7 @@ interface TaxConfig {
 export function TaxSettings() {
   const queryClient = useQueryClient();
   const [newTax, setNewTax] = useState({ name: "", rate: "" });
+  const [editingTax, setEditingTax] = useState<TaxConfig | null>(null);
 
   const { data: taxConfigs, isLoading } = useQuery({
     queryKey: ["taxConfigs"],
@@ -76,20 +88,53 @@ export function TaxSettings() {
     },
   });
 
+  const deleteTaxMutation = useMutation({
+    mutationFn: async (id: string) => {
+      await axios.delete(
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/tax/${id}`,
+        await axiosHeaders()
+      );
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["taxConfigs"] });
+      toast.success("Tax configuration deleted successfully");
+    },
+    onError: () => {
+      toast.error("Failed to delete tax configuration");
+    },
+  });
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newTax.name || !newTax.rate) {
       toast.error("Please fill in all fields");
       return;
     }
-    createTaxMutation.mutate({
-      name: newTax.name,
-      rate: parseFloat(newTax.rate),
-    });
+
+    if (editingTax) {
+      updateTaxMutation.mutate({
+        id: editingTax._id,
+        data: {
+          name: newTax.name,
+          rate: parseFloat(newTax.rate),
+        },
+      });
+      setEditingTax(null);
+    } else {
+      createTaxMutation.mutate({
+        name: newTax.name,
+        rate: parseFloat(newTax.rate),
+      });
+    }
   };
 
   const handleToggle = (id: string, isActive: boolean) => {
     updateTaxMutation.mutate({ id, data: { isActive } });
+  };
+
+  const handleEdit = (tax: TaxConfig) => {
+    setEditingTax(tax);
+    setNewTax({ name: tax.name, rate: tax.rate.toString() });
   };
 
   if (isLoading) {
@@ -127,9 +172,30 @@ export function TaxSettings() {
             />
           </div>
           <Button type="submit" className="flex items-center gap-2">
-            <Plus className="w-4 h-4" />
-            Add Tax
+            {editingTax ? (
+              <>
+                <Pencil className="w-4 h-4" />
+                Update Tax
+              </>
+            ) : (
+              <>
+                <Plus className="w-4 h-4" />
+                Add Tax
+              </>
+            )}
           </Button>
+          {editingTax && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setEditingTax(null);
+                setNewTax({ name: "", rate: "" });
+              }}
+            >
+              Cancel
+            </Button>
+          )}
         </form>
       </div>
 
@@ -153,6 +219,45 @@ export function TaxSettings() {
                   {tax.isActive ? "Active" : "Inactive"}
                 </span>
               </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => handleEdit(tax)}
+                className="p-2"
+              >
+                <Pencil className="w-4 h-4" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="p-2 text-red-500"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>
+                      Delete Tax Configuration
+                    </AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this tax configuration?
+                      This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => deleteTaxMutation.mutate(tax._id)}
+                      className="bg-red-500 hover:bg-red-600"
+                    >
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </div>
           </div>
         ))}

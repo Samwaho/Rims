@@ -45,6 +45,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
 import { Loader2 } from "lucide-react";
+import { Globe } from "lucide-react";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -72,13 +73,10 @@ export type Order = {
   profit: number;
   status: string;
   orderDate: string;
-  paymentStatus: string;
-  paymentMethod: string;
-  shippingInfo?: {
-    trackingNumber?: string;
-    carrier?: string;
-    estimatedDelivery?: string;
-    updatedAt?: string;
+  paymentStatus: "pending" | "completed" | "failed" | "refunded";
+  paymentMethod: "pesapal";
+  paymentDetails?: {
+    pesapalTrackingId?: string;
   };
   viewed: boolean;
 };
@@ -226,15 +224,23 @@ const PaymentInfo = memo(
   ({
     paymentStatus,
     paymentMethod,
+    paymentDetails,
   }: {
     paymentStatus: string;
     paymentMethod: string;
+    paymentDetails?: { pesapalTrackingId?: string };
   }) => (
     <div className="space-y-1.5">
       <PaymentStatusBadge status={paymentStatus} />
-      <div className="text-xs font-medium text-muted-foreground">
-        {paymentMethod.toUpperCase()}
+      <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground">
+        <Globe className="h-3 w-3 text-primary" />
+        <span>PESAPAL</span>
       </div>
+      {paymentDetails?.pesapalTrackingId && (
+        <div className="text-xs text-muted-foreground">
+          ID: {paymentDetails.pesapalTrackingId}
+        </div>
+      )}
     </div>
   )
 );
@@ -611,6 +617,7 @@ export const createColumns = ({
       <PaymentInfo
         paymentStatus={row.original.paymentStatus}
         paymentMethod={row.original.paymentMethod}
+        paymentDetails={row.original.paymentDetails}
       />
     ),
   },

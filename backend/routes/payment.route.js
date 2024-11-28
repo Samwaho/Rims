@@ -1,11 +1,16 @@
 import express from "express";
-import { processPayment } from "../controllers/payment.controller.js";
-import { ensureAuthenticated } from "../middleware/middleware.js";
+import { ensureAuthenticated, authorize } from "../middleware/middleware.js";
+import {
+  initiatePesapalPayment,
+  handlePesapalIPN,
+} from "../controllers/pesapal.controller.js";
 
 const router = express.Router();
 
-router.use(ensureAuthenticated);
+// Protected route - requires authentication
+router.post("/pesapal/initiate", ensureAuthenticated, initiatePesapalPayment);
 
-router.post("/", processPayment);
+// Public route - for Pesapal IPN callbacks
+router.post("/pesapal/ipn", handlePesapalIPN);
 
 export default router;

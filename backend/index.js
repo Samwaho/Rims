@@ -6,6 +6,8 @@ import cors from "cors";
 import passport from "./config/passport.config.js";
 import "./instrument.js";
 import * as Sentry from "@sentry/node";
+import https from "https";
+import axios from "axios";
 
 // Route imports
 import authRouter from "./routes/auth.route.js";
@@ -17,6 +19,7 @@ import shippingRoute from "./routes/shipping.route.js";
 import taxRoute from "./routes/tax.route.js";
 import userRouter from "./routes/user.route.js";
 import analyticsRoute from "./routes/analytics.route.js";
+import paymentRouter from "./routes/payment.route.js";
 
 // Load environment variables
 dotenv.config();
@@ -64,12 +67,18 @@ app.use(
 );
 app.use(passport.initialize());
 
+// Add this before your route definitions
+axios.defaults.httpsAgent = new https.Agent({
+  rejectUnauthorized: process.env.NODE_ENV !== "development",
+});
+
 // API Routes
 app.use("/api/auth", authRouter);
 app.use("/api/users", userRouter);
 app.use("/api/products", productRouter);
 app.use("/api/cart", cartRouter);
 app.use("/api/orders", orderRouter);
+app.use("/api/payments", paymentRouter);
 app.use("/api/discounts", discountRoute);
 app.use("/api/shipping", shippingRoute);
 app.use("/api/tax", taxRoute);
