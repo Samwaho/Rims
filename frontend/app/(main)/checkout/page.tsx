@@ -32,6 +32,7 @@ import {
   Globe,
   Shield,
   Lock,
+  User,
 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import axios from "axios";
@@ -73,6 +74,7 @@ import {
 } from "@/components/ui/form";
 import { sendOrderConfirmationEmail, initEmailJS } from "@/lib/emailService";
 import emailjs from "@emailjs/browser";
+import { getUserPaymentDetails } from "@/lib/actions";
 
 // Types
 interface Product {
@@ -322,6 +324,11 @@ export default function CheckoutPage() {
   const [selectedDeliveryPoint, setSelectedDeliveryPoint] = useState("");
   const [checkoutStep, setCheckoutStep] = useState(1);
   const [showConfirmation, setShowConfirmation] = useState(false);
+  const [userDetails, setUserDetails] = useState<{
+    email: string;
+    firstName: string;
+    lastName: string;
+  } | null>(null);
 
   // Queries
   const { data: items = [], isLoading } = useQuery<CheckoutItem[]>({
@@ -381,26 +388,62 @@ export default function CheckoutPage() {
 
   const createOrderMutation = useMutation({
     mutationFn: async () => {
+      if (!userDetails) {
+        throw new Error("User details not available");
+      }
+
+      const shippingDetails = {
+        city: form.getValues("shippingDetails.city"),
+        subCounty: form.getValues("shippingDetails.subCounty"),
+        estateName: form.getValues("shippingDetails.estateName"),
+        roadName: form.getValues("shippingDetails.roadName"),
+        apartmentName: form.getValues("shippingDetails.apartmentName"),
+        houseNumber: form.getValues("shippingDetails.houseNumber"),
+        contactNumber: form.getValues("shippingDetails.contactNumber"),
+      };
+
+      // Calculate totals
+      const orderSubtotal = items.reduce(
+        (total, item) => total + item.product.price * item.quantity,
+        0
+      );
+
+      const orderShippingCost = items.reduce(
+        (total, item) =>
+          total + (item.product.shippingCost || 0) * item.quantity,
+        0
+      );
+
+      const orderTotal =
+        orderSubtotal + orderShippingCost - (discountAmount || 0);
+
       // First initiate Pesapal payment
       const pesapalResponse = await axios.post(
         `${BACKEND_URL}/api/payments/pesapal/initiate`,
         {
-          amount: totalPrice,
+          amount: orderTotal,
           description: `Order for ${items.length} items`,
-          email: "customer@example.com",
+          email: userDetails.email,
           orderData: {
             ...(productId ? { productId, quantity: 1 } : {}),
+            products: items.map((item) => ({
+              product: item.product._id,
+              quantity: item.quantity,
+              price: item.product.price,
+              shippingCost: item.product.shippingCost || 0,
+            })),
             paymentMethod: "pesapal",
-            paymentDetails: {},
-            shippingDetails: {
-              city: form.getValues("shippingDetails.city"),
-              subCounty: form.getValues("shippingDetails.subCounty"),
-              estateName: form.getValues("shippingDetails.estateName"),
-              roadName: form.getValues("shippingDetails.roadName"),
-              apartmentName: form.getValues("shippingDetails.apartmentName"),
-              houseNumber: form.getValues("shippingDetails.houseNumber"),
-              contactNumber: form.getValues("shippingDetails.contactNumber"),
+            paymentDetails: {
+              provider: "pesapal",
+              status: "pending",
+              customerEmail: userDetails.email,
+              customerName:
+                `${userDetails.firstName} ${userDetails.lastName}`.trim(),
             },
+            shippingDetails,
+            subtotal: orderSubtotal,
+            shippingCost: orderShippingCost,
+            total: orderTotal,
             discount: appliedDiscount
               ? {
                   code: appliedDiscount.code,
@@ -414,14 +457,36 @@ export default function CheckoutPage() {
         await axiosHeaders()
       );
 
-      return pesapalResponse.data.redirectUrl;
+      if (!pesapalResponse.data.redirectUrl) {
+        throw new Error("No redirect URL received from payment provider");
+      }
+
+      // Store order details for post-payment handling
+      localStorage.setItem(
+        "pendingOrder",
+        JSON.stringify({
+          trackingId: pesapalResponse.data.trackingId,
+          orderId: pesapalResponse.data.order._id,
+          amount: orderTotal,
+        })
+      );
+
+      return pesapalResponse.data;
     },
-    onSuccess: (redirectUrl) => {
-      if (redirectUrl) {
-        window.location.href = redirectUrl;
+    onSuccess: (data) => {
+      if (data.redirectUrl) {
+        // Clear cart before redirecting
+        queryClient.setQueryData(["cart"], []);
+
+        // Show success message
+        toast.success("Redirecting to payment gateway...");
+
+        // Redirect to Pesapal
+        window.location.href = data.redirectUrl;
       }
     },
     onError: (error: any) => {
+      console.error("Payment initiation error:", error);
       toast.error(
         error.response?.data?.message ||
           "Failed to process order. Please try again."
@@ -640,7 +705,46 @@ export default function CheckoutPage() {
     }
   }, [activeDiscount, subtotal]);
 
-  if (isLoading) {
+  // Add a useEffect to handle post-payment redirect
+  useEffect(() => {
+    const status = searchParams.get("pesapal_status");
+    const pendingOrder = localStorage.getItem("pendingOrder");
+
+    if (status && pendingOrder) {
+      try {
+        const orderDetails = JSON.parse(pendingOrder);
+
+        // Clear the pending order from storage
+        localStorage.removeItem("pendingOrder");
+
+        // Redirect to order details page
+        router.push(`/orders/${orderDetails.orderId}`);
+
+        // Show appropriate toast message
+        if (status.toLowerCase() === "completed") {
+          toast.success("Payment successful! Your order has been confirmed.");
+        } else {
+          toast.error("Payment was not completed. Please try again.");
+        }
+      } catch (error) {
+        console.error("Error handling payment redirect:", error);
+      }
+    }
+  }, [searchParams, router]);
+
+  // Add effect to fetch user details
+  useEffect(() => {
+    const fetchUserDetails = async () => {
+      const details = await getUserPaymentDetails();
+      if (details) {
+        setUserDetails(details);
+      }
+    };
+
+    fetchUserDetails();
+  }, []);
+
+  if (isLoading || !userDetails) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
         <Loader2 className="h-10 w-10 sm:h-14 sm:w-14 animate-spin text-primary" />
@@ -874,58 +978,142 @@ export default function CheckoutPage() {
 
         {/* Order Confirmation Dialog */}
         <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-          <AlertDialogContent className="max-w-md">
+          <AlertDialogContent className="max-w-md bg-white">
             <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2">
-                <Globe className="w-5 h-5 text-primary" />
+              <AlertDialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+                <Globe className="w-6 h-6 text-primary" />
                 Confirm Your Order
               </AlertDialogTitle>
-              <AlertDialogDescription className="text-muted-foreground">
-                You're about to place an order for {formatPrice(totalPrice)}.
-                You'll be redirected to Pesapal's secure payment platform to
-                complete your payment.
+              <AlertDialogDescription className="text-sm text-gray-600 mt-2">
+                You're about to place an order for{" "}
+                <span className="font-medium text-primary">
+                  {formatPrice(totalPrice)}
+                </span>
+                . You'll be redirected to Pesapal's secure payment platform to
+                complete your purchase.
               </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="p-4 bg-primary/5 rounded-lg my-4 border border-primary/20">
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span className="text-sm text-primary-foreground">
-                    Total Items:
-                  </span>
-                  <span className="font-medium text-primary">
-                    {items.length}
-                  </span>
+
+            {/* Order Summary Section */}
+            <div className="space-y-4 my-6">
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Order Summary
+                </h4>
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Items:</span>
+                    <span className="font-medium text-gray-900">
+                      {items.length}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Subtotal:</span>
+                    <span className="font-medium text-gray-900">
+                      {formatPrice(subtotal)}
+                    </span>
+                  </div>
+                  {appliedDiscount && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-green-600">Discount:</span>
+                      <span className="font-medium text-green-600">
+                        -{formatPrice(discountAmount)}
+                      </span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-gray-600">Shipping:</span>
+                    <span className="font-medium text-gray-900">
+                      {formatPrice(shippingCost)}
+                    </span>
+                  </div>
+                  <div className="pt-2 mt-2 border-t border-gray-200">
+                    <div className="flex justify-between">
+                      <span className="font-medium text-gray-900">Total:</span>
+                      <span className="font-bold text-primary">
+                        {formatPrice(totalPrice)}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-sm text-primary-foreground">
-                    Total Amount:
-                  </span>
-                  <span className="font-medium text-primary">
-                    {formatPrice(totalPrice)}
-                  </span>
+              </div>
+
+              {/* Shipping Details Preview */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Delivery Details
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-gray-600">
+                      {form.getValues("shippingDetails.estateName")},{" "}
+                      {form.getValues("shippingDetails.roadName")},{" "}
+                      {form.getValues("shippingDetails.city")}
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-2">
+                    <PhoneIcon className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-gray-600">
+                      {form.getValues("shippingDetails.contactNumber")}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Customer Details */}
+              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <h4 className="font-medium text-gray-900 mb-3">
+                  Customer Details
+                </h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-start gap-2">
+                    <Mail className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                    <div className="text-gray-600">{userDetails?.email}</div>
+                  </div>
+                  {(userDetails?.firstName || userDetails?.lastName) && (
+                    <div className="flex items-start gap-2">
+                      <User className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div className="text-gray-600">
+                        {`${userDetails?.firstName} ${userDetails?.lastName}`.trim()}
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
+
+            {/* Security Notice */}
+            <div className="flex items-center gap-2 bg-primary/5 p-3 rounded-lg mb-6">
+              <Lock className="w-4 h-4 text-primary flex-shrink-0" />
+              <p className="text-xs text-gray-600">
+                Your payment will be securely processed by Pesapal
+              </p>
+            </div>
+
             <AlertDialogFooter>
               <Button
                 variant="outline"
                 onClick={() => setShowConfirmation(false)}
-                className="border-primary/20 text-primary hover:bg-primary/5"
+                className="border-gray-200 hover:bg-gray-50 text-gray-600"
               >
                 Cancel
               </Button>
               <Button
                 onClick={() => createOrderMutation.mutate()}
-                className="ml-2 bg-primary hover:bg-primary/90"
+                className="bg-primary hover:bg-primary/90 text-white"
                 disabled={createOrderMutation.isPending}
               >
                 {createOrderMutation.isPending ? (
-                  <div className="flex items-center">
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  <div className="flex items-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
                     Processing...
                   </div>
                 ) : (
-                  "Proceed to Payment"
+                  <div className="flex items-center gap-2">
+                    <Globe className="w-4 h-4" />
+                    Proceed to Payment
+                  </div>
                 )}
               </Button>
             </AlertDialogFooter>

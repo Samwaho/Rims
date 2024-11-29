@@ -1,6 +1,7 @@
 import axios from "axios";
 import crypto from "crypto";
 import Order from "../models/order.model.js";
+import Product from "../models/product.model.js";
 
 const PESAPAL_API_URL = process.env.PESAPAL_API_URL;
 const PESAPAL_CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
@@ -10,14 +11,11 @@ const FRONTEND_URL = process.env.FRONTEND_URL;
 const generateToken = async () => {
   try {
     console.log("Attempting to generate Pesapal token...");
-    console.log("API URL:", PESAPAL_API_URL);
 
     const payload = {
       consumer_key: PESAPAL_CONSUMER_KEY,
       consumer_secret: PESAPAL_CONSUMER_SECRET,
     };
-
-    console.log("Request payload:", payload);
 
     const response = await axios.post(
       `${PESAPAL_API_URL}/api/Auth/RequestToken`,
@@ -30,36 +28,19 @@ const generateToken = async () => {
       }
     );
 
-    console.log("Pesapal auth response:", response.data);
-
-    if (response.data.error) {
-      throw new Error(
-        `Pesapal error: ${response.data.error.code} - ${response.data.error.message}`
-      );
-    }
-
     if (!response.data.token) {
-      console.error("Unexpected response format:", response.data);
       throw new Error("No token in response");
     }
 
-    console.log("Successfully generated token");
     return response.data.token;
   } catch (error) {
-    if (error.response) {
-      console.error("Pesapal API error response:", {
-        status: error.response.status,
-        data: error.response.data,
-      });
-      throw new Error(
-        `Pesapal API error: ${
-          error.response.data?.error?.code || error.response.status
-        }`
-      );
-    }
-    console.error("Token generation error:", error);
+    console.error("Token generation error:", error.response?.data || error);
     throw error;
   }
+};
+
+const generateValidIpnId = () => {
+  return crypto.randomUUID();
 };
 
 export const initiatePesapalPayment = async (req, res) => {
@@ -67,56 +48,90 @@ export const initiatePesapalPayment = async (req, res) => {
     const { amount, description, email, orderData } = req.body;
 
     if (!amount || !description || !email || !orderData) {
-      console.log("Missing required parameters:", {
-        amount,
-        description,
-        email,
-        orderData,
-      });
+      console.error("Missing required fields:", { amount, description, email });
       return res.status(400).json({
         error: "Missing required parameters",
-        received: { amount, description, email },
+        message: "Amount, description, and email are required",
       });
     }
 
-    // Generate token first
-    const token = await generateToken();
-
-    if (!token) {
-      throw new Error("Failed to generate Pesapal token");
+    const parsedAmount = parseFloat(amount);
+    if (isNaN(parsedAmount) || parsedAmount <= 0) {
+      return res.status(400).json({
+        error: "Invalid amount",
+        message: "Amount must be a positive number",
+      });
     }
 
-    // Generate a valid IPN ID (must be alphanumeric, no special characters)
-    const ipnId = `IPN${Date.now()}${Math.random()
-      .toString(36)
-      .substring(2, 7)}`;
+    const token = await generateToken();
 
-    // Create Pesapal payment request
+    const ipnRegistrationPayload = {
+      url: `${process.env.BACKEND_URL}/api/payments/pesapal/ipn`,
+      ipn_notification_type: "POST",
+    };
+
+    console.log("Registering IPN URL:", ipnRegistrationPayload);
+
+    const ipnResponse = await axios.post(
+      `${PESAPAL_API_URL}/api/URLSetup/RegisterIPN`,
+      ipnRegistrationPayload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("IPN Registration response:", ipnResponse.data);
+
+    if (ipnResponse.data.error) {
+      throw new Error(
+        `IPN Registration failed: ${ipnResponse.data.error.message}`
+      );
+    }
+
+    const ipnId = ipnResponse.data.ipn_id;
+
+    const userFirstName =
+      orderData.paymentDetails?.customerName?.split(" ")[0] || "";
+    const userLastName =
+      orderData.paymentDetails?.customerName?.split(" ")[1] || "";
+
     const payload = {
       id: crypto.randomUUID(),
       currency: "KES",
-      amount: parseFloat(amount),
+      amount: parsedAmount,
       description: description,
-      callback_url: `${FRONTEND_URL}/orders`, // Redirect to orders page after payment
-      notification_id: ipnId, // Use the properly formatted IPN ID
-      ipn_url: `${process.env.BACKEND_URL}/api/payments/pesapal/ipn`, // Add IPN URL
+      callback_url: `${FRONTEND_URL}/checkout?pesapal_status=completed`,
+      notification_id: ipnId,
+      ipn_url: `${process.env.BACKEND_URL}/api/payments/pesapal/ipn`,
       billing_address: {
-        email_address: email,
-        phone_number: null,
+        email_address: orderData.paymentDetails.customerEmail || email,
+        phone_number: orderData.shippingDetails?.contactNumber || null,
         country_code: "KE",
-        first_name: req.user?.firstName || "",
+        first_name: userFirstName,
         middle_name: "",
-        last_name: req.user?.lastName || "",
-        line_1: "",
-        line_2: "",
-        city: "",
-        state: "",
+        last_name: userLastName,
+        line_1: orderData.shippingDetails?.roadName || "",
+        line_2: orderData.shippingDetails?.estateName || "",
+        city: orderData.shippingDetails?.city || "",
+        state: orderData.shippingDetails?.subCounty || "",
         postal_code: "",
         zip_code: "",
       },
+      cancellation_url: `${FRONTEND_URL}/checkout?pesapal_status=cancelled`,
     };
 
-    console.log("Sending request to Pesapal:", payload);
+    console.log("Sending payment request to Pesapal:", {
+      url: `${PESAPAL_API_URL}/api/Transactions/SubmitOrderRequest`,
+      payload,
+      customerDetails: {
+        name: orderData.paymentDetails.customerName,
+        email: orderData.paymentDetails.customerEmail,
+      },
+    });
 
     const pesapalResponse = await axios.post(
       `${PESAPAL_API_URL}/api/Transactions/SubmitOrderRequest`,
@@ -130,37 +145,108 @@ export const initiatePesapalPayment = async (req, res) => {
       }
     );
 
-    console.log("Pesapal response:", pesapalResponse.data);
+    console.log("Payment response:", pesapalResponse.data);
 
-    // Handle Pesapal errors
     if (pesapalResponse.data.error) {
-      return res.status(400).json({
-        error: "Pesapal payment error",
-        message: pesapalResponse.data.error.message,
-        details: pesapalResponse.data.error,
-      });
+      throw new Error(
+        `Payment initiation failed: ${pesapalResponse.data.error.message}`
+      );
     }
 
-    if (!pesapalResponse.data.redirect_url) {
-      throw new Error("No redirect URL in Pesapal response");
+    let products = [];
+    let subtotal = 0;
+    let shippingCost = 0;
+
+    if (orderData.productId) {
+      // Single product purchase
+      const product = await Product.findById(orderData.productId);
+      if (!product) {
+        throw new Error("Product not found");
+      }
+      products = [
+        {
+          product: product._id,
+          quantity: orderData.quantity || 1,
+          price: product.price,
+          shippingCost: product.shippingCost || 0,
+        },
+      ];
+      subtotal = product.price * (orderData.quantity || 1);
+      shippingCost = (product.shippingCost || 0) * (orderData.quantity || 1);
+    } else {
+      // Cart purchase
+      products = await Promise.all(
+        orderData.products.map(async (item) => {
+          const product = await Product.findById(item.product);
+          if (!product) {
+            throw new Error(`Product ${item.product} not found`);
+          }
+          subtotal += product.price * item.quantity;
+          shippingCost += (product.shippingCost || 0) * item.quantity;
+          return {
+            product: product._id,
+            quantity: item.quantity,
+            price: product.price,
+            shippingCost: product.shippingCost || 0,
+          };
+        })
+      );
     }
 
-    // Only create order if Pesapal payment initiation was successful
+    const total = subtotal + shippingCost;
+
     const order = await Order.create({
-      ...orderData,
       user: req.user.id,
+      products: products,
+      subtotal: subtotal,
+      shippingCost: shippingCost,
+      total: total,
+      paymentMethod: "pesapal",
       paymentDetails: {
         pesapalTrackingId: pesapalResponse.data.order_tracking_id,
-        ipnId: ipnId, // Store the IPN ID with the order
+        ipnId: ipnId,
+        provider: "pesapal",
+        status: "pending",
+        amount: parsedAmount,
+        currency: "KES",
+        description: description,
+        customerEmail: orderData.paymentDetails.customerEmail,
+        customerName: orderData.paymentDetails.customerName,
       },
-      status: "pending",
+      status: "order_submitted",
       paymentStatus: "pending",
+      orderDate: new Date(),
+      shippingDetails: {
+        city: orderData.shippingDetails.city,
+        subCounty: orderData.shippingDetails.subCounty,
+        estateName: orderData.shippingDetails.estateName,
+        roadName: orderData.shippingDetails.roadName,
+        apartmentName: orderData.shippingDetails.apartmentName,
+        houseNumber: orderData.shippingDetails.houseNumber,
+        contactNumber: orderData.shippingDetails.contactNumber,
+      },
+      discount: orderData.discount
+        ? {
+            code: orderData.discount.code,
+            type: orderData.discount.type,
+            value: orderData.discount.value,
+            amount: orderData.discount.amount,
+          }
+        : undefined,
     });
 
-    // Populate the order with necessary details
-    const populatedOrder = await Order.findById(order._id)
-      .populate("user", "username email")
-      .populate("products.product", "name price images");
+    console.log("Created order:", {
+      id: order._id,
+      products: order.products,
+      total: order.total,
+      subtotal: order.subtotal,
+      shippingCost: order.shippingCost,
+    });
+
+    const populatedOrder = await order.populate([
+      { path: "user", select: "username email firstName lastName" },
+      { path: "products.product", select: "name price images" },
+    ]);
 
     res.json({
       redirectUrl: pesapalResponse.data.redirect_url,
@@ -168,12 +254,12 @@ export const initiatePesapalPayment = async (req, res) => {
       order: populatedOrder,
     });
   } catch (error) {
-    console.error(
-      "Pesapal payment initiation error:",
-      error.response?.data || error
-    );
+    console.error("Payment initiation error:", {
+      error: error.response?.data || error.message,
+      stack: error.stack,
+    });
     res.status(500).json({
-      error: "Failed to initiate Pesapal payment",
+      error: "Failed to initiate payment",
       details: error.response?.data || error.message,
     });
   }
@@ -184,9 +270,14 @@ export const handlePesapalIPN = async (req, res) => {
     const { OrderTrackingId, OrderMerchantReference, OrderNotificationType } =
       req.body;
 
+    console.log("Received IPN notification:", {
+      OrderTrackingId,
+      OrderMerchantReference,
+      OrderNotificationType,
+    });
+
     const token = await generateToken();
 
-    // Get payment status from Pesapal
     const statusResponse = await axios.get(
       `${PESAPAL_API_URL}/api/Transactions/GetTransactionStatus?orderTrackingId=${OrderTrackingId}`,
       {
@@ -196,22 +287,85 @@ export const handlePesapalIPN = async (req, res) => {
       }
     );
 
+    console.log("Payment status response:", statusResponse.data);
+
     const paymentStatus = statusResponse.data.payment_status_description;
 
-    // Update order status based on Pesapal payment status
     const order = await Order.findOne({
       "paymentDetails.pesapalTrackingId": OrderTrackingId,
     });
 
-    if (order) {
-      order.paymentStatus =
-        paymentStatus.toLowerCase() === "completed" ? "paid" : "pending";
-      await order.save();
+    if (!order) {
+      console.error("Order not found for tracking ID:", OrderTrackingId);
+      return res.status(404).json({ error: "Order not found" });
     }
 
-    res.json({ status: "success" });
+    order.paymentStatus =
+      paymentStatus.toLowerCase() === "completed" ? "paid" : "pending";
+
+    order.paymentDetails = {
+      ...order.paymentDetails,
+      verificationResponse: statusResponse.data,
+      verifiedAt: new Date(),
+      status: paymentStatus,
+    };
+
+    await order.save();
+
+    res.status(200).json({
+      success: true,
+      message: "IPN processed successfully",
+    });
   } catch (error) {
     console.error("Pesapal IPN error:", error);
     res.status(500).json({ error: "Failed to process IPN" });
+  }
+};
+
+export const registerPesapalIPN = async (req, res) => {
+  try {
+    const token = await generateToken();
+
+    const ipnId = generateValidIpnId();
+
+    const payload = {
+      url: `${process.env.BACKEND_URL}/api/payments/pesapal/ipn`,
+      ipn_notification_type: "POST",
+      ipn_id: ipnId,
+    };
+
+    const response = await axios.post(
+      `${PESAPAL_API_URL}/api/URLSetup/RegisterIPN`,
+      payload,
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log("IPN Registration response:", response.data);
+
+    if (response.data.error) {
+      return res.status(400).json({
+        error: "IPN registration failed",
+        details: response.data.error,
+      });
+    }
+
+    res.json({
+      success: true,
+      message: "IPN URL registered successfully",
+      data: response.data,
+      ipnId: ipnId,
+    });
+  } catch (error) {
+    console.error("IPN registration error:", error.response?.data || error);
+    res.status(500).json({
+      error: "Failed to register IPN URL",
+      details: error.response?.data || error.message,
+    });
   }
 };

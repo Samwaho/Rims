@@ -64,8 +64,9 @@ const orderSchema = new mongoose.Schema(
         "under_clearance",
         "out_for_delivery",
         "delivered",
+        "cancelled",
       ],
-      default: "order_submitted",
+      required: true,
     },
     paymentMethod: {
       type: String,
