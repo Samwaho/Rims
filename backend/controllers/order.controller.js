@@ -111,17 +111,36 @@ const processCartPurchase = async (
   let shippingCost = 0;
   const orderProducts = [];
 
+  // Validate all products first
   for (const item of cart.items) {
     const { product, quantity } = item;
     await validateProduct(product, quantity);
+  }
+
+  // Process each item
+  for (const item of cart.items) {
+    const { product, quantity } = item;
 
     subtotal += product.price * quantity;
     shippingCost += (product.shippingCost || 0) * quantity;
-    orderProducts.push({ product: product._id, quantity });
+
+    orderProducts.push({
+      product: product._id,
+      quantity,
+      price: product.price,
+      shippingCost: product.shippingCost || 0,
+    });
+
+    // Update stock
     await updateProductStock(product._id, quantity);
   }
 
-  await Cart.findOneAndUpdate({ user: userId }, { $set: { items: [] } });
+  // Clear the cart after successful processing
+  await Cart.findOneAndUpdate(
+    { user: userId },
+    { $set: { items: [] } },
+    { new: true }
+  );
 
   return {
     orderProducts,
@@ -136,6 +155,7 @@ export const createOrder = async (req, res, next) => {
     const {
       productId,
       quantity,
+      products,
       paymentMethod,
       paymentDetails,
       discount,
@@ -153,14 +173,25 @@ export const createOrder = async (req, res, next) => {
       throw { status: 400, message: "Required shipping details are missing" };
     }
 
-    const orderData = productId
-      ? await processDirectPurchase(
-          productId,
-          quantity,
-          shippingDetails,
-          discount?.code
-        )
-      : await processCartPurchase(userId, shippingDetails, discount?.code);
+    let orderData;
+    if (productId) {
+      // Handle direct purchase
+      orderData = await processDirectPurchase(
+        productId,
+        quantity,
+        shippingDetails,
+        discount?.code
+      );
+    } else if (products && products.length > 0) {
+      // Handle multiple products from cart
+      orderData = await processCartPurchase(
+        userId,
+        shippingDetails,
+        discount?.code
+      );
+    } else {
+      throw { status: 400, message: "Invalid order data" };
+    }
 
     const order = await Order.create({
       user: userId,

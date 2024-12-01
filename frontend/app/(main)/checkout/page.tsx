@@ -402,7 +402,7 @@ export default function CheckoutPage() {
         contactNumber: form.getValues("shippingDetails.contactNumber"),
       };
 
-      // Calculate totals
+      // Calculate order totals
       const orderSubtotal = items.reduce(
         (total, item) => total + item.product.price * item.quantity,
         0
@@ -417,43 +417,41 @@ export default function CheckoutPage() {
       const orderTotal =
         orderSubtotal + orderShippingCost - (discountAmount || 0);
 
+      // Prepare the order data
+      const orderData = {
+        ...(productId ? { productId, quantity: 1 } : {}), // For direct purchase
+        products: items.map((item) => ({
+          product: item.product._id,
+          quantity: item.quantity,
+          price: item.product.price,
+          shippingCost: item.product.shippingCost || 0,
+        })),
+        paymentMethod: "pesapal",
+        paymentDetails: {
+          provider: "pesapal",
+          status: "pending",
+          customerEmail: userDetails.email,
+          customerName:
+            `${userDetails.firstName} ${userDetails.lastName}`.trim(),
+        },
+        shippingDetails,
+        subtotal: orderSubtotal,
+        shippingCost: orderShippingCost,
+        total: orderTotal,
+        discount: appliedDiscount
+          ? {
+              code: appliedDiscount.code,
+              type: appliedDiscount.type,
+              value: appliedDiscount.value,
+              amount: discountAmount,
+            }
+          : null,
+      };
+
       // First initiate Pesapal payment
       const pesapalResponse = await axios.post(
         `${BACKEND_URL}/api/payments/pesapal/initiate`,
-        {
-          amount: orderTotal,
-          description: `Order for ${items.length} items`,
-          email: userDetails.email,
-          orderData: {
-            ...(productId ? { productId, quantity: 1 } : {}),
-            products: items.map((item) => ({
-              product: item.product._id,
-              quantity: item.quantity,
-              price: item.product.price,
-              shippingCost: item.product.shippingCost || 0,
-            })),
-            paymentMethod: "pesapal",
-            paymentDetails: {
-              provider: "pesapal",
-              status: "pending",
-              customerEmail: userDetails.email,
-              customerName:
-                `${userDetails.firstName} ${userDetails.lastName}`.trim(),
-            },
-            shippingDetails,
-            subtotal: orderSubtotal,
-            shippingCost: orderShippingCost,
-            total: orderTotal,
-            discount: appliedDiscount
-              ? {
-                  code: appliedDiscount.code,
-                  type: appliedDiscount.type,
-                  value: appliedDiscount.value,
-                  amount: discountAmount,
-                }
-              : null,
-          },
-        },
+        orderData,
         await axiosHeaders()
       );
 
@@ -856,10 +854,10 @@ export default function CheckoutPage() {
           </div>
 
           {/* Payment Options */}
-          <Card className="h-fit border-gray-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
-            <CardHeader className="border-b border-gray-100">
+          <Card className="h-fit border-green-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
+            <CardHeader className="border-b border-green-100">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Globe className="w-5 h-5 text-primary" />
+                <Globe className="w-5 h-5 text-green-600" />
                 Payment Method
               </CardTitle>
               <CardDescription className="text-sm">
@@ -869,16 +867,16 @@ export default function CheckoutPage() {
             <CardContent className="pt-6">
               <div className="space-y-6">
                 {/* Pesapal Payment Info Card */}
-                <div className="bg-gradient-to-br from-primary/5 to-primary/10 rounded-xl p-6 sm:p-8 border border-primary/20">
+                <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-6 sm:p-8 border border-green-200">
                   <div className="flex flex-col items-center text-center space-y-4">
                     <div className="bg-white p-4 rounded-full shadow-md">
-                      <Globe className="w-12 h-12 sm:w-16 sm:h-16 text-primary" />
+                      <Globe className="w-12 h-12 sm:w-16 sm:h-16 text-green-600" />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-primary text-lg sm:text-xl mb-2">
+                      <h3 className="font-semibold text-green-700 text-lg sm:text-xl mb-2">
                         Pay Securely with Pesapal
                       </h3>
-                      <p className="text-muted-foreground text-sm sm:text-base max-w-md mx-auto">
+                      <p className="text-gray-600 text-sm sm:text-base max-w-md mx-auto">
                         You'll be redirected to Pesapal's secure payment
                         platform to complete your purchase
                       </p>
@@ -888,31 +886,27 @@ export default function CheckoutPage() {
 
                 {/* Payment Methods Supported */}
                 <div className="space-y-4">
-                  <h4 className="text-sm font-medium text-primary-foreground">
+                  <h4 className="text-sm font-medium text-gray-900">
                     Supported Payment Methods:
                   </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="flex flex-col items-center justify-center bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors">
-                      <CreditCard className="w-6 h-6 text-primary mb-2" />
-                      <span className="text-xs text-muted-foreground">
-                        Credit Card
-                      </span>
+                    <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
+                      <CreditCard className="w-6 h-6 text-green-600 mb-2" />
+                      <span className="text-xs text-gray-600">Credit Card</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors">
-                      <PhoneIcon className="w-6 h-6 text-primary mb-2" />
-                      <span className="text-xs text-muted-foreground">
-                        M-PESA
-                      </span>
+                    <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
+                      <PhoneIcon className="w-6 h-6 text-green-600 mb-2" />
+                      <span className="text-xs text-gray-600">M-PESA</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors">
-                      <Building className="w-6 h-6 text-primary mb-2" />
-                      <span className="text-xs text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
+                      <Building className="w-6 h-6 text-green-600 mb-2" />
+                      <span className="text-xs text-gray-600">
                         Bank Transfer
                       </span>
                     </div>
-                    <div className="flex flex-col items-center justify-center bg-background rounded-lg p-4 border border-border hover:border-primary/50 transition-colors">
-                      <Globe className="w-6 h-6 text-primary mb-2" />
-                      <span className="text-xs text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
+                      <Globe className="w-6 h-6 text-green-600 mb-2" />
+                      <span className="text-xs text-gray-600">
                         Other Methods
                       </span>
                     </div>
@@ -921,28 +915,28 @@ export default function CheckoutPage() {
 
                 {/* Security Features */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                  <div className="flex items-start gap-3 bg-background p-4 rounded-lg border border-border hover:border-primary/50 transition-colors">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Shield className="w-5 h-5 text-primary" />
+                  <div className="flex items-start gap-3 bg-white p-4 rounded-lg border border-green-100 hover:border-green-300 transition-colors">
+                    <div className="bg-green-50 p-2 rounded-full">
+                      <Shield className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
-                      <h5 className="font-medium text-sm text-primary-foreground mb-1">
+                      <h5 className="font-medium text-sm text-gray-900 mb-1">
                         Secure Payment
                       </h5>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-gray-600">
                         Your payment information is encrypted
                       </p>
                     </div>
                   </div>
-                  <div className="flex items-start gap-3 bg-background p-4 rounded-lg border border-border hover:border-primary/50 transition-colors">
-                    <div className="bg-primary/10 p-2 rounded-full">
-                      <Lock className="w-5 h-5 text-primary" />
+                  <div className="flex items-start gap-3 bg-white p-4 rounded-lg border border-green-100 hover:border-green-300 transition-colors">
+                    <div className="bg-green-50 p-2 rounded-full">
+                      <Lock className="w-5 h-5 text-green-600" />
                     </div>
                     <div>
-                      <h5 className="font-medium text-sm text-primary-foreground mb-1">
+                      <h5 className="font-medium text-sm text-gray-900 mb-1">
                         Safe & Protected
                       </h5>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="text-xs text-gray-600">
                         Your data is protected at all times
                       </p>
                     </div>
@@ -952,7 +946,7 @@ export default function CheckoutPage() {
             </CardContent>
             <CardFooter className="flex flex-col gap-4">
               <Button
-                className="w-full h-12 text-base font-medium bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg hover:shadow-xl transition-all duration-300"
+                className="w-full h-12 text-base font-medium bg-green-600 hover:bg-green-700 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 onClick={handlePayment}
                 disabled={createOrderMutation.isPending}
               >
@@ -981,12 +975,12 @@ export default function CheckoutPage() {
           <AlertDialogContent className="max-w-md bg-white">
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                <Globe className="w-6 h-6 text-primary" />
+                <Globe className="w-6 h-6 text-green-600" />
                 Confirm Your Order
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm text-gray-600 mt-2">
                 You're about to place an order for{" "}
-                <span className="font-medium text-primary">
+                <span className="font-medium text-green-600">
                   {formatPrice(totalPrice)}
                 </span>
                 . You'll be redirected to Pesapal's secure payment platform to
@@ -1084,8 +1078,8 @@ export default function CheckoutPage() {
             </div>
 
             {/* Security Notice */}
-            <div className="flex items-center gap-2 bg-primary/5 p-3 rounded-lg mb-6">
-              <Lock className="w-4 h-4 text-primary flex-shrink-0" />
+            <div className="flex items-center gap-2 bg-green-50 p-3 rounded-lg mb-6">
+              <Lock className="w-4 h-4 text-green-600 flex-shrink-0" />
               <p className="text-xs text-gray-600">
                 Your payment will be securely processed by Pesapal
               </p>
@@ -1101,7 +1095,7 @@ export default function CheckoutPage() {
               </Button>
               <Button
                 onClick={() => createOrderMutation.mutate()}
-                className="bg-primary hover:bg-primary/90 text-white"
+                className="bg-green-600 hover:bg-green-700 text-white"
                 disabled={createOrderMutation.isPending}
               >
                 {createOrderMutation.isPending ? (
