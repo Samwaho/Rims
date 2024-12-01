@@ -36,6 +36,10 @@ services:
       - NEXT_PUBLIC_HOSTNAME=jarawheels.com
       - NEXTAUTH_URL=https://jarawheels.com
       - NEXT_PUBLIC_BASE_URL=https://jarawheels.com
+      - NEXT_PUBLIC_API_URL=https://jarawheels.com/api
+      - NEXT_PUBLIC_HOSTNAME=jarawheels.com
+      - NEXTAUTH_URL=https://jarawheels.com
+      - NEXT_PUBLIC_BASE_URL=https://jarawheels.com
     env_file:
       - ./frontend/.env
     depends_on:
