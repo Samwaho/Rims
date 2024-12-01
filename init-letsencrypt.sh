@@ -30,7 +30,8 @@ docker-compose run --rm certbot certonly \
     --no-eff-email \
     --force-renewal \
     ${staging:+"--staging"} \
-    -d jarawheels.com -d www.jarawheels.com
+    -d jarawheels.com -d www.jarawheels.com \
+    --expand
 
 # Restart nginx to load the new certificates
 docker-compose restart nginx
