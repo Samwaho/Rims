@@ -1,7 +1,7 @@
 #!/bin/bash
 
 domains=(jarawheels.com www.jarawheels.com)
-email="wahomesamuel2003@gmail.com" # Change this to your email
+email="wahomesamuel2003@gmail.com"
 staging=0 # Set to 1 if you're testing your setup
 
 # Create required directories
@@ -17,15 +17,22 @@ rm -rf ./certbot/conf/*
 # Start nginx
 docker-compose up --force-recreate -d nginx
 
-# Request certificates
+# Wait for nginx to start
+echo "### Waiting for nginx to start..."
+sleep 5
+
+# Request new certificates
 docker-compose run --rm certbot certonly \
     --webroot \
     --webroot-path=/var/www/certbot \
     --email $email \
     --agree-tos \
     --no-eff-email \
+    --force-renewal \
     ${staging:+"--staging"} \
-    ${domains[@]/#/-d }
+    -d jarawheels.com -d www.jarawheels.com
 
-# Restart nginx
-docker-compose restart nginx 
+# Restart nginx to load the new certificates
+docker-compose restart nginx
+
+echo "### Done! Certificate should now be downloaded." 
