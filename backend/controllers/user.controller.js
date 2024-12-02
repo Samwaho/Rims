@@ -231,25 +231,26 @@ export const getAllUsers = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const [users, total] = await Promise.all([
-      User.find({})
-        .select("-password -verificationCode -verificationExpiry")
-        .populate("orders")
-        .skip(skip)
-        .limit(limit)
-        .lean(),
-      User.countDocuments(),
-    ]);
+    // Get total count first
+    const totalUsers = await User.countDocuments();
+    const totalPages = Math.ceil(totalUsers / limit);
 
-    const formattedUsers = users.map(formatUserResponse);
+    // Get paginated users
+    const users = await User.find()
+      .select(
+        "-password -verificationCode -verificationExpiry -resetPasswordToken -resetPasswordExpires"
+      )
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
 
     res.status(200).json({
       status: "success",
-      results: users.length,
-      data: formattedUsers,
+      data: users,
       currentPage: page,
-      totalPages: Math.ceil(total / limit),
-      totalUsers: total,
+      totalPages,
+      totalUsers,
+      resultsPerPage: limit,
     });
   } catch (error) {
     next(errorHandler(res, error.status || 500, error.message));
@@ -268,6 +269,33 @@ export const deleteUser = async (req, res, next) => {
     res.status(200).json({
       status: "success",
       message: "User deleted successfully",
+    });
+  } catch (error) {
+    next(errorHandler(res, error.status || 500, error.message));
+  }
+};
+
+export const updateUserRole = async (req, res, next) => {
+  try {
+    const { userId } = req.params;
+    const { role } = req.body;
+
+    if (!["admin", "user"].includes(role)) {
+      throw { status: 400, message: "Invalid role specified" };
+    }
+
+    const user = await User.findById(userId);
+    if (!user) {
+      throw { status: 404, message: "User not found" };
+    }
+
+    user.role = role;
+    await user.save();
+
+    res.status(200).json({
+      status: "success",
+      message: "User role updated successfully",
+      data: { role: user.role },
     });
   } catch (error) {
     next(errorHandler(res, error.status || 500, error.message));

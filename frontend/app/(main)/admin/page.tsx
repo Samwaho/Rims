@@ -10,6 +10,7 @@ import {
   Settings,
   Package,
   TrendingUp,
+  Users,
 } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
@@ -258,6 +259,20 @@ export default function AdminPage() {
                 <div>
                   <h3 className="font-medium">View Store</h3>
                   <p className="text-sm text-gray-500">See customer view</p>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link href="/admin/users">
+            <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-rose-100 rounded-lg">
+                  <Users className="h-5 w-5 text-rose-600" />
+                </div>
+                <div>
+                  <h3 className="font-medium">Users</h3>
+                  <p className="text-sm text-gray-500">Manage users</p>
                 </div>
               </div>
             </Card>

@@ -9,6 +9,7 @@ import {
   updatePreferences,
   updateAddress,
   getAllUsers,
+  updateUserRole,
 } from "../controllers/user.controller.js";
 import { ensureAuthenticated, authorize } from "../middleware/middleware.js";
 
@@ -39,5 +40,7 @@ router.route("/address").patch(updateAddress);
 
 // Admin routes
 router.route("/all").get(authorize(["admin"]), getAllUsers);
+
+router.patch("/:userId/role", authorize(["admin"]), updateUserRole);
 
 export default router;
