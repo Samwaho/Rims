@@ -5,6 +5,7 @@ import {
   ChevronsRight,
 } from "lucide-react";
 import { Table } from "@tanstack/react-table";
+import { Product } from "@/types/product";
 import { Button } from "@/components/ui/button";
 import {
   Select,
@@ -14,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
-interface DataTablePaginationProps<TData> {
+export interface DataTablePaginationProps<TData> {
   table: Table<TData>;
 }
 
@@ -37,7 +38,8 @@ export function DataTablePagination<TData>({
           <Select
             value={`${table.getState().pagination.pageSize}`}
             onValueChange={(value) => {
-              table.setPageSize(Number(value));
+              const newSize = Number(value);
+              table.setPageSize(newSize);
             }}
           >
             <SelectTrigger className="h-8 w-[70px]">

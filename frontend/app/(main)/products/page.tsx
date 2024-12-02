@@ -8,12 +8,13 @@ import { FilterAccordion } from "@/components/FilterAccordion";
 import { Loader2, AlertCircle, PackageSearch } from "lucide-react";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { ProductsHeader } from "@/components/products/ProductsHeader";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts, ProductsResponse } from "@/hooks/useProducts";
 import { useCart } from "@/hooks/useCart";
 import { Product, FilterState, ProductCategory } from "@/types/product";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { PRODUCT_TYPES, formatPrice } from "@/lib/utils";
+import { useInfiniteQuery } from "@tanstack/react-query";
 
 const PRODUCTS_PER_PAGE = 12;
 
@@ -51,7 +52,9 @@ const ProductsPage = () => {
     hasNextPage,
     isFetchingNextPage,
     refetch,
-  } = useProducts(debouncedSearchTerm);
+  } = useProducts(debouncedSearchTerm, { mode: "infinite" }) as ReturnType<
+    typeof useInfiniteQuery<ProductsResponse>
+  >;
 
   useEffect(() => {
     if (inView && hasNextPage && !isFetchingNextPage) {
@@ -60,7 +63,10 @@ const ProductsPage = () => {
   }, [inView, fetchNextPage, hasNextPage, isFetchingNextPage]);
 
   const products = useMemo(() => {
-    return productsData?.pages.flatMap((page) => page.products) ?? [];
+    if (!productsData?.pages) return [];
+    return productsData.pages.flatMap(
+      (page: ProductsResponse) => page.products
+    );
   }, [productsData]);
 
   const filteredProducts = useMemo(() => {
@@ -91,13 +97,13 @@ const ProductsPage = () => {
         );
       })
       .sort(
-        (a, b) =>
+        (a: Product, b: Product) =>
           new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
       );
   }, [products, filters, debouncedSearchTerm]);
 
   const maxPrice = useMemo(
-    () => Math.max(...products.map((product) => product.price)),
+    () => Math.max(...products.map((product: Product) => product.price)),
     [products]
   );
 

@@ -16,7 +16,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
-import { useProducts } from "@/hooks/useProducts";
+import { useProducts, ProductsResponse } from "@/hooks/useProducts";
 import { getAuthUser, axiosHeaders } from "@/lib/actions";
 import { useRouter } from "next/navigation";
 import axios from "axios";
@@ -32,7 +32,6 @@ import {
   flexRender,
   getCoreRowModel,
   useReactTable,
-  getPaginationRowModel,
   getSortedRowModel,
   SortingState,
   getFilteredRowModel,
@@ -43,6 +42,7 @@ import { DataTablePagination } from "@/components/ui/data-table/pagination";
 import { DataTableViewOptions } from "@/components/ui/data-table/view-options";
 import { Card } from "@/components/ui/card";
 import { useNewOrders } from "@/hooks/useNewOrders";
+import { useQuery } from "@tanstack/react-query";
 
 const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL;
 
@@ -52,13 +52,23 @@ export default function AdminPage() {
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const debouncedSearch = useDebounce(searchTerm, 500);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   const {
     data: productsData,
     isLoading,
     isError,
     refetch,
-  } = useProducts(debouncedSearch);
+  } = useProducts(debouncedSearch, {
+    mode: "pagination",
+    page: currentPage,
+    limit: pageSize,
+  }) as ReturnType<typeof useQuery<ProductsResponse>>;
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, pageSize]);
 
   const { data: newOrdersCount = 0 } = useNewOrders();
 
@@ -99,10 +109,9 @@ export default function AdminPage() {
   );
 
   const table = useReactTable({
-    data: productsData?.pages?.[0]?.products || [],
+    data: productsData?.products || [],
     columns,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     onSortingChange: setSorting,
@@ -110,6 +119,22 @@ export default function AdminPage() {
     state: {
       sorting,
       columnFilters,
+      pagination: {
+        pageIndex: currentPage - 1,
+        pageSize,
+      },
+    },
+    pageCount: productsData?.totalPages || 1,
+    manualPagination: true,
+    onPaginationChange: (updater) => {
+      if (typeof updater === "function") {
+        const newState = updater({
+          pageIndex: currentPage - 1,
+          pageSize,
+        });
+        setCurrentPage(newState.pageIndex + 1);
+        setPageSize(newState.pageSize);
+      }
     },
   });
 
