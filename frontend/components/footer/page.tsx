@@ -6,7 +6,7 @@ const FooterLink = memo(
     <Link
       href={href}
       prefetch={false}
-      className="hover:text-red-400 transition-colors duration-200"
+      className="hover:text-primary/80 transition-colors duration-200"
     >
       {children}
     </Link>
@@ -41,22 +41,22 @@ const Footer = memo(() => {
     {
       title: "Company",
       links: [
-        { href: "#", text: "About Us" },
-        { href: "#", text: "Contact" },
+        { href: "/about", text: "About Us" },
+        { href: "/contact", text: "Contact" },
       ],
     },
     {
       title: "Products",
       links: [
-        { href: "#", text: "Tyres" },
-        { href: "#", text: "Wheels" },
+        { href: "/products", text: "Tyres" },
+        { href: "/products", text: "Wheels" },
       ],
     },
     {
       title: "Legal",
       links: [
-        { href: "#", text: "Privacy Policy" },
-        { href: "#", text: "Terms of Service" },
+        { href: "/privacy", text: "Privacy Policy" },
+        { href: "/terms", text: "Terms of Service" },
       ],
     },
   ];
@@ -74,7 +74,9 @@ const Footer = memo(() => {
 
           {/* Bottom bar with copyright */}
           <div className="pt-8 border-t border-gray-600 text-center text-sm text-gray-400">
-            <p>© {new Date().getFullYear()} WheelsHub. All rights reserved.</p>
+            <p>
+              © {new Date().getFullYear()} Jara Wheels. All rights reserved.
+            </p>
           </div>
         </div>
       </div>

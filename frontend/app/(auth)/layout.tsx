@@ -38,7 +38,7 @@ export default function AuthLayout({
             <h2 className="text-2xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
               Welcome to{" "}
               <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text">
-                WheelsHub
+                Jara Wheels
               </span>
             </h2>
             <span className="px-3 py-1 text-sm font-medium bg-black/5 rounded-full text-gray-700 backdrop-blur-sm mt-4">
@@ -78,7 +78,7 @@ export default function AuthLayout({
             <h2 className="text-4xl font-bold tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-gray-900 via-gray-700 to-gray-600">
               Welcome to{" "}
               <span className="bg-gradient-to-r from-primary to-primary/80 bg-clip-text">
-                WheelsHub
+                Jara Wheels
               </span>
             </h2>
           </div>

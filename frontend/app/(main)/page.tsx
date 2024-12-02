@@ -40,11 +40,11 @@ const CTA = dynamic(() => import("@/components/CTA/page"), {
 });
 
 export const metadata = {
-  title: "Home | WheelsHub",
+  title: "Home | Jara Wheels",
   description: "Welcome to our store. Find the best products at great prices.",
   keywords: "store, shopping, products, deals",
   openGraph: {
-    title: "Home | WheelsHub",
+    title: "Home | Jara Wheels",
     description:
       "Welcome to our store. Find the best products at great prices.",
     type: "website",
