@@ -14,9 +14,9 @@ const poppins = Poppins({
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "WheelsHub - Premium Wheels and Rims",
+  title: "Jara Wheels - Premium Wheels and Rims",
   description:
-    "Discover and shop the best selection of wheels and rims for your vehicle at WheelsHub, your trusted ecommerce platform for automotive enthusiasts.",
+    "Discover and shop the best selection of wheels and rims for your vehicle at Jara Wheels, your trusted ecommerce platform for automotive enthusiasts.",
 };
 
 export default function RootLayout({
