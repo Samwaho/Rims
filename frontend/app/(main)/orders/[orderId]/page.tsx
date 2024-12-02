@@ -580,34 +580,15 @@ export default function OrderConfirmationPage({
                 <div className="flex justify-between text-gray-600">
                   <div className="flex items-center gap-2">
                     <Truck className="w-4 h-4" />
-                    <span>Total Shipping</span>
+                    <span>Shipping Cost (Already included in price)</span>
                   </div>
-                  <span>
+                  <span className="font-medium text-gray-500">
                     {formatPrice(order.shippingCost)}
-                    <span className="text-xs text-gray-500">
-                      (Individual:{" "}
-                      {order.products
-                        .map((p) => formatPrice(p.product.shippingCost))
-                        .join(", ")}
-                      )
-                    </span>
                   </span>
                 </div>
                 {order.discount > 0 && (
                   <div className="flex justify-between text-green-600">
-                    <span>
-                      Discount
-                      {order.discountDetails && (
-                        <>
-                          {" "}
-                          ({order.discountDetails.code}
-                          {order.discountDetails.type === "percentage"
-                            ? ` - ${order.discountDetails.value}%`
-                            : ""}
-                          )
-                        </>
-                      )}
-                    </span>
+                    <span>Discount</span>
                     <span>-{formatPrice(order.discount)}</span>
                   </div>
                 )}
@@ -618,7 +599,7 @@ export default function OrderConfirmationPage({
                       {formatPrice(order.total)}
                     </span>
                     <div className="text-xs font-normal text-gray-500">
-                      Including shipping
+                      Shipping cost already included in price
                     </div>
                   </div>
                 </div>

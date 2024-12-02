@@ -200,7 +200,7 @@ export const createOrder = async (req, res, next) => {
       discount: orderData.discount,
       discountDetails: orderData.discountDetails,
       shippingCost: orderData.shippingCost,
-      total: orderData.total + orderData.shippingCost,
+      total: orderData.total,
       status: "order_submitted",
       paymentMethod,
       paymentDetails,

@@ -54,13 +54,15 @@ export type Order = {
   user: {
     username: string;
     email: string;
-    name: string;
+    name?: string;
+    firstName?: string;
+    lastName?: string;
   };
   products: Array<{
     product: {
       name: string;
       price: number;
-      buyingPrice: number;
+      buyingPrice?: number;
       images: string[];
     };
     quantity: number;
@@ -70,7 +72,7 @@ export type Order = {
   shippingCost: number;
   deliveryCost: number;
   total: number;
-  profit: number;
+  profit?: number;
   status: string;
   orderDate: string;
   paymentStatus: "pending" | "completed" | "failed" | "refunded";
@@ -394,7 +396,7 @@ const FinancialDetails = memo(
     totalPaid: number;
     products: Array<{
       product: {
-        buyingPrice: number;
+        buyingPrice?: number;
       };
       quantity: number;
     }>;
@@ -408,9 +410,8 @@ const FinancialDetails = memo(
       value: number
     ) => Promise<void>;
   }) => {
-    const [taxRate, setTaxRate] = useState(16); // Default to 16% for admin view only
+    const [taxRate, setTaxRate] = useState(16);
 
-    // Fetch tax rate when component mounts
     useEffect(() => {
       const getTaxRate = async () => {
         const rate = await fetchTaxRate();
@@ -424,7 +425,6 @@ const FinancialDetails = memo(
       0
     );
 
-    // Calculate tax using dynamic rate
     const businessTax = calculateBusinessTax(totalPaid, taxRate);
 
     const totalCosts = productCost + shippingCost + deliveryCost;
@@ -583,11 +583,19 @@ const DeleteOrderButton = memo(
 DeleteOrderButton.displayName = "DeleteOrderButton";
 
 // Update the columns definition to include delivery information
-export const createColumns = ({
+export const createColumns = <T extends Order>({
   handleStatusUpdate,
   handleCostUpdate,
   handleDeleteOrder,
-}: ColumnProps): ColumnDef<Order>[] => [
+}: {
+  handleStatusUpdate: (orderId: string, status: string) => Promise<void>;
+  handleCostUpdate: (
+    orderId: string,
+    field: string,
+    value: number
+  ) => Promise<void>;
+  handleDeleteOrder: (orderId: string) => Promise<void>;
+}): ColumnDef<T>[] => [
   {
     accessorKey: "user",
     header: ({ column }) => (

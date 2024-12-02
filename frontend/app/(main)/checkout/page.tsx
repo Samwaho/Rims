@@ -340,13 +340,31 @@ export default function CheckoutPage() {
   const subtotal = useMemo(
     () =>
       items.reduce(
-        (total, item) =>
-          total +
-          item.product.price * item.quantity +
-          item.product.shippingCost * item.quantity,
+        (total, item) => total + item.product.price * item.quantity,
         0
       ),
     [items]
+  );
+
+  const shippingCosts = useMemo(
+    () =>
+      items.reduce(
+        (total, item) => total + item.product.shippingCost * item.quantity,
+        0
+      ),
+    [items]
+  );
+
+  const discountAmount = useMemo(() => {
+    if (!appliedDiscount) return 0;
+    return appliedDiscount.type === "percentage"
+      ? (subtotal * appliedDiscount.value) / 100
+      : appliedDiscount.amount;
+  }, [appliedDiscount, subtotal]);
+
+  const totalPrice = useMemo(
+    () => subtotal - discountAmount,
+    [subtotal, discountAmount]
   );
 
   const { data: deliveryPoints = [], isLoading: isLoadingDeliveryPoints } =
@@ -408,18 +426,18 @@ export default function CheckoutPage() {
         0
       );
 
+      // Track shipping cost separately but don't add to total
       const orderShippingCost = items.reduce(
         (total, item) =>
           total + (item.product.shippingCost || 0) * item.quantity,
         0
       );
 
-      const orderTotal =
-        orderSubtotal + orderShippingCost - (discountAmount || 0);
+      const orderTotal = orderSubtotal - (discountAmount || 0);
 
       // Prepare the order data
       const orderData = {
-        ...(productId ? { productId, quantity: 1 } : {}), // For direct purchase
+        ...(productId ? { productId, quantity: 1 } : {}),
         products: items.map((item) => ({
           product: item.product._id,
           quantity: item.quantity,
@@ -436,8 +454,8 @@ export default function CheckoutPage() {
         },
         shippingDetails,
         subtotal: orderSubtotal,
-        shippingCost: orderShippingCost,
-        total: orderTotal,
+        shippingCost: orderShippingCost, // Store shipping cost for reference
+        total: orderTotal, // Total without adding shipping (it's already in product prices)
         discount: appliedDiscount
           ? {
               code: appliedDiscount.code,
@@ -465,7 +483,7 @@ export default function CheckoutPage() {
         JSON.stringify({
           trackingId: pesapalResponse.data.trackingId,
           orderId: pesapalResponse.data.order._id,
-          amount: orderTotal,
+          amount: orderTotal, // Store the total without additional shipping
         })
       );
 
@@ -492,19 +510,6 @@ export default function CheckoutPage() {
       setShowConfirmation(false);
     },
   });
-
-  // Memoized Values
-  const discountAmount = useMemo(() => {
-    if (!appliedDiscount) return 0;
-    return appliedDiscount.type === "percentage"
-      ? (subtotal * appliedDiscount.value) / 100
-      : appliedDiscount.amount;
-  }, [appliedDiscount, subtotal]);
-
-  const totalPrice = useMemo(
-    () => subtotal + shippingCost - discountAmount,
-    [subtotal, shippingCost, discountAmount]
-  );
 
   const backLink = useMemo(
     () => (productId ? `/products/${productId}` : "/cart"),
@@ -798,13 +803,7 @@ export default function CheckoutPage() {
                       <span>Subtotal (Items)</span>
                       <div className="text-right">
                         <span className="font-medium">
-                          {formatPrice(
-                            items.reduce(
-                              (total, item) =>
-                                total + item.product.price * item.quantity,
-                              0
-                            )
-                          )}
+                          {formatPrice(subtotal)}
                         </span>
                         <div className="text-xs text-gray-500 mt-0.5">
                           All prices are for 4 pieces per item
@@ -812,38 +811,28 @@ export default function CheckoutPage() {
                       </div>
                     </div>
                     <div className="flex justify-between text-gray-700 text-sm">
-                      <span>Shipping Total</span>
-                      <span className="font-medium">
-                        {formatPrice(
-                          items.reduce(
-                            (total, item) =>
-                              total + item.product.shippingCost * item.quantity,
-                            0
-                          )
-                        )}
+                      <div className="flex items-center gap-2">
+                        <Truck className="w-4 h-4" />
+                        <span>Shipping Cost (Already included in price)</span>
+                      </div>
+                      <span className="font-medium text-gray-500">
+                        {formatPrice(shippingCosts)}
                       </span>
                     </div>
                     {appliedDiscount && (
                       <div className="flex justify-between text-green-600 text-sm">
-                        <span>
-                          Discount ({appliedDiscount.code}
-                          {appliedDiscount.type === "percentage"
-                            ? ` - ${appliedDiscount.value}%`
-                            : ""}
-                          )
-                        </span>
+                        <span>Discount ({appliedDiscount.code})</span>
                         <span className="font-medium">
                           -{formatPrice(discountAmount)}
                         </span>
                       </div>
                     )}
-                    <Separator className="my-4" />
-                    <div className="flex justify-between font-bold text-lg sm:text-xl text-gray-900">
+                    <div className="flex justify-between font-bold text-lg text-gray-900">
                       <span>Total</span>
                       <div className="text-right">
                         <span>{formatPrice(totalPrice)}</span>
                         <div className="text-xs font-normal text-gray-500">
-                          Including shipping
+                          Shipping cost already included in price
                         </div>
                       </div>
                     </div>

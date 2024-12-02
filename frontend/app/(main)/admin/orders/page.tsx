@@ -24,7 +24,7 @@ import { Loader2, Search, AlertCircle, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
 import { axiosHeaders, getAuthUser } from "@/lib/actions";
 import { useRouter } from "next/navigation";
-import { createColumns, type Order } from "./columns";
+import { createColumns } from "./columns";
 import { DataTablePagination } from "@/components/ui/data-table/pagination";
 import { DataTableViewOptions } from "@/components/ui/data-table/view-options";
 import { Input } from "@/components/ui/input";
@@ -58,6 +58,49 @@ const statusStyles = {
   in_transit: "bg-orange-100 text-orange-800 border border-orange-200",
   shipped: "bg-purple-100 text-purple-800 border border-purple-200",
 } as const;
+
+interface Order {
+  _id: string;
+  user: {
+    _id: string;
+    username: string;
+    email: string;
+    firstName?: string;
+    lastName?: string;
+    name?: string;
+  };
+  products: Array<{
+    product: {
+      _id: string;
+      name: string;
+      price: number;
+      buyingPrice?: number;
+      images: string[];
+    };
+    quantity: number;
+  }>;
+  subtotal: number;
+  discount: number;
+  shippingCost: number;
+  deliveryCost: number;
+  total: number;
+  status: string;
+  paymentStatus: "pending" | "completed" | "failed" | "refunded";
+  paymentMethod: "pesapal";
+  paymentDetails?: {
+    pesapalTrackingId?: string;
+  };
+  viewed: boolean;
+  orderDate: string;
+  tax?: number;
+}
+
+interface TransformedOrder extends Order {
+  user: Order["user"] & {
+    name: string;
+  };
+  profit: number;
+}
 
 export default function AdminOrders() {
   const router = useRouter();
@@ -174,9 +217,39 @@ export default function AdminOrders() {
     [refetch]
   );
 
+  const transformedOrders: TransformedOrder[] = useMemo(() => {
+    return orders.map((order) => {
+      const total = order.total;
+      const productCost = order.products.reduce(
+        (sum, item) => sum + (item.product?.buyingPrice || 0) * item.quantity,
+        0
+      );
+
+      const totalCosts =
+        productCost +
+        (order.tax || 0) +
+        (order.shippingCost || 0) +
+        (order.deliveryCost || 0);
+
+      const user = {
+        ...order.user,
+        name: `${order.user.firstName || ""} ${
+          order.user.lastName || ""
+        }`.trim(),
+      };
+
+      return {
+        ...order,
+        user,
+        total,
+        profit: total - totalCosts,
+      };
+    });
+  }, [orders]);
+
   const columns = useMemo(
     () =>
-      createColumns({
+      createColumns<TransformedOrder>({
         handleStatusUpdate,
         handleCostUpdate,
         handleDeleteOrder,
@@ -184,8 +257,8 @@ export default function AdminOrders() {
     [handleStatusUpdate, handleCostUpdate, handleDeleteOrder]
   );
 
-  const table = useReactTable({
-    data: orders,
+  const table = useReactTable<TransformedOrder>({
+    data: transformedOrders,
     columns,
     getCoreRowModel: getCoreRowModel(),
     getPaginationRowModel: getPaginationRowModel(),
@@ -202,9 +275,8 @@ export default function AdminOrders() {
       const searchValue = filterValue.toLowerCase();
       const user = row.original.user;
 
-      // Search in name, username, and email
       return (
-        (user.name?.toLowerCase() || "").includes(searchValue) ||
+        user.name.toLowerCase().includes(searchValue) ||
         user.username.toLowerCase().includes(searchValue) ||
         user.email.toLowerCase().includes(searchValue)
       );
