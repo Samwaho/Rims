@@ -3,7 +3,6 @@
 import { useEffect, useCallback } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useState, useMemo } from "react";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Card,
   CardContent,
@@ -13,13 +12,11 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Phone as PhoneIcon,
   CreditCard,
-  CheckCircle,
   ArrowLeft,
   MapPin,
   Clock,
@@ -40,18 +37,6 @@ import { axiosHeaders } from "@/lib/actions";
 import { toast } from "sonner";
 import { formatPrice } from "@/lib/utils";
 import Link from "next/link";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  HoverCard,
-  HoverCardContent,
-  HoverCardTrigger,
-} from "@/components/ui/hover-card";
 import { Progress } from "@/components/ui/progress";
 import {
   AlertDialog,
@@ -876,21 +861,45 @@ export default function CheckoutPage() {
                     Supported Payment Methods:
                   </h4>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                    <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
-                      <CreditCard className="w-6 h-6 text-green-600 mb-2" />
+                    <div
+                      onClick={handlePayment}
+                      className="flex flex-col items-center cursor-pointer justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors"
+                    >
+                      <Image
+                        src="/credit-card-svgrepo-com.png"
+                        alt="Credit Card"
+                        width={50}
+                        height={50}
+                        className="object-contain"
+                      />
                       <span className="text-xs text-gray-600">Credit Card</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
-                      <PhoneIcon className="w-6 h-6 text-green-600 mb-2" />
+                    <div
+                      onClick={handlePayment}
+                      className="flex flex-col items-center cursor-pointer justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors"
+                    >
+                      <Image
+                        src="/mpesa-logo (1).png"
+                        alt="M-PESA"
+                        width={64}
+                        height={64}
+                        className="object-contain"
+                      />
                       <span className="text-xs text-gray-600">M-PESA</span>
                     </div>
-                    <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
+                    <div
+                      onClick={handlePayment}
+                      className="flex flex-col items-center cursor-pointer justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors"
+                    >
                       <Building className="w-6 h-6 text-green-600 mb-2" />
                       <span className="text-xs text-gray-600">
                         Bank Transfer
                       </span>
                     </div>
-                    <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
+                    <div
+                      onClick={handlePayment}
+                      className="flex flex-col items-center cursor-pointer justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors"
+                    >
                       <Image
                         src="/pesapal-logo.png"
                         alt="Pesapal"
