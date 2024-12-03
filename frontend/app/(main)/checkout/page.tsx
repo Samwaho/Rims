@@ -73,6 +73,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { getUserPaymentDetails } from "@/lib/actions";
+import Image from "next/image";
 
 // Types
 interface Product {
@@ -839,7 +840,6 @@ export default function CheckoutPage() {
           <Card className="h-fit border-green-100 shadow-lg hover:shadow-xl transition-shadow duration-300">
             <CardHeader className="border-b border-green-100">
               <CardTitle className="flex items-center gap-2 text-lg sm:text-xl">
-                <Globe className="w-5 h-5 text-green-600" />
                 Payment Method
               </CardTitle>
               <CardDescription className="text-sm">
@@ -849,11 +849,15 @@ export default function CheckoutPage() {
             <CardContent className="pt-6">
               <div className="space-y-6">
                 {/* Pesapal Payment Info Card */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100/50 rounded-xl p-6 sm:p-8 border border-green-200">
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl p-6 sm:p-8 border border-gray-200">
                   <div className="flex flex-col items-center text-center space-y-4">
-                    <div className="bg-white p-4 rounded-full shadow-md">
-                      <Globe className="w-12 h-12 sm:w-16 sm:h-16 text-green-600" />
-                    </div>
+                    <Image
+                      src="/pesapal-logo.png"
+                      alt="Pesapal"
+                      width={250}
+                      height={250}
+                    />
+
                     <div>
                       <h3 className="font-semibold text-green-700 text-lg sm:text-xl mb-2">
                         Pay Securely with Pesapal
@@ -887,7 +891,13 @@ export default function CheckoutPage() {
                       </span>
                     </div>
                     <div className="flex flex-col items-center justify-center bg-white rounded-lg p-4 border border-green-100 hover:border-green-300 transition-colors">
-                      <Globe className="w-6 h-6 text-green-600 mb-2" />
+                      <Image
+                        src="/pesapal-logo.png"
+                        alt="Pesapal"
+                        width={64}
+                        height={64}
+                        className="object-contain"
+                      />
                       <span className="text-xs text-gray-600">
                         Other Methods
                       </span>
@@ -939,8 +949,7 @@ export default function CheckoutPage() {
                   </div>
                 ) : (
                   <div className="flex items-center justify-center">
-                    <Globe className="w-5 h-5 mr-2" />
-                    Pay Securely {formatPrice(totalPrice)}
+                    Pay {formatPrice(totalPrice)}
                   </div>
                 )}
               </Button>
@@ -957,7 +966,13 @@ export default function CheckoutPage() {
           <AlertDialogContent className="max-w-md bg-white">
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                <Globe className="w-6 h-6 text-green-600" />
+                <Image
+                  src="/pesapal-logo.png"
+                  alt="Pesapal"
+                  width={24}
+                  height={24}
+                  className="object-contain"
+                />
                 Confirm Your Order
               </AlertDialogTitle>
               <AlertDialogDescription className="text-sm text-gray-600 mt-2">
@@ -1087,7 +1102,13 @@ export default function CheckoutPage() {
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
-                    <Globe className="w-4 h-4" />
+                    <Image
+                      src="/pesapal-logo.png"
+                      alt="Pesapal"
+                      width={16}
+                      height={16}
+                      className="object-contain"
+                    />
                     Proceed to Payment
                   </div>
                 )}
