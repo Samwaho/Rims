@@ -135,7 +135,7 @@ const EmptyOrdersCard = memo(() => (
       <Link href="/products">
         <Button
           size="lg"
-          className="bg-red-600 hover:bg-red-700 text-white transition-all duration-200 transform hover:scale-105"
+          className="bg-primary hover:opacity-80 text-white transition-all duration-200 transform hover:scale-105"
         >
           Start Shopping
         </Button>
