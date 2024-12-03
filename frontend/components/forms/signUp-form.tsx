@@ -58,11 +58,14 @@ export default function SignUpForm() {
       );
       return response.data;
     },
-    onSuccess: () => {
-      toast.success("Sign-up successful! Redirecting to login...", {
-        duration: 3000,
-        position: "top-center",
-      });
+    onSuccess: (data) => {
+      toast.success(
+        "Sign-up successful! Please check your email for verification instructions.",
+        {
+          duration: 5000,
+          position: "top-center",
+        }
+      );
       router.push("/sign-in");
     },
     onError: (error: any) => {

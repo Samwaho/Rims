@@ -8,6 +8,7 @@ import TaxConfig from "../models/tax.model.js";
 import { calculateShippingCost } from "../controllers/shipping.controller.js";
 import { validateDiscountCode } from "../controllers/discount.controller.js";
 import { getTaxRate } from "../controllers/tax.controller.js";
+import { sendOrderConfirmationEmail } from "../utils/sendEmails.js";
 
 const validateUser = (req) => {
   if (!req.user?.id) {
@@ -216,6 +217,17 @@ export const createOrder = async (req, res, next) => {
       )
       .lean();
 
+    // Send order confirmation email
+    try {
+      await sendOrderConfirmationEmail(
+        populatedOrder.user.email,
+        populatedOrder
+      );
+    } catch (emailError) {
+      console.error("Failed to send order confirmation email:", emailError);
+      // Don't throw the error as we don't want to affect the order creation
+    }
+
     res.status(201).json({
       message: "Order created successfully",
       order: populatedOrder,
@@ -317,6 +329,7 @@ export const updateOrderStatus = async (req, res, next) => {
       throw { status: 404, message: "Order not found" };
     }
 
+    const previousStatus = order.status;
     order.status = status;
     if (!order.statusHistory) {
       order.statusHistory = [];
@@ -334,6 +347,22 @@ export const updateOrderStatus = async (req, res, next) => {
     const updatedOrder = await Order.findById(orderId)
       .populate("user", "username email")
       .populate("products.product", "name price images");
+
+    // Send status update email for specific status changes
+    if (
+      ["shipped", "delivered"].includes(status) &&
+      status !== previousStatus
+    ) {
+      try {
+        await sendOrderConfirmationEmail(
+          updatedOrder.user.email,
+          updatedOrder,
+          status
+        );
+      } catch (emailError) {
+        console.error("Failed to send order status update email:", emailError);
+      }
+    }
 
     res.status(200).json({
       message: "Order status updated successfully",

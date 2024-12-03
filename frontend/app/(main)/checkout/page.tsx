@@ -72,8 +72,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { sendOrderConfirmationEmail, initEmailJS } from "@/lib/emailService";
-import emailjs from "@emailjs/browser";
 import { getUserPaymentDetails } from "@/lib/actions";
 
 // Types
@@ -310,11 +308,6 @@ export default function CheckoutPage() {
   const searchParams = useSearchParams();
   const productId = searchParams.get("productId");
   const queryClient = useQueryClient();
-
-  // Add an effect to handle initialization
-  useEffect(() => {
-    // Any initialization logic can go here
-  }, []);
 
   // State
   const [paymentMethod, setPaymentMethod] = useState("pesapal");

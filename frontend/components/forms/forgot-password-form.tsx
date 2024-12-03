@@ -1,11 +1,10 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { useMutation } from "@tanstack/react-query";
-import axios from "axios";
+import { useAuthMutations } from "@/hooks/useAuthMutations";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -19,7 +18,6 @@ import {
 import Link from "next/link";
 import { toast } from "sonner";
 import { Mail } from "lucide-react";
-import { sendPasswordResetEmail, initEmailJS } from "@/lib/emailService";
 
 const INITIAL_VALUES = { email: "" };
 
@@ -31,39 +29,11 @@ type ForgotPasswordValues = z.infer<typeof forgotPasswordSchema>;
 
 export default function ForgotPasswordForm() {
   const [isEmailSent, setIsEmailSent] = useState(false);
+  const { sendResetLink, isResetting, handleEmailAction } = useAuthMutations();
 
   const form = useForm<ForgotPasswordValues>({
     resolver: zodResolver(forgotPasswordSchema),
     defaultValues: INITIAL_VALUES,
-  });
-
-  const { mutate: requestPasswordReset, isPending } = useMutation({
-    mutationFn: async (data: ForgotPasswordValues) => {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/auth/forgot-password`,
-        data
-      );
-
-      if (response.data.resetLink) {
-        await sendPasswordResetEmail(data.email, response.data.resetLink);
-      }
-
-      return response;
-    },
-    onSuccess: () => {
-      setIsEmailSent(true);
-      toast.success("Reset instructions sent to your email", {
-        duration: 5000,
-        position: "top-center",
-      });
-    },
-    onError: (error) => {
-      toast.error("Something went wrong. Please try again.", {
-        duration: 4000,
-        position: "top-center",
-      });
-      console.error("Forgot password error:", error);
-    },
   });
 
   const handleReset = useCallback(() => {
@@ -73,14 +43,13 @@ export default function ForgotPasswordForm() {
 
   const onSubmit = useCallback(
     (data: ForgotPasswordValues) => {
-      requestPasswordReset(data);
+      handleEmailAction(data.email, (email) => {
+        sendResetLink(email);
+        setIsEmailSent(true);
+      });
     },
-    [requestPasswordReset]
+    [sendResetLink, handleEmailAction]
   );
-
-  useEffect(() => {
-    initEmailJS();
-  }, []);
 
   if (isEmailSent) {
     return (
@@ -150,9 +119,9 @@ export default function ForgotPasswordForm() {
           <Button
             type="submit"
             className="w-full h-11 text-base font-semibold"
-            disabled={isPending}
+            disabled={isResetting}
           >
-            {isPending ? (
+            {isResetting ? (
               <div className="flex items-center justify-center gap-2">
                 <div className="w-5 h-5 border-t-2 border-r-2 border-white rounded-full animate-spin" />
                 <span>Sending...</span>

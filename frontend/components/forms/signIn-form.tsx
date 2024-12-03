@@ -94,7 +94,7 @@ export default function SignInForm() {
     />
   );
 
-  const onSubmit = async (data: SignInFormValues) => {
+  const onSubmit = (data: SignInFormValues) => {
     signIn(data);
   };
 

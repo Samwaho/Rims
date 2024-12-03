@@ -6,7 +6,9 @@ import dotenv from "dotenv";
 import {
   sendPasswordResetSuccessEmail,
   sendResetEmail,
-} from "../utils/sendVerificationEmail.js";
+  sendVerificationEmail,
+} from "../utils/sendEmails.js";
+import { generateVerificationCode } from "../utils/generateVerificationCode.js";
 
 dotenv.config();
 
@@ -47,7 +49,9 @@ export const signUpController = async (req, res, next) => {
       return errorHandler(res, 409, "Email already exists");
     }
 
+    const verificationCode = generateVerificationCode();
     const hashedPassword = bcryptjs.hashSync(password, 10);
+
     const newUser = new User({
       firstName,
       lastName,
@@ -55,10 +59,19 @@ export const signUpController = async (req, res, next) => {
       password: hashedPassword,
       phoneNumber,
       address,
+      verificationCode,
+      verificationCodeExpires: Date.now() + 900000, // 15 minutes
     });
 
     await newUser.save();
-    return res.status(201).json({ message: "User created successfully" });
+
+    // Send verification email
+    await sendVerificationEmail(email, verificationCode);
+
+    return res.status(201).json({
+      message:
+        "User created successfully. Please check your email for verification instructions.",
+    });
   } catch (error) {
     next(error);
   }
@@ -164,6 +177,8 @@ export const forgotPasswordController = async (req, res, next) => {
 
     const resetLink = `${FRONTEND_URL}/reset-password?token=${resetToken}`;
 
+    await sendResetEmail(user.email, resetLink);
+
     return res.status(200).json({
       ...genericResponse,
       resetLink,
@@ -206,6 +221,8 @@ export const resetPasswordController = async (req, res, next) => {
     user.resetPasswordToken = undefined;
     user.resetPasswordExpires = undefined;
     await user.save();
+
+    await sendPasswordResetSuccessEmail(user.email);
 
     return res.status(200).json({
       message: "Password reset successfully",
