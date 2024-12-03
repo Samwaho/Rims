@@ -5,6 +5,7 @@ import Footer from "@/components/footer/page";
 import Navbar from "@/components/navbar/page";
 import TanstackProvider from "@/providers/TanstackProvider";
 import { Toaster } from "@/components/ui/sonner";
+import { GoogleAnalytics } from "@next/third-parties/google";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -12,7 +13,7 @@ const poppins = Poppins({
 });
 
 export const dynamic = "force-dynamic";
-
+const googleAnalyticsId = process.env.GOOGLE_ANALYTICS_ID || "";
 export const metadata: Metadata = {
   title: "Jara Wheels - Premium Wheels and Rims",
   description:
@@ -42,6 +43,7 @@ export default function RootLayout({
             }}
           />
         </TanstackProvider>
+        <GoogleAnalytics gaId={googleAnalyticsId} />
       </body>
     </html>
   );
