@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/select";
 import {
   Loader2,
-  TrendingUp,
   DollarSign,
   Package,
   Percent,
@@ -28,7 +27,6 @@ import {
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 import {
-  LineChart,
   Line,
   XAxis,
   YAxis,
@@ -51,6 +49,7 @@ interface TimeSeriesData {
   tax: number;
   discounts: number;
   shipping: number;
+  deliveryCost?: number;
   subtotal: number;
   cost: number;
   profit: number;
@@ -61,6 +60,7 @@ interface FinancialMetrics {
   totalTax: number;
   totalDiscounts: number;
   totalShipping: number;
+  totalDeliveryCost?: number;
   subtotal: number;
   totalCost: number;
   grossProfit: number;
@@ -168,7 +168,42 @@ export function FinancialAnalytics() {
           `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/analytics/financial?timeframe=${timeframe}`,
           await axiosHeaders()
         );
-        return data;
+
+        const transformedData = {
+          ...data,
+          timeSeriesData: data.timeSeriesData.map((item: TimeSeriesData) => {
+            const netAmount = item.revenue / 1.16;
+            const tax = item.revenue - netAmount;
+
+            const totalCosts =
+              (item.cost || 0) +
+              tax +
+              (item.shipping || 0) +
+              (item.deliveryCost || 0);
+
+            const profit = item.revenue - totalCosts;
+
+            return {
+              ...item,
+              tax,
+              profit,
+            };
+          }),
+          grossProfit: (() => {
+            const netRevenue = data.totalRevenue / 1.16;
+            const totalTax = data.totalRevenue - netRevenue;
+
+            return (
+              data.totalRevenue -
+              (data.totalCost +
+                totalTax +
+                data.totalShipping +
+                (data.totalDeliveryCost || 0))
+            );
+          })(),
+        };
+
+        return transformedData;
       } catch (error) {
         console.error("Error fetching financial metrics:", error);
         throw error;
@@ -212,9 +247,9 @@ export function FinancialAnalytics() {
       trendUp: true,
     },
     {
-      title: "Gross Profit",
+      title: "Net Profit",
       value: formatPrice(metrics.grossProfit),
-      description: "Revenue minus cost of goods",
+      description: "Revenue minus all costs (ABP, VAT, Shipping, Delivery)",
       icon: Calculator,
       color: "text-primary",
       bgColor: "bg-primary/10",
@@ -480,7 +515,9 @@ export function FinancialAnalytics() {
         <Card className="hover:shadow-lg transition-shadow">
           <CardHeader>
             <CardTitle>Profit Analysis</CardTitle>
-            <CardDescription>Revenue, cost, and profit trends</CardDescription>
+            <CardDescription>
+              Revenue, costs, and profit breakdown
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={400}>
@@ -512,22 +549,47 @@ export function FinancialAnalytics() {
                 <Legend />
                 <Bar
                   dataKey="revenue"
-                  name={chartConfig.revenue.label}
+                  name="Revenue"
                   fill={chartConfig.revenue.color}
                   opacity={0.8}
                   radius={[4, 4, 0, 0]}
                 />
                 <Bar
                   dataKey="cost"
-                  name={chartConfig.cost.label}
+                  name="Product Cost"
                   fill={chartConfig.cost.color}
                   opacity={0.8}
+                  stackId="costs"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="tax"
+                  name="Tax"
+                  fill={chartConfig.tax.color}
+                  opacity={0.8}
+                  stackId="costs"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="shipping"
+                  name="Shipping"
+                  fill={chartConfig.shipping.color}
+                  opacity={0.8}
+                  stackId="costs"
+                  radius={[4, 4, 0, 0]}
+                />
+                <Bar
+                  dataKey="deliveryCost"
+                  name="Delivery"
+                  fill={chartConfig.shipping.color}
+                  opacity={0.6}
+                  stackId="costs"
                   radius={[4, 4, 0, 0]}
                 />
                 <Line
                   type="monotone"
                   dataKey="profit"
-                  name={chartConfig.profit.label}
+                  name="Net Profit"
                   stroke={chartConfig.profit.color}
                   strokeWidth={3}
                   dot={false}
