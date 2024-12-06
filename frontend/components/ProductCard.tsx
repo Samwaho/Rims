@@ -113,8 +113,8 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
               </p>
               <div className="flex items-center justify-between gap-2">
                 {getBoltPattern() && (
-                  <p className="text-sm sm:text-base text-muted-foreground">
-                    <span className="font-medium text-foreground">PCD:</span>{" "}
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    <span className="font-medium text-foreground">Pcd:</span>{" "}
                     {getBoltPattern()}
                   </p>
                 )}
