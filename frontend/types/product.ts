@@ -29,6 +29,12 @@ export interface PriceDetails {
 // Product category type
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
+// Product type from PRODUCT_TYPES
+export type ProductType = (typeof PRODUCT_TYPES)[number];
+
+// Product condition type
+export type ProductCondition = "new" | "used";
+
 // Main product interface with strict typing
 export interface Product {
   _id: string;
@@ -41,17 +47,17 @@ export interface Product {
   stock: number;
   images: string[];
   category: ProductCategory;
-  productType: (typeof PRODUCT_TYPES)[number];
+  productType: ProductType;
   size: string;
-  madeIn: string;
+  madeIn?: string;
   specifications: Specification[];
   reviews: Review[];
   numReviews: number;
   averageRating: number;
+  condition: ProductCondition;
   createdAt: string;
   updatedAt: string;
   priceDetails?: PriceDetails;
-  condition?: string;
 }
 
 // Product filter state with precise types

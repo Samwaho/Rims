@@ -24,6 +24,7 @@ interface ProductCardProps {
     | "images"
     | "deliveryTime"
     | "condition"
+    | "specifications"
   >;
   onAddToCart: () => void;
 }
@@ -71,6 +72,12 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
     [handleAuthAction, onAddToCart]
   );
 
+  const getBoltPattern = () => {
+    return product.specifications?.find(
+      (spec) => spec.name.toLowerCase() === "bolt pattern"
+    )?.value;
+  };
+
   return (
     <div className="group bg-background rounded-lg overflow-hidden shadow-sm hover:shadow-lg transition-all duration-300 border border-gray-200 hover:border-primary/20">
       <Link href={`/products/${product._id}`} className="block relative">
@@ -100,20 +107,28 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
             <h3 className="text-sm sm:text-base font-bold line-clamp-1 group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
-            <div className="flex items-center gap-2 flex-wrap">
-              <p className="text-sm sm:text-base font-semibold truncate max-w-[130px] whitespace-nowrap">
+            <div className="flex flex-col gap-1.5">
+              <p className="text-sm sm:text-base font-semibold">
                 Size: {product.size}
               </p>
-              {typeof product.condition === "string" && product.condition && (
-                <Badge
-                  variant="outline"
-                  className={`${getConditionBadgeColor(
-                    product.condition
-                  )} shrink-0`}
-                >
-                  {product.condition === "new" ? "New" : "Used"}
-                </Badge>
-              )}
+              <div className="flex items-center justify-between gap-2">
+                {getBoltPattern() && (
+                  <p className="text-sm sm:text-base text-muted-foreground">
+                    <span className="font-medium text-foreground">PCD:</span>{" "}
+                    {getBoltPattern()}
+                  </p>
+                )}
+                {typeof product.condition === "string" && product.condition && (
+                  <Badge
+                    variant="outline"
+                    className={`${getConditionBadgeColor(
+                      product.condition
+                    )} shrink-0 ml-auto`}
+                  >
+                    {product.condition === "new" ? "New" : "Used"}
+                  </Badge>
+                )}
+              </div>
             </div>
             {product.madeIn && (
               <p className="text-xs sm:text-sm text-muted-foreground flex items-center gap-1.5 sm:gap-2">
