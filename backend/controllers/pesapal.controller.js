@@ -5,6 +5,7 @@ import Product from "../models/product.model.js";
 import { generateToken } from "../utils/pesapal.js";
 import { sendOrderConfirmationEmail } from "../utils/sendEmails.js";
 import { updateProductStock } from "../controllers/order.controller.js";
+import Cart from "../models/cart.model.js";
 
 const PESAPAL_API_URL = process.env.PESAPAL_API_URL;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -162,7 +163,7 @@ export const handlePesapalIPN = async (req, res) => {
 
     const order = await Order.findOne({
       "paymentDetails.pesapalTrackingId": OrderTrackingId,
-    }).populate("products.product");
+    }).populate("products.product user");
 
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
@@ -179,6 +180,13 @@ export const handlePesapalIPN = async (req, res) => {
           order.products.map(async (item) => {
             await updateProductStock(item.product._id, item.quantity);
           })
+        );
+
+        // Clear the user's cart
+        await Cart.findOneAndUpdate(
+          { user: order.user._id },
+          { $set: { items: [] } },
+          { new: true }
         );
 
         // Update order status

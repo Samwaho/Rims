@@ -159,17 +159,17 @@ const processCartPurchase = async (
         shippingCost: product.shippingCost || 0,
       });
     }
+
+    // Clear the cart after successful stock updates
+    await Cart.findOneAndUpdate(
+      { user: userId },
+      { $set: { items: [] } },
+      { new: true }
+    );
   } catch (error) {
     // If any stock update fails, throw the error
     throw { status: error.status || 500, message: error.message };
   }
-
-  // Clear the cart after successful stock updates
-  await Cart.findOneAndUpdate(
-    { user: userId },
-    { $set: { items: [] } },
-    { new: true }
-  );
 
   return {
     orderProducts,

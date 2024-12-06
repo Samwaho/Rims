@@ -397,6 +397,9 @@ const FinancialDetails = memo(
     products: Array<{
       product: {
         buyingPrice?: number;
+        price: number;
+        name: string;
+        images?: string[];
       };
       quantity: number;
     }>;
@@ -411,6 +414,7 @@ const FinancialDetails = memo(
     ) => Promise<void>;
   }) => {
     const [taxRate, setTaxRate] = useState(16);
+    const [showDetails, setShowDetails] = useState(false);
 
     useEffect(() => {
       const getTaxRate = async () => {
@@ -420,13 +424,22 @@ const FinancialDetails = memo(
       getTaxRate();
     }, []);
 
-    const productCost = products.reduce(
-      (sum, item) => sum + (item.product?.buyingPrice || 0) * item.quantity,
+    // Calculate total product cost and revenue
+    const productDetails = products.map((item) => ({
+      name: item.product?.name || "Unknown Product",
+      quantity: item.quantity,
+      buyingPrice: item.product?.buyingPrice || 0,
+      sellingPrice: item.product?.price || 0,
+      totalBuying: (item.product?.buyingPrice || 0) * item.quantity,
+      totalSelling: (item.product?.price || 0) * item.quantity,
+    }));
+
+    const productCost = productDetails.reduce(
+      (sum, item) => sum + item.totalBuying,
       0
     );
 
     const businessTax = calculateBusinessTax(totalPaid, taxRate);
-
     const totalCosts = productCost + shippingCost + deliveryCost;
     const profit = totalPaid - totalCosts - businessTax;
 
@@ -445,15 +458,40 @@ const FinancialDetails = memo(
         )}
 
         <div className="space-y-2 py-2">
-          <div className="text-sm font-medium text-muted-foreground mb-1">
-            Business Costs:
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-medium text-muted-foreground">
+              Business Costs:
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-6 px-2 text-xs"
+              onClick={() => setShowDetails(!showDetails)}
+            >
+              {showDetails ? "Hide Details" : "Show Details"}
+            </Button>
           </div>
+
+          {showDetails && (
+            <div className="space-y-1 mb-2 pl-2 text-xs">
+              {productDetails.map((item, index) => (
+                <div key={index} className="grid grid-cols-2 gap-x-2">
+                  <span className="text-muted-foreground truncate">
+                    {item.name} (x{item.quantity}):
+                  </span>
+                  <span className="font-medium">
+                    {formatPrice(item.totalBuying)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
+
           <div className="grid grid-cols-2 gap-x-4 text-sm pl-2">
-            <span className="text-muted-foreground">
-              Actual Buying Price (ABP):
-            </span>
+            <span className="text-muted-foreground">Total Buying Price:</span>
             <span className="font-medium">{formatPrice(productCost)}</span>
           </div>
+
           <div className="grid grid-cols-2 gap-x-4 text-sm pl-2">
             <span className="text-muted-foreground">
               VAT ({taxRate}%):
@@ -473,6 +511,7 @@ const FinancialDetails = memo(
             </span>
             <span className="font-medium">{formatPrice(businessTax)}</span>
           </div>
+
           <div className="grid grid-cols-2 gap-x-4 text-sm pl-2">
             <span className="text-muted-foreground">Shipping Cost:</span>
             <EditableCost
@@ -482,6 +521,7 @@ const FinancialDetails = memo(
               onUpdate={onCostUpdate}
             />
           </div>
+
           <div className="grid grid-cols-2 gap-x-4 text-sm pl-2">
             <span className="text-muted-foreground">Delivery Cost:</span>
             <EditableCost
