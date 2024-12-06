@@ -27,7 +27,7 @@ const sendEmail = async (toEmail, subject, htmlContent) => {
   }
 
   const params = {
-    Source: process.env.AWS_SES_SENDER_EMAIL,
+    Source: `"Jara Wheels" <${process.env.AWS_SES_SENDER_EMAIL}>`,
     Destination: {
       ToAddresses: [toEmail],
     },
