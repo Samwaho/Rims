@@ -3,6 +3,7 @@ import crypto from "crypto";
 import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import { generateToken } from "../utils/pesapal.js";
+import { sendOrderConfirmationEmail } from "../utils/sendEmails.js";
 
 const PESAPAL_API_URL = process.env.PESAPAL_API_URL;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -115,6 +116,20 @@ export const initiatePesapalPayment = async (req, res) => {
       { path: "user", select: "username email firstName lastName" },
       { path: "products.product", select: "name price images" },
     ]);
+
+    // Send order confirmation email
+    try {
+      const emailSent = await sendOrderConfirmationEmail(
+        populatedOrder.user.email,
+        populatedOrder
+      );
+
+      if (!emailSent) {
+        console.error("Failed to send order confirmation email");
+      }
+    } catch (emailError) {
+      console.error("Error sending order confirmation email:", emailError);
+    }
 
     res.json({
       redirectUrl: paymentResponse.data.redirect_url,

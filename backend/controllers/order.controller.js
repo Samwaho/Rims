@@ -204,7 +204,7 @@ export const createOrder = async (req, res, next) => {
     });
 
     const populatedOrder = await Order.findById(order._id)
-      .populate("user", "username email")
+      .populate("user", "username email firstName lastName")
       .populate(
         "products.product",
         "name price images shippingCost deliveryTime"
@@ -213,13 +213,17 @@ export const createOrder = async (req, res, next) => {
 
     // Send order confirmation email
     try {
-      await sendOrderConfirmationEmail(
-        populatedOrder.user.email,
+      const userEmail = populatedOrder.user.email;
+      const emailSent = await sendOrderConfirmationEmail(
+        userEmail,
         populatedOrder
       );
+
+      if (!emailSent) {
+        console.error("Failed to send order confirmation email");
+      }
     } catch (emailError) {
-      console.error("Failed to send order confirmation email:", emailError);
-      // Don't throw the error as we don't want to affect the order creation
+      console.error("Error sending order confirmation email:", emailError);
     }
 
     res.status(201).json({

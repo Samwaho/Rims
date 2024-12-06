@@ -132,23 +132,44 @@ export const sendOrderConfirmationEmail = async (
   try {
     let subject, template;
     const formattedPaymentMethod =
-      order.paymentMethod === "mpesa" ? "M-PESA" : "Bank Transfer";
+      order.paymentMethod === "mpesa"
+        ? "M-PESA"
+        : order.paymentMethod === "pesapal"
+        ? "Pesapal"
+        : "Bank Transfer";
+
     const orderLink = `${process.env.FRONTEND_URL}/orders/${order._id}`;
 
-    // Generate order items HTML
+    // Generate order items HTML with more details
     const orderItems = order.products
       .map(
         (item) => `
         <div style="border-bottom: 1px solid #e5e5e5; padding: 12px 0;">
-          <p style="margin: 0; color: #4b5563;">
-            ${item.product.name} x ${item.quantity} - ${new Intl.NumberFormat(
-          "en-KE",
-          {
-            style: "currency",
-            currency: "KES",
-          }
-        ).format(item.product.price * item.quantity)}
-          </p>
+          <div style="display: flex; justify-content: space-between;">
+            <div>
+              <p style="margin: 0; color: #4b5563; font-weight: bold;">
+                ${item.product.name}
+              </p>
+              <p style="margin: 5px 0; color: #6b7280;">
+                Quantity: ${item.quantity}
+              </p>
+              ${
+                item.product.deliveryTime
+                  ? `<p style="margin: 5px 0; color: #6b7280;">
+                      Estimated Delivery: ${item.product.deliveryTime}
+                     </p>`
+                  : ""
+              }
+            </div>
+            <div style="text-align: right;">
+              <p style="margin: 0; color: #4b5563; font-weight: bold;">
+                ${new Intl.NumberFormat("en-KE", {
+                  style: "currency",
+                  currency: "KES",
+                }).format(item.product.price * item.quantity)}
+              </p>
+            </div>
+          </div>
         </div>
       `
       )
@@ -169,7 +190,7 @@ export const sendOrderConfirmationEmail = async (
         template = ORDER_CONFIRMATION_TEMPLATE;
     }
 
-    // Replace template placeholders
+    // Replace template placeholders with enhanced formatting
     const htmlContent = template
       .replace("{orderId}", order._id)
       .replace(
