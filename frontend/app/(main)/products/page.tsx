@@ -310,6 +310,7 @@ const ProductsPage = () => {
                       price: product.price,
                       images: product.images,
                       deliveryTime: product.deliveryTime,
+                      condition: product.condition,
                     }}
                     onAddToCart={() =>
                       addToCartMutation.mutate({

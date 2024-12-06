@@ -149,7 +149,7 @@ export default function ProductDetails({
                 variant="outline"
                 className={`${getConditionBadgeColor(product.condition)}`}
               >
-                {product.condition === "new" ? "New" : "Slightly Used"}
+                {product.condition === "new" ? "New" : "Used"}
               </Badge>
             )}
             <Badge

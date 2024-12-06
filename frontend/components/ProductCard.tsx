@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import { getAuthUser } from "@/lib/actions";
 import { toast } from "sonner";
 import type { Product } from "@/types/product";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductCardProps {
   product: Pick<
@@ -26,6 +27,17 @@ interface ProductCardProps {
   >;
   onAddToCart: () => void;
 }
+
+const getConditionBadgeColor = (condition: string) => {
+  switch (condition?.toLowerCase()) {
+    case "new":
+      return "bg-green-100 text-green-800 border-green-200";
+    case "used":
+      return "bg-amber-100 text-amber-800 border-amber-200";
+    default:
+      return "bg-gray-100 text-gray-800 border-gray-200";
+  }
+};
 
 const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
   const router = useRouter();
@@ -88,14 +100,19 @@ const ProductCardComponent = ({ product, onAddToCart }: ProductCardProps) => {
             <h3 className="text-sm sm:text-base font-bold line-clamp-1 group-hover:text-primary transition-colors duration-300">
               {product.name}
             </h3>
-            <p className="text-sm sm:text-base font-semibold w-full">
-              Size: {product.size}
-            </p>
-            <div className="flex items-center gap-2">
-              {product.condition && (
-                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
-                  {product.condition === "new" ? "New" : "Slightly Used"}
-                </span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <p className="text-sm sm:text-base font-semibold truncate max-w-[130px] whitespace-nowrap">
+                Size: {product.size}
+              </p>
+              {typeof product.condition === "string" && product.condition && (
+                <Badge
+                  variant="outline"
+                  className={`${getConditionBadgeColor(
+                    product.condition
+                  )} shrink-0`}
+                >
+                  {product.condition === "new" ? "New" : "Used"}
+                </Badge>
               )}
             </div>
             {product.madeIn && (
