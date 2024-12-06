@@ -135,6 +135,33 @@ productSchema.methods.calculateAverageRating = function () {
   }
 };
 
+// Add this before creating the model
+productSchema.pre("save", function (next) {
+  if (this.stock < 0) {
+    next(new Error("Product stock cannot be negative"));
+  }
+  next();
+});
+
+// Add this before creating the model
+productSchema.pre("findOneAndUpdate", function (next) {
+  const update = this.getUpdate();
+  if (update.$inc && update.$inc.stock) {
+    // If the update would result in negative stock, prevent it
+    this.model
+      .findOne(this.getQuery())
+      .then((product) => {
+        if (product.stock + update.$inc.stock < 0) {
+          next(new Error("Product stock cannot be negative"));
+        }
+        next();
+      })
+      .catch(next);
+  } else {
+    next();
+  }
+});
+
 const Product = mongoose.model("Product", productSchema);
 
 export default Product;

@@ -24,10 +24,33 @@ const validateProduct = async (product, quantity) => {
   }
 };
 
-const updateProductStock = async (productId, quantity) => {
-  await Product.findByIdAndUpdate(productId, {
-    $inc: { stock: -quantity },
-  });
+export const updateProductStock = async (productId, quantity) => {
+  const product = await Product.findById(productId);
+  if (!product) {
+    throw { status: 404, message: "Product not found" };
+  }
+
+  if (product.stock < quantity) {
+    throw {
+      status: 400,
+      message: `Insufficient stock for product: ${product.name}`,
+    };
+  }
+
+  const updatedProduct = await Product.findByIdAndUpdate(
+    productId,
+    { $inc: { stock: -quantity } },
+    { new: true, runValidators: true }
+  );
+
+  if (updatedProduct.stock < 0) {
+    throw {
+      status: 400,
+      message: `Insufficient stock for product: ${product.name}`,
+    };
+  }
+
+  return updatedProduct;
 };
 
 const calculateOrderTotals = async (
@@ -81,7 +104,12 @@ const processDirectPurchase = async (
     shippingCost: product.shippingCost || 0,
   };
 
-  await updateProductStock(product._id, quantity);
+  // Update stock and handle any errors
+  try {
+    await updateProductStock(product._id, quantity);
+  } catch (error) {
+    throw { status: error.status || 500, message: error.message };
+  }
 
   const subtotal = product.price * quantity;
   const shippingCost = product.shippingCost * quantity;
@@ -114,22 +142,29 @@ const processCartPurchase = async (
     await validateProduct(product, quantity);
   }
 
-  // Process each item
-  for (const item of cart.items) {
-    const { product, quantity } = item;
+  // Process each item and update stock
+  try {
+    for (const item of cart.items) {
+      const { product, quantity } = item;
 
-    subtotal += product.price * quantity;
-    shippingCost += (product.shippingCost || 0) * quantity;
+      // Update stock for each product
+      await updateProductStock(product._id, quantity);
 
-    orderProducts.push({
-      product: product._id,
-      quantity,
-      shippingCost: product.shippingCost || 0,
-    });
+      subtotal += product.price * quantity;
+      shippingCost += (product.shippingCost || 0) * quantity;
 
-    await updateProductStock(product._id, quantity);
+      orderProducts.push({
+        product: product._id,
+        quantity,
+        shippingCost: product.shippingCost || 0,
+      });
+    }
+  } catch (error) {
+    // If any stock update fails, throw the error
+    throw { status: error.status || 500, message: error.message };
   }
 
+  // Clear the cart after successful stock updates
   await Cart.findOneAndUpdate(
     { user: userId },
     { $set: { items: [] } },

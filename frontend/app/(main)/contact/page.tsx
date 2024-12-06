@@ -23,33 +23,8 @@ export default function ContactPage() {
 
           <div className="space-y-4">
             <div>
-              <h3 className="font-semibold mb-1">Address</h3>
-              <p className="text-gray-600">
-                123 Wheel Street
-                <br />
-                AppleWood, Adams Arcade
-              </p>
-            </div>
-
-            <div>
               <h3 className="font-semibold mb-1">Email</h3>
               <p className="text-gray-600">info@jarawheels.com</p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-1">Phone</h3>
-              <p className="text-gray-600">+234 123 456 7890</p>
-            </div>
-
-            <div>
-              <h3 className="font-semibold mb-1">Business Hours</h3>
-              <p className="text-gray-600">
-                Monday - Friday: 9:00 AM - 6:00 PM
-                <br />
-                Saturday: 10:00 AM - 4:00 PM
-                <br />
-                Sunday: Closed
-              </p>
             </div>
           </div>
         </div>

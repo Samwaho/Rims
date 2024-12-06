@@ -4,6 +4,7 @@ import Order from "../models/order.model.js";
 import Product from "../models/product.model.js";
 import { generateToken } from "../utils/pesapal.js";
 import { sendOrderConfirmationEmail } from "../utils/sendEmails.js";
+import { updateProductStock } from "../controllers/order.controller.js";
 
 const PESAPAL_API_URL = process.env.PESAPAL_API_URL;
 const FRONTEND_URL = process.env.FRONTEND_URL;
@@ -161,20 +162,49 @@ export const handlePesapalIPN = async (req, res) => {
 
     const order = await Order.findOne({
       "paymentDetails.pesapalTrackingId": OrderTrackingId,
-    });
+    }).populate("products.product");
 
     if (!order) {
       return res.status(404).json({ error: "Order not found" });
     }
 
     const paymentStatus = statusResponse.data.payment_status_description;
-    order.paymentStatus =
-      paymentStatus.toLowerCase() === "completed" ? "completed" : "pending";
-    order.paymentDetails.status = paymentStatus;
-    order.paymentDetails.verificationResponse = statusResponse.data;
-    order.paymentDetails.verifiedAt = new Date();
+    const isCompleted = paymentStatus.toLowerCase() === "completed";
 
-    await order.save();
+    // Only update stock if payment is completed and order wasn't already completed
+    if (isCompleted && order.paymentStatus !== "completed") {
+      try {
+        // Update stock for all products in the order
+        await Promise.all(
+          order.products.map(async (item) => {
+            await updateProductStock(item.product._id, item.quantity);
+          })
+        );
+
+        // Update order status
+        order.paymentStatus = "completed";
+        order.paymentDetails.status = paymentStatus;
+        order.paymentDetails.verificationResponse = statusResponse.data;
+        order.paymentDetails.verifiedAt = new Date();
+
+        await order.save();
+      } catch (error) {
+        console.error("Failed to update stock:", error);
+        return res.status(500).json({
+          error: "Failed to update stock",
+          message: error.message,
+        });
+      }
+    } else {
+      // Just update payment status if not completed
+      order.paymentStatus = isCompleted ? "completed" : "pending";
+      order.paymentDetails.status = paymentStatus;
+      order.paymentDetails.verificationResponse = statusResponse.data;
+      order.paymentDetails.verifiedAt = new Date();
+
+      await order.save();
+    }
+
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("Pesapal IPN error:", error);
