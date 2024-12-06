@@ -146,7 +146,8 @@ export default function AdminOrders() {
     },
     retry: 1,
     staleTime: STALE_TIME,
-    refetchOnWindowFocus: true,
+    refetchInterval: 30000,
+    refetchOnWindowFocus: false,
     enabled: isAuthChecked,
   });
 
@@ -383,9 +384,15 @@ export default function AdminOrders() {
 
   const PesapalStatusCheck = memo(({ order }: { order: Order }) => {
     const [isChecking, setIsChecking] = useState(false);
+    const [lastChecked, setLastChecked] = useState<Date | null>(null);
 
     const handleCheck = async () => {
       if (!order.paymentDetails?.pesapalTrackingId) return;
+
+      if (lastChecked && Date.now() - lastChecked.getTime() < 10000) {
+        toast.info("Please wait a few seconds before checking again");
+        return;
+      }
 
       setIsChecking(true);
       try {
@@ -393,6 +400,7 @@ export default function AdminOrders() {
           order._id,
           order.paymentDetails.pesapalTrackingId
         );
+        setLastChecked(new Date());
         toast.success("Payment status checked successfully");
       } catch (error) {
         toast.error("Failed to check payment status");
@@ -419,6 +427,7 @@ export default function AdminOrders() {
       </Button>
     );
   });
+  PesapalStatusCheck.displayName = "PesapalStatusCheck";
 
   useEffect(() => {
     const checkPendingPayments = async () => {
@@ -438,11 +447,11 @@ export default function AdminOrders() {
       }
     };
 
-    // Check pending payments every 5 minutes
     const interval = setInterval(checkPendingPayments, 5 * 60 * 1000);
 
-    // Initial check
-    checkPendingPayments();
+    if (orders.some((order) => order.paymentStatus === "pending")) {
+      checkPendingPayments();
+    }
 
     return () => clearInterval(interval);
   }, [orders]);

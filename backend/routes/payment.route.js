@@ -3,7 +3,7 @@ import { ensureAuthenticated, authorize } from "../middleware/middleware.js";
 import {
   initiatePesapalPayment,
   handlePesapalIPN,
-  registerPesapalIPN,
+  getPesapalTransactionStatus,
 } from "../controllers/pesapal.controller.js";
 
 const router = express.Router();
@@ -14,12 +14,12 @@ router.post("/pesapal/initiate", ensureAuthenticated, initiatePesapalPayment);
 // Public route - for Pesapal IPN callbacks
 router.post("/pesapal/ipn", handlePesapalIPN);
 
-// Admin route - for registering IPN URL
-router.post(
-  "/pesapal/register-ipn",
+// Admin route - for checking payment status
+router.get(
+  "/pesapal/status/:trackingId",
   ensureAuthenticated,
   authorize(["admin"]),
-  registerPesapalIPN
+  getPesapalTransactionStatus
 );
 
 export default router;
