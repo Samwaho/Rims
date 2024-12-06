@@ -193,7 +193,7 @@ export const initiatePesapalPayment = async (req, res) => {
       );
     }
 
-    const total = subtotal + shippingCost;
+    const total = subtotal - (orderData.discount?.amount || 0);
 
     const order = await Order.create({
       user: req.user.id,
@@ -207,7 +207,7 @@ export const initiatePesapalPayment = async (req, res) => {
         ipnId: ipnId,
         provider: "pesapal",
         status: "pending",
-        amount: parsedAmount,
+        amount: total,
         currency: "KES",
         description: description,
         customerEmail: orderData.paymentDetails.customerEmail,

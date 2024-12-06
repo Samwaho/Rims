@@ -2,12 +2,7 @@ import Order from "../models/order.model.js";
 import Cart from "../models/cart.model.js";
 import Product from "../models/product.model.js";
 import { errorHandler } from "../utils/error.js";
-import Discount from "../models/discount.model.js";
-import ShippingZone from "../models/shipping.model.js";
-import TaxConfig from "../models/tax.model.js";
-import { calculateShippingCost } from "../controllers/shipping.controller.js";
 import { validateDiscountCode } from "../controllers/discount.controller.js";
-import { getTaxRate } from "../controllers/tax.controller.js";
 import { sendOrderConfirmationEmail } from "../utils/sendEmails.js";
 
 const validateUser = (req) => {
@@ -83,6 +78,7 @@ const processDirectPurchase = async (
   const orderProduct = {
     product: product._id,
     quantity,
+    shippingCost: product.shippingCost || 0,
   };
 
   await updateProductStock(product._id, quantity);
@@ -128,15 +124,12 @@ const processCartPurchase = async (
     orderProducts.push({
       product: product._id,
       quantity,
-      price: product.price,
       shippingCost: product.shippingCost || 0,
     });
 
-    // Update stock
     await updateProductStock(product._id, quantity);
   }
 
-  // Clear the cart after successful processing
   await Cart.findOneAndUpdate(
     { user: userId },
     { $set: { items: [] } },
@@ -176,7 +169,6 @@ export const createOrder = async (req, res, next) => {
 
     let orderData;
     if (productId) {
-      // Handle direct purchase
       orderData = await processDirectPurchase(
         productId,
         quantity,
@@ -184,7 +176,6 @@ export const createOrder = async (req, res, next) => {
         discount?.code
       );
     } else if (products && products.length > 0) {
-      // Handle multiple products from cart
       orderData = await processCartPurchase(
         userId,
         shippingDetails,
@@ -198,13 +189,16 @@ export const createOrder = async (req, res, next) => {
       user: userId,
       products: orderData.orderProducts,
       subtotal: orderData.subtotal,
-      discount: orderData.discount,
+      discount: orderData.discount || 0,
       discountDetails: orderData.discountDetails,
       shippingCost: orderData.shippingCost,
-      total: orderData.total,
+      total: orderData.subtotal - (orderData.discount || 0),
       status: "order_submitted",
       paymentMethod,
-      paymentDetails,
+      paymentDetails: {
+        ...paymentDetails,
+        amount: orderData.subtotal - (orderData.discount || 0),
+      },
       paymentStatus: "pending",
       shippingDetails,
     });

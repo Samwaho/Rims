@@ -16,17 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Phone as PhoneIcon,
-  CreditCard,
   ArrowLeft,
   MapPin,
   Clock,
   Mail,
-  Info,
   Loader2,
   Building,
   Home,
   Truck,
-  Globe,
   Shield,
   Lock,
   User,
@@ -247,7 +244,8 @@ const OrderItem = React.memo(({ item }: { item: CheckoutItem }) => (
         {formatPrice(item.product.price * item.quantity)}
       </span>
       <p className="text-xs text-gray-500">
-        + {formatPrice(item.product.shippingCost * item.quantity)} shipping
+        (Includes {formatPrice(item.product.shippingCost * item.quantity)}{" "}
+        shipping)
       </p>
     </div>
   </div>
@@ -308,6 +306,7 @@ export default function CheckoutPage() {
     firstName: string;
     lastName: string;
   } | null>(null);
+  const [isRestoringSession, setIsRestoringSession] = useState(false);
 
   // Queries
   const { data: items = [], isLoading } = useQuery<CheckoutItem[]>({
@@ -399,7 +398,7 @@ export default function CheckoutPage() {
         contactNumber: form.getValues("shippingDetails.contactNumber"),
       };
 
-      // Calculate order totals
+      // Calculate order totals - shipping is already included in product price
       const orderSubtotal = items.reduce(
         (total, item) => total + item.product.price * item.quantity,
         0
@@ -412,42 +411,50 @@ export default function CheckoutPage() {
         0
       );
 
+      // Total is just subtotal minus discount (shipping already included)
       const orderTotal = orderSubtotal - (discountAmount || 0);
 
-      // Prepare the order data
+      // Prepare the order data with required Pesapal fields
       const orderData = {
-        ...(productId ? { productId, quantity: 1 } : {}),
-        products: items.map((item) => ({
-          product: item.product._id,
-          quantity: item.quantity,
-          price: item.product.price,
-          shippingCost: item.product.shippingCost || 0,
-        })),
-        paymentMethod: "pesapal",
-        paymentDetails: {
-          provider: "pesapal",
-          status: "pending",
-          customerEmail: userDetails.email,
-          customerName:
-            `${userDetails.firstName} ${userDetails.lastName}`.trim(),
+        amount: orderTotal, // This is the final amount including shipping
+        description: `Order for ${items
+          .map((item) => item.product.name)
+          .join(", ")}`,
+        email: userDetails.email,
+        orderData: {
+          ...(productId ? { productId, quantity: 1 } : {}),
+          products: items.map((item) => ({
+            product: item.product._id,
+            quantity: item.quantity,
+            price: item.product.price, // Price already includes shipping
+            shippingCost: item.product.shippingCost || 0,
+          })),
+          paymentMethod: "pesapal",
+          paymentDetails: {
+            provider: "pesapal",
+            status: "pending",
+            customerEmail: userDetails.email,
+            customerName:
+              `${userDetails.firstName} ${userDetails.lastName}`.trim(),
+          },
+          shippingDetails,
+          subtotal: orderSubtotal,
+          shippingCost: orderShippingCost, // Store shipping cost for reference
+          total: orderTotal, // Total with shipping already included
+          discount: appliedDiscount
+            ? {
+                code: appliedDiscount.code,
+                type: appliedDiscount.type,
+                value: appliedDiscount.value,
+                amount: discountAmount,
+              }
+            : null,
         },
-        shippingDetails,
-        subtotal: orderSubtotal,
-        shippingCost: orderShippingCost, // Store shipping cost for reference
-        total: orderTotal, // Total without adding shipping (it's already in product prices)
-        discount: appliedDiscount
-          ? {
-              code: appliedDiscount.code,
-              type: appliedDiscount.type,
-              value: appliedDiscount.value,
-              amount: discountAmount,
-            }
-          : null,
       };
 
-      // First initiate Pesapal payment
+      // Initiate Pesapal payment
       const pesapalResponse = await axios.post(
-        `${BACKEND_URL}/api/payments/pesapal/initiate`,
+        `${process.env.NEXT_PUBLIC_BACKEND_URL}/api/payments/pesapal/initiate`,
         orderData,
         await axiosHeaders()
       );
@@ -462,7 +469,7 @@ export default function CheckoutPage() {
         JSON.stringify({
           trackingId: pesapalResponse.data.trackingId,
           orderId: pesapalResponse.data.order._id,
-          amount: orderTotal, // Store the total without additional shipping
+          amount: orderTotal,
         })
       );
 
@@ -692,27 +699,59 @@ export default function CheckoutPage() {
     const status = searchParams.get("pesapal_status");
     const pendingOrder = localStorage.getItem("pendingOrder");
 
-    if (status && pendingOrder) {
+    if (status) {
+      setIsRestoringSession(true);
       try {
-        const orderDetails = JSON.parse(pendingOrder);
+        const orderDetails = pendingOrder ? JSON.parse(pendingOrder) : null;
 
         // Clear the pending order from storage
         localStorage.removeItem("pendingOrder");
 
-        // Redirect to order details page
-        router.push(`/orders/${orderDetails.orderId}`);
-
-        // Show appropriate toast message
         if (status.toLowerCase() === "completed") {
-          toast.success("Payment successful! Your order has been confirmed.");
+          // Handle successful payment
+          if (orderDetails?.orderId) {
+            router.push(`/orders/${orderDetails.orderId}`);
+            toast.success("Payment successful! Your order has been confirmed.");
+          } else {
+            router.push("/orders");
+            toast.success("Payment completed successfully!");
+          }
+        } else if (status.toLowerCase() === "cancelled") {
+          // Handle cancelled payment
+          toast.error(
+            "Payment was cancelled. You can try again or choose a different payment method.",
+            {
+              duration: 5000,
+            }
+          );
+
+          if (orderDetails) {
+            setShowConfirmation(false);
+            setCheckoutStep(2); // Go back to payment step
+
+            // Restore form data if available
+            if (orderDetails.shippingDetails) {
+              form.reset(orderDetails.shippingDetails);
+            }
+          } else {
+            // If no order details, go back to cart
+            router.push("/cart");
+          }
         } else {
+          // Handle other status
           toast.error("Payment was not completed. Please try again.");
+          setShowConfirmation(false);
+          setCheckoutStep(2);
         }
       } catch (error) {
         console.error("Error handling payment redirect:", error);
+        toast.error("Something went wrong. Please try again.");
+        router.push("/cart");
+      } finally {
+        setIsRestoringSession(false);
       }
     }
-  }, [searchParams, router]);
+  }, [searchParams, router, form]);
 
   // Add effect to fetch user details
   useEffect(() => {
@@ -726,10 +765,17 @@ export default function CheckoutPage() {
     fetchUserDetails();
   }, []);
 
-  if (isLoading || !userDetails) {
+  if (isLoading || !userDetails || isRestoringSession) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50/50">
-        <Loader2 className="h-10 w-10 sm:h-14 sm:w-14 animate-spin text-primary" />
+        <div className="text-center">
+          <Loader2 className="h-10 w-10 sm:h-14 sm:w-14 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-sm text-gray-600">
+            {isRestoringSession
+              ? "Restoring your checkout session..."
+              : "Loading..."}
+          </p>
+        </div>
       </div>
     );
   }
@@ -777,41 +823,32 @@ export default function CheckoutPage() {
                   <Separator className="my-4 sm:my-6" />
 
                   {/* Price Breakdown */}
-                  <div className="space-y-3 pt-2">
-                    <div className="flex justify-between text-gray-700 text-sm">
-                      <span>Subtotal (Items)</span>
+                  <div className="border-t pt-4 mt-6 space-y-3">
+                    <div className="flex justify-between text-gray-600">
+                      <span>Subtotal</span>
                       <div className="text-right">
                         <span className="font-medium">
                           {formatPrice(subtotal)}
                         </span>
-                        <div className="text-xs text-gray-500 mt-0.5">
-                          All prices are for 4 pieces per item
+                        <div className="text-xs text-gray-500">
+                          Includes shipping cost
                         </div>
                       </div>
                     </div>
-                    <div className="flex justify-between text-gray-700 text-sm">
-                      <div className="flex items-center gap-2">
-                        <Truck className="w-4 h-4" />
-                        <span>Shipping Cost (Already included in price)</span>
-                      </div>
-                      <span className="font-medium text-gray-500">
-                        {formatPrice(shippingCosts)}
-                      </span>
-                    </div>
                     {appliedDiscount && (
-                      <div className="flex justify-between text-green-600 text-sm">
-                        <span>Discount ({appliedDiscount.code})</span>
-                        <span className="font-medium">
-                          -{formatPrice(discountAmount)}
-                        </span>
+                      <div className="flex justify-between text-green-600">
+                        <span>Discount</span>
+                        <span>-{formatPrice(discountAmount)}</span>
                       </div>
                     )}
-                    <div className="flex justify-between font-bold text-lg text-gray-900">
+                    <div className="flex justify-between font-bold text-lg pt-3 border-t">
                       <span>Total</span>
                       <div className="text-right">
-                        <span>{formatPrice(totalPrice)}</span>
+                        <span className="text-primary">
+                          {formatPrice(totalPrice)}
+                        </span>
                         <div className="text-xs font-normal text-gray-500">
-                          Shipping cost already included in price
+                          Shipping cost included in price
                         </div>
                       </div>
                     </div>
