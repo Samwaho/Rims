@@ -1009,157 +1009,165 @@ export default function CheckoutPage() {
 
         {/* Order Confirmation Dialog */}
         <AlertDialog open={showConfirmation} onOpenChange={setShowConfirmation}>
-          <AlertDialogContent className="max-w-md bg-white">
-            <AlertDialogHeader>
-              <AlertDialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
-                <Image
-                  src="/pesapal-logo.png"
-                  alt="Pesapal"
-                  width={24}
-                  height={24}
-                  className="object-contain"
-                />
-                Confirm Your Order
-              </AlertDialogTitle>
-              <AlertDialogDescription className="text-sm text-gray-600 mt-2">
-                You're about to place an order for{" "}
-                <span className="font-medium text-green-600">
-                  {formatPrice(totalPrice)}
-                </span>
-                . You'll be redirected to Pesapal's secure payment platform to
-                complete your purchase.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
+          <AlertDialogContent className="max-w-md bg-white max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white pt-6 pb-2 z-10 border-b">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2 text-xl font-semibold text-gray-900">
+                  <Image
+                    src="/pesapal-logo.png"
+                    alt="Pesapal"
+                    width={24}
+                    height={24}
+                    className="object-contain"
+                  />
+                  Confirm Your Order
+                </AlertDialogTitle>
+                <AlertDialogDescription className="text-sm text-gray-600 mt-2">
+                  You're about to place an order for{" "}
+                  <span className="font-medium text-green-600">
+                    {formatPrice(totalPrice)}
+                  </span>
+                  . You'll be redirected to Pesapal's secure payment platform to
+                  complete your purchase.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+            </div>
 
-            {/* Order Summary Section */}
-            <div className="space-y-4 my-6">
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                <h4 className="font-medium text-gray-900 mb-3">
-                  Order Summary
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Items:</span>
-                    <span className="font-medium text-gray-900">
-                      {items.length}
-                    </span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal:</span>
-                    <span className="font-medium text-gray-900">
-                      {formatPrice(subtotal)}
-                    </span>
-                  </div>
-                  {appliedDiscount && (
+            <div className="py-4">
+              {/* Order Summary Section */}
+              <div className="space-y-4 mb-6">
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Order Summary
+                  </h4>
+                  <div className="space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-green-600">Discount:</span>
-                      <span className="font-medium text-green-600">
-                        -{formatPrice(discountAmount)}
+                      <span className="text-gray-600">Items:</span>
+                      <span className="font-medium text-gray-900">
+                        {items.length}
                       </span>
                     </div>
-                  )}
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Shipping:</span>
-                    <span className="font-medium text-gray-900">
-                      {formatPrice(shippingCost)}
-                    </span>
-                  </div>
-                  <div className="pt-2 mt-2 border-t border-gray-200">
-                    <div className="flex justify-between">
-                      <span className="font-medium text-gray-900">Total:</span>
-                      <span className="font-bold text-primary">
-                        {formatPrice(totalPrice)}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Subtotal:</span>
+                      <span className="font-medium text-gray-900">
+                        {formatPrice(subtotal)}
                       </span>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Shipping Details Preview */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                <h4 className="font-medium text-gray-900 mb-3">
-                  Delivery Details
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                    <div className="text-gray-600">
-                      {form.getValues("shippingDetails.estateName")},{" "}
-                      {form.getValues("shippingDetails.roadName")},{" "}
-                      {form.getValues("shippingDetails.city")}
+                    {appliedDiscount && (
+                      <div className="flex justify-between text-sm">
+                        <span className="text-green-600">Discount:</span>
+                        <span className="font-medium text-green-600">
+                          -{formatPrice(discountAmount)}
+                        </span>
+                      </div>
+                    )}
+                    <div className="flex justify-between text-sm">
+                      <span className="text-gray-600">Shipping:</span>
+                      <span className="font-medium text-gray-900">
+                        {formatPrice(shippingCost)}
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <PhoneIcon className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                    <div className="text-gray-600">
-                      {form.getValues("shippingDetails.contactNumber")}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Customer Details */}
-              <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-                <h4 className="font-medium text-gray-900 mb-3">
-                  Customer Details
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-start gap-2">
-                    <Mail className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                    <div className="text-gray-600">{userDetails?.email}</div>
-                  </div>
-                  {(userDetails?.firstName || userDetails?.lastName) && (
-                    <div className="flex items-start gap-2">
-                      <User className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
-                      <div className="text-gray-600">
-                        {`${userDetails?.firstName} ${userDetails?.lastName}`.trim()}
+                    <div className="pt-2 mt-2 border-t border-gray-200">
+                      <div className="flex justify-between">
+                        <span className="font-medium text-gray-900">
+                          Total:
+                        </span>
+                        <span className="font-bold text-primary">
+                          {formatPrice(totalPrice)}
+                        </span>
                       </div>
                     </div>
-                  )}
+                  </div>
                 </div>
+
+                {/* Shipping Details Preview */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Delivery Details
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div className="text-gray-600">
+                        {form.getValues("shippingDetails.estateName")},{" "}
+                        {form.getValues("shippingDetails.roadName")},{" "}
+                        {form.getValues("shippingDetails.city")}
+                      </div>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <PhoneIcon className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div className="text-gray-600">
+                        {form.getValues("shippingDetails.contactNumber")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Customer Details */}
+                <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+                  <h4 className="font-medium text-gray-900 mb-3">
+                    Customer Details
+                  </h4>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-start gap-2">
+                      <Mail className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                      <div className="text-gray-600">{userDetails?.email}</div>
+                    </div>
+                    {(userDetails?.firstName || userDetails?.lastName) && (
+                      <div className="flex items-start gap-2">
+                        <User className="w-4 h-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                        <div className="text-gray-600">
+                          {`${userDetails?.firstName} ${userDetails?.lastName}`.trim()}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Security Notice */}
+              <div className="flex items-center gap-2 bg-green-50 p-3 rounded-lg mb-6">
+                <Lock className="w-4 h-4 text-green-600 flex-shrink-0" />
+                <p className="text-xs text-gray-600">
+                  Your payment will be securely processed by Pesapal
+                </p>
               </div>
             </div>
 
-            {/* Security Notice */}
-            <div className="flex items-center gap-2 bg-green-50 p-3 rounded-lg mb-6">
-              <Lock className="w-4 h-4 text-green-600 flex-shrink-0" />
-              <p className="text-xs text-gray-600">
-                Your payment will be securely processed by Pesapal
-              </p>
+            <div className="sticky bottom-0 bg-white pt-2 pb-6 border-t">
+              <AlertDialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowConfirmation(false)}
+                  className="border-gray-200 hover:bg-gray-50 text-gray-600"
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => createOrderMutation.mutate()}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                  disabled={createOrderMutation.isPending}
+                >
+                  {createOrderMutation.isPending ? (
+                    <div className="flex items-center gap-2">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Processing...
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Image
+                        src="/pesapal-logo.png"
+                        alt="Pesapal"
+                        width={16}
+                        height={16}
+                        className="object-contain"
+                      />
+                      Proceed to Payment
+                    </div>
+                  )}
+                </Button>
+              </AlertDialogFooter>
             </div>
-
-            <AlertDialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setShowConfirmation(false)}
-                className="border-gray-200 hover:bg-gray-50 text-gray-600"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={() => createOrderMutation.mutate()}
-                className="bg-green-600 hover:bg-green-700 text-white"
-                disabled={createOrderMutation.isPending}
-              >
-                {createOrderMutation.isPending ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Processing...
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Image
-                      src="/pesapal-logo.png"
-                      alt="Pesapal"
-                      width={16}
-                      height={16}
-                      className="object-contain"
-                    />
-                    Proceed to Payment
-                  </div>
-                )}
-              </Button>
-            </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
       </div>
