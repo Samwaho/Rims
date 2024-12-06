@@ -6,6 +6,7 @@ import Navbar from "@/components/navbar/page";
 import TanstackProvider from "@/providers/TanstackProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import Script from "next/script";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -44,6 +45,19 @@ export default function RootLayout({
           />
         </TanstackProvider>
         <GoogleAnalytics gaId={googleAnalyticsId} />
+        <Script strategy="lazyOnload">
+          {`
+            var Tawk_API=Tawk_API||{}, Tawk_LoadStart=new Date();
+            (function(){
+              var s1=document.createElement("script"),s0=document.getElementsByTagName("script")[0];
+              s1.async=true;
+              s1.src='https://embed.tawk.to/67527ba24304e3196aed2448/1ied35t54';
+              s1.charset='UTF-8';
+              s1.setAttribute('crossorigin','*');
+              s0.parentNode.insertBefore(s1,s0);
+            })();
+          `}
+        </Script>
       </body>
     </html>
   );
