@@ -160,6 +160,34 @@ const ProductsPage = () => {
     }));
   };
 
+  const showTiresComingSoon = filters.category.includes("tyres");
+
+  if (showTiresComingSoon) {
+    return (
+      <div className="min-h-screen bg-gray-50 py-12">
+        <div className="container mx-auto px-4">
+          <div className="text-center py-16 bg-white rounded-lg shadow-sm">
+            <PackageSearch className="mx-auto h-16 w-16 text-gray-400 mb-4" />
+            <h3 className="text-2xl font-semibold text-gray-900 mb-4">
+              Tyres Coming Soon!
+            </h3>
+            <p className="text-gray-500 mb-6">
+              We're working on bringing you a great selection of tyres. Please
+              check back later!
+            </p>
+            <Button
+              variant="outline"
+              onClick={handleClearFilters}
+              className="hover:bg-primary hover:text-white transition-colors"
+            >
+              View Other Products
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (error) {
     return (
       <div className="container mx-auto px-4 py-8">
