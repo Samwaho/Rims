@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
-import Footer from "@/components/footer/page";
-import Navbar from "@/components/navbar/page";
 import TanstackProvider from "@/providers/TanstackProvider";
 import { Toaster } from "@/components/ui/sonner";
 import { GoogleAnalytics } from "@next/third-parties/google";
@@ -58,6 +56,7 @@ export default function RootLayout({
             })();
           `}
         </Script>
+        
       </body>
     </html>
   );
