@@ -24,6 +24,12 @@ const nextConfig = {
   compress: true,
   reactStrictMode: true,
   swcMinify: true,
+  // Add this configuration for Server Actions
+  experimental: {
+    serverActions: {
+      allowedOrigins: ['localhost', 'w06z1rvh-80.inc1.devtunnels.ms'],
+    },
+  },
 };
 
 export default withSentryConfig(nextConfig, {

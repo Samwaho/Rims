@@ -5,7 +5,6 @@ services:
     image: nginx:alpine
     ports:
       - "80:80"
-      - "443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
@@ -17,6 +16,10 @@ services:
     networks:
       - app-network
     restart: unless-stopped
+    # Added for development
+    environment:
+      - DEV_MODE=true
+      - DEV_TUNNEL_URL=https://w06z1rvh-80.inc1.devtunnels.ms
 
   certbot:
     image: certbot/certbot:latest
@@ -28,6 +31,8 @@ services:
     networks:
       - app-network
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    # Only run in production
+    profiles: ["production"]
 
   frontend:
     build:
@@ -37,14 +42,12 @@ services:
       - "3000"
     environment:
       - NODE_ENV=production
-      - NEXT_PUBLIC_API_URL=https://jarawheels.com/api
-      - NEXT_PUBLIC_HOSTNAME=jarawheels.com
-      - NEXTAUTH_URL=https://jarawheels.com
-      - NEXT_PUBLIC_BASE_URL=https://jarawheels.com
+      - NEXT_PUBLIC_API_URL=https://w06z1rvh-80.inc1.devtunnels.ms/api
+      - NEXT_PUBLIC_HOSTNAME=w06z1rvh-80.inc1.devtunnels.ms
+      - NEXTAUTH_URL=https://w06z1rvh-80.inc1.devtunnels.ms
+      - NEXT_PUBLIC_BASE_URL=https://w06z1rvh-80.inc1.devtunnels.ms
     env_file:
       - ./frontend/.env
-    depends_on:
-      - backend
     networks:
       - app-network
     restart: unless-stopped
@@ -57,6 +60,7 @@ services:
       - "5000"
     environment:
       - NODE_ENV=production
+      - FRONTEND_URL=https://w06z1rvh-80.inc1.devtunnels.ms
     env_file:
       - ./backend/.env
     networks:
