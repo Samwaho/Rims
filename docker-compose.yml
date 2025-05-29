@@ -1,8 +1,8 @@
-version: "3.8"
+version: '3.8'
 
 services:
   nginx:
-    image: nginx:stable-alpine
+    image: nginx:alpine
     ports:
       - "80:80"
       - "443:443"
@@ -11,18 +11,19 @@ services:
       - ./nginx/conf.d:/etc/nginx/conf.d:ro
       - ./certbot/conf:/etc/letsencrypt:rw
       - ./certbot/www:/var/www/certbot:rw
-      - ./nginx/certs:/etc/nginx/certs:ro
     depends_on:
       - frontend
       - backend
     networks:
       - app-network
     restart: unless-stopped
-    environment:
-      - DEV_MODE=false
+    # Added for development
+    # environment:
+    #   - DEV_MODE=true
+    #   - DEV_TUNNEL_URL=https://w06z1rvh-80.inc1.devtunnels.ms
 
   certbot:
-    image: certbot/certbot:v1.38.0
+    image: certbot/certbot:latest
     volumes:
       - ./certbot/conf:/etc/letsencrypt:rw
       - ./certbot/www:/var/www/certbot:rw
@@ -31,6 +32,8 @@ services:
     networks:
       - app-network
     entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew; sleep 12h & wait $${!}; done;'"
+    # Only run in production
+    profiles: ["production"]
 
   frontend:
     build:
