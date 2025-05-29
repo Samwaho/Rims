@@ -1,4 +1,4 @@
-import { SESClient, SendEmailCommand } from "@aws-sdk/client-ses";
+import { MailtrapClient } from "mailtrap";
 import dotenv from "dotenv";
 import {
   PASSWORD_RESET_REQUEST_TEMPLATE,
@@ -11,51 +11,27 @@ import {
 
 dotenv.config();
 
-// Initialize SES client
-const sesClient = new SESClient({
-  region: process.env.AWS_REGION,
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-  },
-});
+// Initialize Mailtrap client
+const client = new MailtrapClient({ token: process.env.MAILTRAP_API_TOKEN });
+const sender = {
+  email: process.env.MAILTRAP_SENDER_EMAIL || "info@jarawheels.com",
+  name: "Jara Wheels",
+};
 
 const sendEmail = async (toEmail, subject, htmlContent) => {
-  // Add verification check in sandbox mode
-  if (process.env.NODE_ENV !== "production") {
-    console.log("Running in sandbox mode - verifying emails are allowed");
-  }
-
-  const params = {
-    Source: `"Jara Wheels" <${process.env.AWS_SES_SENDER_EMAIL}>`,
-    Destination: {
-      ToAddresses: [toEmail],
-    },
-    Message: {
-      Subject: {
-        Data: subject,
-        Charset: "UTF-8",
-      },
-      Body: {
-        Html: {
-          Data: htmlContent,
-          Charset: "UTF-8",
-        },
-      },
-    },
-  };
-
   try {
-    const command = new SendEmailCommand(params);
-    const response = await sesClient.send(command);
-    console.log("Email sent successfully:", response.MessageId);
-    return { success: true, messageId: response.MessageId };
+    const response = await client.send({
+      from: sender,
+      to: [{ email: toEmail }],
+      subject: subject,
+      html: htmlContent,
+    });
+    
+    console.log("Email sent successfully:", response.message_ids);
+    return { success: true, messageId: response.message_ids[0] };
   } catch (error) {
-    console.error("SES Error:", {
+    console.error("Mailtrap Error:", {
       message: error.message,
-      code: error.Code,
-      type: error.$metadata?.httpStatusCode,
-      requestId: error.$metadata?.requestId,
       stack: error.stack,
     });
     return { success: false, error };

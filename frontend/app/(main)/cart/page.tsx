@@ -40,6 +40,7 @@ interface CartItem {
     name: string;
     price: number;
     images: string[];
+    shippingCost: number;
   };
   quantity: number;
 }
@@ -196,10 +197,12 @@ CartItem.displayName = "CartItem";
 const OrderSummary = memo(
   ({
     totalPrice,
+    shippingCost,
     onCheckout,
     isLoading,
   }: {
     totalPrice: number;
+    shippingCost: number;
     onCheckout: () => void;
     isLoading: boolean;
   }) => (
@@ -217,7 +220,7 @@ const OrderSummary = memo(
         </div>
         <div className="flex justify-between text-gray-700 text-lg">
           <span>Shipping</span>
-          <span className="font-medium">Free</span>
+          <span className="font-medium">{formatPrice(shippingCost)}</span>
         </div>
         <div className="border-t pt-4 flex justify-between font-bold text-xl">
           <span>Total</span>
@@ -373,6 +376,12 @@ const CartPage = () => {
     0
   );
 
+  const shippingCost = cartItems.reduce(
+    (total, item) =>
+      total + (item.product.shippingCost || 0) * (quantities[item._id] || item.quantity),
+    0
+  );
+
   if (isLoading) {
     return (
       <div className="container mx-auto px-6 py-12 max-w-6xl">
@@ -442,6 +451,7 @@ const CartPage = () => {
             <div className="lg:col-span-1">
               <OrderSummary
                 totalPrice={totalPrice}
+                shippingCost={shippingCost}
                 onCheckout={() => router.push("/checkout")}
                 isLoading={
                   updateCartMutation.isPending || removeItemMutation.isPending
