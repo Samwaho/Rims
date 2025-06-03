@@ -73,6 +73,7 @@ const calculateOrderTotals = async (
         code: discountCode,
         type: discountResult.type,
         value: discountResult.value,
+        amount: discountAmount
       };
     } catch (error) {
       console.error("Discount validation error:", error);

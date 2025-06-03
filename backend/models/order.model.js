@@ -43,6 +43,7 @@ const orderSchema = new mongoose.Schema(
         enum: ["percentage", "fixed"],
       },
       value: Number,
+      amount: Number
     },
     shippingCost: {
       type: Number,
