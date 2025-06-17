@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import Product from "../models/product.model.js";
 
-// Load environment variables
-dotenv.config();
+// Get the directory of the current script
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from the backend directory
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // KES to USD conversion rate (update this with current rate)
 // As of recent rates: 1 USD ≈ 130-140 KES

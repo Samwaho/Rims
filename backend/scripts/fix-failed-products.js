@@ -1,9 +1,15 @@
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import path from "path";
+import { fileURLToPath } from "url";
 import Product from "../models/product.model.js";
 
-// Load environment variables
-dotenv.config();
+// Get the directory of the current script
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Load environment variables from the backend directory
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 // KES to USD conversion rate (same as main migration)
 const KES_TO_USD_RATE = 1 / 135;
@@ -11,7 +17,15 @@ const KES_TO_USD_RATE = 1 / 135;
 // Connect to MongoDB
 async function connectToDatabase() {
   try {
-    await mongoose.connect(process.env.MONGODB_URI);
+    const mongoUri = process.env.MONGODB_URI;
+    if (!mongoUri) {
+      console.error("❌ MONGODB_URI environment variable is not set");
+      console.log("Make sure you have a .env file in the backend directory with MONGODB_URI");
+      process.exit(1);
+    }
+
+    console.log("🔌 Connecting to MongoDB...");
+    await mongoose.connect(mongoUri);
     console.log("✅ Connected to MongoDB successfully!");
   } catch (error) {
     console.error("❌ Failed to connect to MongoDB:", error.message);
