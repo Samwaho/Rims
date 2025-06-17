@@ -6,12 +6,12 @@ import { z } from "zod";
 export const cn = (...inputs: ClassValue[]) => twMerge(clsx(inputs));
 
 // Cached formatters for better performance
-const priceFormatter = new Intl.NumberFormat("en-KE", {
+const priceFormatter = new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "KES",
+  currency: "USD",
 });
 
-const dateFormatter = new Intl.DateTimeFormat("en-KE", {
+const dateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "long",
   day: "numeric",
@@ -19,9 +19,9 @@ const dateFormatter = new Intl.DateTimeFormat("en-KE", {
   minute: "2-digit",
 });
 
-const numberFormatter = new Intl.NumberFormat("en-KE");
+const numberFormatter = new Intl.NumberFormat("en-US");
 
-const percentFormatter = new Intl.NumberFormat("en-KE", {
+const percentFormatter = new Intl.NumberFormat("en-US", {
   style: "percent",
   minimumFractionDigits: 2,
   maximumFractionDigits: 2,
@@ -52,7 +52,7 @@ export const formatCurrency = (currency: string, amount: number) => {
   if (!currencyFormatters.has(currency)) {
     currencyFormatters.set(
       currency,
-      new Intl.NumberFormat("en-KE", { style: "currency", currency })
+      new Intl.NumberFormat("en-US", { style: "currency", currency })
     );
   }
   return currencyFormatters.get(currency)!.format(amount);

@@ -25,7 +25,7 @@ export default function AboutPage() {
 
           <h2 className="text-2xl font-semibold mb-4">Our Story</h2>
           <p className="mb-4">
-            Founded in [year], Jara Wheels has been at the forefront of
+            Founded in 2024, Jara Wheels has been at the forefront of
             providing high-quality wheels and tyres to car enthusiasts and
             everyday drivers alike. Our journey began with a simple mission: to
             make premium automotive products accessible to everyone.
