@@ -4,6 +4,7 @@ import Product from "../models/product.model.js";
 import { errorHandler } from "../utils/error.js";
 import { validateDiscountCode } from "../controllers/discount.controller.js";
 import { sendOrderConfirmationEmail } from "../utils/sendEmails.js";
+import { isValidCountryCode, formatPhoneNumber, validatePhoneNumber } from "../utils/countries.js";
 
 const validateUser = (req) => {
   if (!req.user?.id) {
@@ -192,16 +193,32 @@ export const createOrder = async (req, res, next) => {
       shippingDetails,
     } = req.body;
 
+    // Validate shipping details
     if (
+      !shippingDetails?.addressLine1 ||
       !shippingDetails?.city ||
-      !shippingDetails?.subCounty ||
-      !shippingDetails?.estateName ||
-      !shippingDetails?.roadName ||
-      !shippingDetails?.houseNumber ||
+      !shippingDetails?.state ||
+      !shippingDetails?.postalCode ||
+      !shippingDetails?.country ||
+      !shippingDetails?.countryCode ||
       !shippingDetails?.contactNumber
     ) {
-      throw { status: 400, message: "Required shipping details are missing" };
+      throw {
+        status: 400,
+        message: "Required shipping details are missing. Please provide complete address information."
+      };
     }
+
+    // Validate country code
+    if (!isValidCountryCode(shippingDetails.countryCode)) {
+      throw { status: 400, message: "Invalid country code" };
+    }
+
+    // Format phone number based on country code
+    shippingDetails.contactNumber = formatPhoneNumber(
+      shippingDetails.contactNumber,
+      shippingDetails.countryCode
+    );
 
     let orderData;
     if (productId) {

@@ -49,7 +49,7 @@ export const initiatePesapalPayment = async (req, res) => {
       `${PESAPAL_API_URL}/api/Transactions/SubmitOrderRequest`,
       {
         id: crypto.randomUUID(),
-        currency: "KES",
+        currency: "USD",
         amount: parseFloat(amount),
         description,
         callback_url: `${FRONTEND_URL}/checkout?pesapal_status=completed`,
@@ -57,14 +57,16 @@ export const initiatePesapalPayment = async (req, res) => {
         billing_address: {
           email_address: orderData.paymentDetails?.customerEmail || email,
           phone_number: orderData.shippingDetails?.contactNumber || null,
-          country_code: "KE",
+          country_code: orderData.shippingDetails?.countryCode || "US",
           first_name:
             orderData.paymentDetails?.customerName?.split(" ")[0] || "",
           last_name:
             orderData.paymentDetails?.customerName?.split(" ")[1] || "",
-          line_1: orderData.shippingDetails?.roadName || "",
+          line_1: orderData.shippingDetails?.addressLine1 || "",
+          line_2: orderData.shippingDetails?.addressLine2 || "",
           city: orderData.shippingDetails?.city || "",
-          state: orderData.shippingDetails?.subCounty || "",
+          state: orderData.shippingDetails?.state || "",
+          zip: orderData.shippingDetails?.postalCode || "",
         },
         cancellation_url: `${FRONTEND_URL}/checkout?pesapal_status=cancelled`,
       },

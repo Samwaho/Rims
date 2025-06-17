@@ -84,26 +84,30 @@ const orderSchema = new mongoose.Schema(
       pesapalTrackingId: String,
     },
     shippingDetails: {
+      addressLine1: {
+        type: String,
+        required: true,
+      },
+      addressLine2: {
+        type: String,
+      },
       city: {
         type: String,
         required: true,
       },
-      subCounty: {
+      state: {
         type: String,
         required: true,
       },
-      estateName: {
+      postalCode: {
         type: String,
         required: true,
       },
-      roadName: {
+      country: {
         type: String,
         required: true,
       },
-      apartmentName: {
-        type: String,
-      },
-      houseNumber: {
+      countryCode: {
         type: String,
         required: true,
       },

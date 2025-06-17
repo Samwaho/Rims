@@ -347,7 +347,7 @@ export const ProductForm = memo(function ProductForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">
-                    Buying Price (KES) *
+                    Buying Price (USD) *
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -384,7 +384,7 @@ export const ProductForm = memo(function ProductForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">
-                    Selling Price (KES) *
+                    Selling Price (USD) *
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -538,7 +538,7 @@ export const ProductForm = memo(function ProductForm({
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">
-                    Shipping Cost (KES) *
+                    Shipping Cost (USD) *
                   </FormLabel>
                   <FormControl>
                     <Input

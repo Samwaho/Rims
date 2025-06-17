@@ -51,12 +51,13 @@ interface Order {
   paymentStatus: "pending" | "completed" | "failed" | "refunded";
   paymentDetails?: any;
   shippingDetails: {
+    addressLine1: string;
+    addressLine2?: string;
     city: string;
-    subCounty: string;
-    estateName: string;
-    roadName: string;
-    apartmentName?: string;
-    houseNumber: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    countryCode: string;
     contactNumber: string;
   };
   statusHistory?: Array<{
@@ -180,14 +181,11 @@ const OrderCard = memo(({ order }: { order: Order }) => {
                 <div className="space-y-0.5">
                   <div className="text-gray-500 flex items-start gap-1">
                     <span className="font-medium">Delivery to:</span>
-                    {order.shippingDetails.estateName},{" "}
-                    {order.shippingDetails.roadName},{" "}
-                    {order.shippingDetails.city}
+                    {order.shippingDetails.addressLine1}, {order.shippingDetails.city}, {order.shippingDetails.state}, {order.shippingDetails.country}
                   </div>
-                  {order.shippingDetails.apartmentName && (
+                  {order.shippingDetails.addressLine2 && (
                     <div className="text-gray-500 pl-[72px]">
-                      {order.shippingDetails.apartmentName}, Unit{" "}
-                      {order.shippingDetails.houseNumber}
+                      {order.shippingDetails.addressLine2}
                     </div>
                   )}
                 </div>

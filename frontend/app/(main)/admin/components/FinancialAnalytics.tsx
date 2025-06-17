@@ -147,10 +147,10 @@ const formatChartDate = (dateStr: string, timeframe: string) => {
 };
 
 const formatYAxisTick = (value: number) => {
-  if (value === 0) return "KSh 0";
-  if (value >= 1000000) return `KSh ${(value / 1000000).toFixed(1)}M`;
-  if (value >= 1000) return `KSh ${(value / 1000).toFixed(1)}K`;
-  return `KSh ${value}`;
+  if (value === 0) return "$ 0";
+  if (value >= 1000000) return `$ ${(value / 1000000).toFixed(1)}M`;
+  if (value >= 1000) return `$ ${(value / 1000).toFixed(1)}K`;
+  return `$ ${value}`;
 };
 
 export function FinancialAnalytics() {

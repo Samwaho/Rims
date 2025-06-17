@@ -22,6 +22,7 @@ import { AlertCircle } from "lucide-react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { memo, useMemo } from "react";
 import Image from "next/image";
+import { getCountryByCode } from "@/lib/countries";
 
 interface OrderProduct {
   product: {
@@ -63,12 +64,13 @@ interface Order {
     pesapalTrackingId?: string;
   };
   shippingDetails: {
+    addressLine1: string;
+    addressLine2?: string;
     city: string;
-    subCounty: string;
-    estateName: string;
-    roadName: string;
-    apartmentName?: string;
-    houseNumber: string;
+    state: string;
+    postalCode: string;
+    country: string;
+    countryCode: string;
     contactNumber: string;
   };
   statusHistory?: Array<{
@@ -290,6 +292,72 @@ const StatusHistory = memo(
 
 StatusHistory.displayName = "StatusHistory";
 
+const ShippingDetailsDisplay = memo(({ shippingDetails }: { shippingDetails: Order["shippingDetails"] }) => {
+  // Get country information
+  const country = getCountryByCode(shippingDetails.countryCode);
+
+  return (
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
+      <div className="sm:col-span-2">
+        <p className="text-gray-600 mb-1">Address</p>
+        <p className="font-medium text-gray-900">
+          {shippingDetails.addressLine1}
+          {shippingDetails.addressLine2 && (
+            <>
+              <br />
+              {shippingDetails.addressLine2}
+            </>
+          )}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-gray-600 mb-1">City</p>
+        <p className="font-medium text-gray-900">
+          {shippingDetails.city}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-gray-600 mb-1">State/Province</p>
+        <p className="font-medium text-gray-900">
+          {shippingDetails.state}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-gray-600 mb-1">Postal/ZIP Code</p>
+        <p className="font-medium text-gray-900">
+          {shippingDetails.postalCode}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-gray-600 mb-1">Country</p>
+        <div className="flex items-center gap-2">
+          {country?.flag && (
+            <span className="text-lg" role="img" aria-label={`${country.name} flag`}>
+              {country.flag}
+            </span>
+          )}
+          <p className="font-medium text-gray-900">
+            {shippingDetails.country}
+          </p>
+        </div>
+      </div>
+
+      <div>
+        <p className="text-gray-600 mb-1">Contact Number</p>
+        <p className="font-medium text-gray-900">
+          {shippingDetails.contactNumber}
+        </p>
+      </div>
+    </div>
+  );
+});
+
+ShippingDetailsDisplay.displayName = "ShippingDetailsDisplay";
+
 const isAxiosError = (error: any): error is import("axios").AxiosError => {
   return error.isAxiosError === true;
 };
@@ -482,52 +550,7 @@ export default function OrderConfirmationPage({
             <CardTitle>Shipping Details</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-sm">
-              <div>
-                <p className="text-gray-600 mb-1">City</p>
-                <p className="font-medium text-gray-900">
-                  {order.shippingDetails?.city || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600 mb-1">Sub County</p>
-                <p className="font-medium text-gray-900">
-                  {order.shippingDetails?.subCounty || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600 mb-1">Estate Name</p>
-                <p className="font-medium text-gray-900">
-                  {order.shippingDetails?.estateName || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600 mb-1">Road/Street Name</p>
-                <p className="font-medium text-gray-900">
-                  {order.shippingDetails?.roadName || "N/A"}
-                </p>
-              </div>
-              {order.shippingDetails?.apartmentName && (
-                <div>
-                  <p className="text-gray-600 mb-1">Apartment Name</p>
-                  <p className="font-medium text-gray-900">
-                    {order.shippingDetails.apartmentName}
-                  </p>
-                </div>
-              )}
-              <div>
-                <p className="text-gray-600 mb-1">House Number</p>
-                <p className="font-medium text-gray-900">
-                  {order.shippingDetails?.houseNumber || "N/A"}
-                </p>
-              </div>
-              <div>
-                <p className="text-gray-600 mb-1">Contact Number</p>
-                <p className="font-medium text-gray-900">
-                  {order.shippingDetails?.contactNumber || "N/A"}
-                </p>
-              </div>
-            </div>
+            <ShippingDetailsDisplay shippingDetails={order.shippingDetails} />
           </CardContent>
         </Card>
 

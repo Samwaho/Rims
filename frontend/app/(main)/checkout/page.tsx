@@ -56,6 +56,8 @@ import {
 } from "@/components/ui/form";
 import { getUserPaymentDetails } from "@/lib/actions";
 import Image from "next/image";
+import { CountrySelect } from "@/components/ui/country-select";
+import { getCountryByCode, getPhonePrefix, formatPhoneNumber } from "@/lib/countries";
 
 // Types
 interface Product {
@@ -113,15 +115,22 @@ const bankDetailsSchema = z.object({
 
 const shippingSchema = z.object({
   shippingDetails: z.object({
+    // New global format
+    addressLine1: z.string().min(1, "Address line 1 is required"),
+    addressLine2: z.string().optional(),
     city: z.string().min(1, "City is required"),
-    subCounty: z.string().min(1, "Sub County is required"),
-    estateName: z.string().min(1, "Estate name is required"),
-    roadName: z.string().min(1, "Road/Street name is required"),
+    state: z.string().min(1, "State/Province is required"),
+    postalCode: z.string().min(1, "Postal/ZIP code is required"),
+    country: z.string().min(1, "Country is required"),
+    countryCode: z.string().min(2, "Country code is required"),
+    contactNumber: z.string().min(1, "Contact number is required"),
+
+    // Legacy fields for backward compatibility (optional)
+    subCounty: z.string().optional(),
+    estateName: z.string().optional(),
+    roadName: z.string().optional(),
     apartmentName: z.string().optional(),
-    houseNumber: z.string().min(1, "House number is required"),
-    contactNumber: z.string().regex(/^\+254\d{9}$/, {
-      message: "Please enter a valid phone number starting with +254",
-    }),
+    houseNumber: z.string().optional(),
   }),
 });
 
@@ -389,13 +398,22 @@ export default function CheckoutPage() {
       }
 
       const shippingDetails = {
+        // New global format
+        addressLine1: form.getValues("shippingDetails.addressLine1"),
+        addressLine2: form.getValues("shippingDetails.addressLine2"),
         city: form.getValues("shippingDetails.city"),
+        state: form.getValues("shippingDetails.state"),
+        postalCode: form.getValues("shippingDetails.postalCode"),
+        country: form.getValues("shippingDetails.country"),
+        countryCode: form.getValues("shippingDetails.countryCode"),
+        contactNumber: form.getValues("shippingDetails.contactNumber"),
+
+        // Legacy fields for backward compatibility
         subCounty: form.getValues("shippingDetails.subCounty"),
         estateName: form.getValues("shippingDetails.estateName"),
         roadName: form.getValues("shippingDetails.roadName"),
         apartmentName: form.getValues("shippingDetails.apartmentName"),
         houseNumber: form.getValues("shippingDetails.houseNumber"),
-        contactNumber: form.getValues("shippingDetails.contactNumber"),
       };
 
       // Calculate order totals - shipping is already included in product price
@@ -551,13 +569,22 @@ export default function CheckoutPage() {
     resolver: zodResolver(shippingSchema),
     defaultValues: {
       shippingDetails: {
+        // New global format
+        addressLine1: "",
+        addressLine2: "",
         city: "",
+        state: "",
+        postalCode: "",
+        country: "United States",
+        countryCode: "US",
+        contactNumber: "+1",
+
+        // Legacy fields for backward compatibility
         subCounty: "",
         estateName: "",
         roadName: "",
         apartmentName: "",
         houseNumber: "",
-        contactNumber: "+254",
       },
     },
   });
