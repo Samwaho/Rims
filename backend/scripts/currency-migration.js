@@ -22,7 +22,42 @@ async function connectToDatabase() {
 
 // Function to convert KES to USD and round to 2 decimal places
 function convertKESToUSD(kesAmount) {
+  // Handle invalid numbers
+  if (isNaN(kesAmount) || kesAmount === null || kesAmount === undefined) {
+    return 0;
+  }
   return Math.round(kesAmount * KES_TO_USD_RATE * 100) / 100;
+}
+
+// Function to fix product data issues
+function fixProductData(product) {
+  const fixes = [];
+
+  // Fix NaN buyingPrice
+  if (isNaN(product.buyingPrice) || product.buyingPrice === null || product.buyingPrice === undefined) {
+    product.buyingPrice = 0;
+    fixes.push('Fixed NaN buyingPrice');
+  }
+
+  // Fix missing deliveryTime
+  if (!product.deliveryTime || product.deliveryTime.trim() === '') {
+    product.deliveryTime = '3-5 business days';
+    fixes.push('Added default deliveryTime');
+  }
+
+  // Fix invalid productType
+  const validProductTypes = ['oem', 'aftermarket', 'alloy'];
+  if (!validProductTypes.includes(product.productType)) {
+    if (product.productType === 'original') {
+      product.productType = 'oem';
+      fixes.push('Changed productType from "original" to "oem"');
+    } else {
+      product.productType = 'aftermarket';
+      fixes.push(`Changed invalid productType "${product.productType}" to "aftermarket"`);
+    }
+  }
+
+  return fixes;
 }
 
 // Function to preview the conversion without making changes
@@ -75,12 +110,15 @@ async function executeConversion() {
         const originalPrice = product.price;
         const originalBuyingPrice = product.buyingPrice;
         const originalShippingCost = product.shippingCost;
-        
+
+        // Fix any data issues first
+        const fixes = fixProductData(product);
+
         // Convert prices
         product.price = convertKESToUSD(originalPrice);
-        product.buyingPrice = convertKESToUSD(originalBuyingPrice);
+        product.buyingPrice = convertKESToUSD(product.buyingPrice); // Use fixed value
         product.shippingCost = convertKESToUSD(originalShippingCost);
-        
+
         // Save the updated product
         await product.save();
         
@@ -97,6 +135,9 @@ async function executeConversion() {
           console.log(`   Price: KES ${originalPrice.toLocaleString()} → USD ${product.price}`);
           console.log(`   Buying Price: KES ${originalBuyingPrice.toLocaleString()} → USD ${product.buyingPrice}`);
           console.log(`   Shipping Cost: KES ${originalShippingCost.toLocaleString()} → USD ${product.shippingCost}`);
+          if (fixes.length > 0) {
+            console.log(`   Fixes applied: ${fixes.join(', ')}`);
+          }
         }
         
       } catch (error) {
