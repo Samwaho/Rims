@@ -22,7 +22,6 @@ import {
   Mail,
   Loader2,
   Building,
-  Home,
   Truck,
   Shield,
   Lock,
@@ -57,7 +56,7 @@ import {
 import { getUserPaymentDetails } from "@/lib/actions";
 import Image from "next/image";
 import { CountrySelect } from "@/components/ui/country-select";
-import { getCountryByCode, getPhonePrefix, formatPhoneNumber } from "@/lib/countries";
+import { getCountryByCode } from "@/lib/countries";
 
 // Types
 interface Product {
@@ -648,58 +647,96 @@ export default function CheckoutPage() {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {renderFormField({
-                  name: "city",
-                  label: "City",
-                  placeholder: "e.g., Nairobi",
-                  icon: Building,
-                })}
-                {renderFormField({
-                  name: "subCounty",
-                  label: "Sub County",
-                  placeholder: "e.g., Westlands",
-                  icon: MapPin,
-                })}
-              </div>
-
+              {/* Address Line 1 */}
               {renderFormField({
-                name: "estateName",
-                label: "Estate Name",
-                placeholder: "e.g., Kileleshwa",
-                icon: Home,
-              })}
-
-              {renderFormField({
-                name: "roadName",
-                label: "Road/Street Name",
-                placeholder: "e.g., Moi Avenue",
+                name: "addressLine1",
+                label: "Address Line 1",
+                placeholder: "e.g., 123 Main Street",
                 icon: MapPin,
               })}
 
+              {/* Address Line 2 (Optional) */}
               {renderFormField({
-                name: "apartmentName",
-                label: "Apartment Name",
-                placeholder: "e.g., Sunrise Apartments",
+                name: "addressLine2",
+                label: "Address Line 2",
+                placeholder: "e.g., Apt 4B, Suite 100",
                 icon: Building,
                 required: false,
               })}
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* City */}
                 {renderFormField({
-                  name: "houseNumber",
-                  label: "House Number",
-                  placeholder: "e.g., A1",
-                  icon: Home,
+                  name: "city",
+                  label: "City",
+                  placeholder: "e.g., New York",
+                  icon: Building,
                 })}
+
+                {/* State/Province */}
+                {renderFormField({
+                  name: "state",
+                  label: "State/Province",
+                  placeholder: "e.g., New York",
+                  icon: MapPin,
+                })}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Postal Code */}
+                {renderFormField({
+                  name: "postalCode",
+                  label: "Postal/ZIP Code",
+                  placeholder: "e.g., 10001",
+                  icon: MapPin,
+                })}
+
+                {/* Contact Number */}
                 {renderFormField({
                   name: "contactNumber",
                   label: "Contact Number",
-                  placeholder: "+254712345678",
+                  placeholder: "+1234567890",
                   icon: PhoneIcon,
                   type: "tel",
                 })}
               </div>
+
+              {/* Country Selection */}
+              <FormField
+                control={form.control}
+                name="shippingDetails.country"
+                render={() => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700">
+                      Country
+                      <span className="text-red-500 ml-1">*</span>
+                    </FormLabel>
+                    <FormControl>
+                      <CountrySelect
+                        value={form.watch("shippingDetails.countryCode")}
+                        onValueChange={(countryCode) => {
+                          const country = getCountryByCode(countryCode);
+                          if (country) {
+                            form.setValue("shippingDetails.countryCode", countryCode);
+                            form.setValue("shippingDetails.country", country.name);
+
+                            // Update phone number prefix if contact number is empty or has old prefix
+                            const currentPhone = form.getValues("shippingDetails.contactNumber");
+                            if (!currentPhone || currentPhone.startsWith("+1") || currentPhone.startsWith("+254")) {
+                              form.setValue("shippingDetails.contactNumber", country.phonePrefix);
+                            }
+                          }
+                        }}
+                        placeholder="Select your country"
+                        showFlag={true}
+                        showPhonePrefix={true}
+                        className="w-full"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
             </div>
           </CardContent>
         </Card>
