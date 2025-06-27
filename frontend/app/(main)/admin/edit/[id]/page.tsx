@@ -62,7 +62,7 @@ export default function EditProductPage({
       shippingCost: 0,
       deliveryTime: "",
       stock: 0,
-      category: "general" as const,
+      category: "rims",
       productType: "oem" as const,
       size: "",
       madeIn: "",
