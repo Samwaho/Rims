@@ -6,7 +6,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "dev": "nodemon",
-    "start": "node index.js"
+    "start": "node index.js",
+    "migrate:categories": "node scripts/migrate-categories.js"
   },
   "keywords": [],
   "author": "",

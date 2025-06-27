@@ -29,6 +29,9 @@ const PRODUCT_TYPES = ["oem", "aftermarket", "alloy"];
 
 const PRODUCT_CONDITIONS = ["new", "used"];
 
+// New categories with their specific requirements
+const PRODUCT_CATEGORIES = ["rims", "offroad-rims", "tyres", "accessories", "cars"];
+
 const productSchema = new mongoose.Schema(
   {
     name: {
@@ -77,14 +80,119 @@ const productSchema = new mongoose.Schema(
     category: {
       type: String,
       required: true,
-      enum: ["general", "wheels", "tyres"],
+      enum: PRODUCT_CATEGORIES,
     },
+    // Make size optional for some categories
     size: {
       type: String,
-      required: true,
+      required: function() {
+        // Size is required for rims, offroad-rims, and tyres
+        return ["rims", "offroad-rims", "tyres"].includes(this.category);
+      },
     },
     madeIn: {
       type: String,
+    },
+    // Category-specific fields
+    brand: {
+      type: String,
+      required: function() {
+        // Brand is required for all categories except accessories
+        return this.category !== "accessories";
+      },
+    },
+    model: {
+      type: String,
+      required: function() {
+        // Model is required for cars and some other categories
+        return ["cars", "rims", "offroad-rims", "tyres"].includes(this.category);
+      },
+    },
+    // Car-specific fields
+    year: {
+      type: Number,
+      required: function() {
+        return this.category === "cars";
+      },
+      min: 1900,
+      max: new Date().getFullYear() + 1,
+    },
+    mileage: {
+      type: Number,
+      required: function() {
+        return this.category === "cars";
+      },
+      min: 0,
+    },
+    fuelType: {
+      type: String,
+      enum: ["petrol", "diesel", "electric", "hybrid", "lpg"],
+      required: function() {
+        return this.category === "cars";
+      },
+    },
+    transmission: {
+      type: String,
+      enum: ["manual", "automatic", "cvt"],
+      required: function() {
+        return this.category === "cars";
+      },
+    },
+    // Rim-specific fields
+    wheelDiameter: {
+      type: Number,
+      required: function() {
+        return ["rims", "offroad-rims"].includes(this.category);
+      },
+      min: 13,
+      max: 26,
+    },
+    wheelWidth: {
+      type: Number,
+      required: function() {
+        return ["rims", "offroad-rims"].includes(this.category);
+      },
+      min: 4,
+      max: 15,
+    },
+    offset: {
+      type: Number,
+      required: function() {
+        return ["rims", "offroad-rims"].includes(this.category);
+      },
+    },
+    boltPattern: {
+      type: String,
+      required: function() {
+        return ["rims", "offroad-rims"].includes(this.category);
+      },
+    },
+    // Tyre-specific fields
+    loadIndex: {
+      type: String,
+      required: function() {
+        return this.category === "tyres";
+      },
+    },
+    speedRating: {
+      type: String,
+      required: function() {
+        return this.category === "tyres";
+      },
+    },
+    treadDepth: {
+      type: Number,
+      required: function() {
+        return this.category === "tyres";
+      },
+      min: 0,
+    },
+    // Accessory-specific fields
+    compatibility: {
+      type: [String],
+      required: function() {
+        return this.category === "accessories";
+      },
     },
     specifications: [
       {
@@ -111,7 +219,7 @@ const productSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: PRODUCT_TYPES,
-      default: "original",
+      default: "oem",
     },
     condition: {
       type: String,
@@ -166,4 +274,4 @@ const Product = mongoose.model("Product", productSchema);
 
 export default Product;
 
-export { PRODUCT_TYPES, PRODUCT_CONDITIONS };
+export { PRODUCT_TYPES, PRODUCT_CONDITIONS, PRODUCT_CATEGORIES };

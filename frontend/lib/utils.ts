@@ -107,7 +107,7 @@ const specificationSchema = z.object({
   value: z.string().min(1, "Specification value is required"),
 });
 
-export const PRODUCT_CATEGORIES = ["tyres", "wheels", "general"] as const;
+export const PRODUCT_CATEGORIES = ["rims", "offroad-rims", "tyres", "accessories", "cars"] as const;
 
 export type ProductCategory = (typeof PRODUCT_CATEGORIES)[number];
 
@@ -115,7 +115,72 @@ export const PRODUCT_TYPES = ["oem", "aftermarket", "alloy"] as const;
 
 export const PRODUCT_CONDITIONS = ["new", "used"] as const;
 
-export const productSchema = z.object({
+// Category-specific specifications
+export const CATEGORY_SPECIFICATIONS = {
+  rims: [
+    { name: "Brand", value: "" },
+    { name: "Model", value: "" },
+    { name: "Wheel Diameter", value: "" },
+    { name: "Wheel Width", value: "" },
+    { name: "Offset", value: "" },
+    { name: "Hub Bore", value: "" },
+    { name: "Bolt Pattern", value: "" },
+    { name: "Wheel Material", value: "" },
+    { name: "Color", value: "" },
+    { name: "Finish", value: "" },
+  ],
+  "offroad-rims": [
+    { name: "Brand", value: "" },
+    { name: "Model", value: "" },
+    { name: "Wheel Diameter", value: "" },
+    { name: "Wheel Width", value: "" },
+    { name: "Offset", value: "" },
+    { name: "Hub Bore", value: "" },
+    { name: "Bolt Pattern", value: "" },
+    { name: "Wheel Material", value: "" },
+    { name: "Color", value: "" },
+    { name: "Finish", value: "" },
+    { name: "Load Rating", value: "" },
+    { name: "Beadlock", value: "" },
+  ],
+  tyres: [
+    { name: "Brand", value: "" },
+    { name: "Model", value: "" },
+    { name: "Size", value: "" },
+    { name: "Load Index", value: "" },
+    { name: "Speed Rating", value: "" },
+    { name: "Tread Pattern", value: "" },
+    { name: "Tread Depth", value: "" },
+    { name: "Tyre Type", value: "" },
+    { name: "Season", value: "" },
+    { name: "Run Flat", value: "" },
+  ],
+  accessories: [
+    { name: "Brand", value: "" },
+    { name: "Model", value: "" },
+    { name: "Compatibility", value: "" },
+    { name: "Material", value: "" },
+    { name: "Color", value: "" },
+    { name: "Weight", value: "" },
+    { name: "Dimensions", value: "" },
+  ],
+  cars: [
+    { name: "Brand", value: "" },
+    { name: "Model", value: "" },
+    { name: "Year", value: "" },
+    { name: "Mileage", value: "" },
+    { name: "Fuel Type", value: "" },
+    { name: "Transmission", value: "" },
+    { name: "Engine Size", value: "" },
+    { name: "Color", value: "" },
+    { name: "Body Type", value: "" },
+    { name: "Doors", value: "" },
+    { name: "Seats", value: "" },
+  ],
+} as const;
+
+// Base product schema
+const baseProductSchema = z.object({
   name: z.string().min(1, "Name is required"),
   description: z.string().min(1, "Description is required"),
   price: z.number().min(0, "Price must be a positive number"),
@@ -123,19 +188,114 @@ export const productSchema = z.object({
   shippingCost: z.number().min(0, "Shipping cost must be a positive number"),
   deliveryTime: z.string().min(1, "Delivery time is required"),
   stock: z.number().int().min(0, "Stock must be a positive integer"),
-  category: z.enum(["general", "wheels", "tyres"] as const),
-  size: z.string().min(1, "Size is required"),
+  category: z.enum(PRODUCT_CATEGORIES),
   madeIn: z.string().optional(),
   images: z.any(),
-  specifications: z.array(
-    z.object({
-      name: z.string(),
-      value: z.string(),
-    })
-  ),
+  specifications: z.array(specificationSchema),
   productType: z.enum(PRODUCT_TYPES),
   condition: z.enum(PRODUCT_CONDITIONS).optional(),
+  brand: z.string().optional(),
+  model: z.string().optional(),
 });
+
+// Category-specific schemas
+const rimSchema = baseProductSchema.extend({
+  category: z.literal("rims"),
+  size: z.string().min(1, "Size is required for rims"),
+  brand: z.string().min(1, "Brand is required"),
+  model: z.string().min(1, "Model is required"),
+  wheelDiameter: z.number().min(13).max(26),
+  wheelWidth: z.number().min(4).max(15),
+  offset: z.number(),
+  boltPattern: z.string().min(1, "Bolt pattern is required"),
+});
+
+const offroadRimSchema = baseProductSchema.extend({
+  category: z.literal("offroad-rims"),
+  size: z.string().min(1, "Size is required for offroad rims"),
+  brand: z.string().min(1, "Brand is required"),
+  model: z.string().min(1, "Model is required"),
+  wheelDiameter: z.number().min(13).max(26),
+  wheelWidth: z.number().min(4).max(15),
+  offset: z.number(),
+  boltPattern: z.string().min(1, "Bolt pattern is required"),
+});
+
+const tyreSchema = baseProductSchema.extend({
+  category: z.literal("tyres"),
+  size: z.string().min(1, "Size is required for tyres"),
+  brand: z.string().min(1, "Brand is required"),
+  model: z.string().min(1, "Model is required"),
+  loadIndex: z.string().min(1, "Load index is required"),
+  speedRating: z.string().min(1, "Speed rating is required"),
+  treadDepth: z.number().min(0, "Tread depth must be positive"),
+});
+
+const accessorySchema = baseProductSchema.extend({
+  category: z.literal("accessories"),
+  size: z.string().optional(),
+  brand: z.string().optional(),
+  model: z.string().optional(),
+  compatibility: z.array(z.string()).min(1, "At least one compatibility option is required"),
+});
+
+const carSchema = baseProductSchema.extend({
+  category: z.literal("cars"),
+  size: z.string().optional(),
+  brand: z.string().min(1, "Brand is required"),
+  model: z.string().min(1, "Model is required"),
+  year: z.number().min(1900).max(new Date().getFullYear() + 1),
+  mileage: z.number().min(0, "Mileage must be positive"),
+  fuelType: z.enum(["petrol", "diesel", "electric", "hybrid", "lpg"]),
+  transmission: z.enum(["manual", "automatic", "cvt"]),
+});
+
+// Union schema for all categories
+export const productSchema = z.discriminatedUnion("category", [
+  rimSchema,
+  offroadRimSchema,
+  tyreSchema,
+  accessorySchema,
+  carSchema,
+]);
+
+// Helper function to get category-specific schema
+export const getCategorySchema = (category: ProductCategory) => {
+  switch (category) {
+    case "rims":
+      return rimSchema;
+    case "offroad-rims":
+      return offroadRimSchema;
+    case "tyres":
+      return tyreSchema;
+    case "accessories":
+      return accessorySchema;
+    case "cars":
+      return carSchema;
+    default:
+      return baseProductSchema;
+  }
+};
+
+// Helper function to get category-specific specifications
+export const getCategorySpecifications = (category: ProductCategory) => {
+  return CATEGORY_SPECIFICATIONS[category] || [];
+};
+
+// Helper function to check if a field is required for a category
+export const isFieldRequired = (field: string, category: ProductCategory) => {
+  const schema = getCategorySchema(category);
+  const fieldSchema = schema.shape[field as keyof typeof schema.shape];
+  
+  if (!fieldSchema) return false;
+  
+  // Check if the field is required in the schema
+  if (fieldSchema instanceof z.ZodOptional) {
+    return false;
+  }
+  
+  return true;
+};
 
 // Add order-related schemas
 export const orderSchema = z.object({

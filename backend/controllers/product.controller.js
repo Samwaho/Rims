@@ -62,11 +62,31 @@ const validateProductData = (productData) => {
     "buyingPrice",
     "stock",
     "category",
-    "size",
     "shippingCost",
     "deliveryTime",
     "productType",
   ];
+
+  // Add category-specific required fields
+  const category = productData.category;
+  if (category) {
+    switch (category) {
+      case "rims":
+      case "offroad-rims":
+        requiredFields.push("size", "brand", "model", "wheelDiameter", "wheelWidth", "offset", "boltPattern");
+        break;
+      case "tyres":
+        requiredFields.push("size", "brand", "model", "loadIndex", "speedRating", "treadDepth");
+        break;
+      case "cars":
+        requiredFields.push("brand", "model", "year", "mileage", "fuelType", "transmission");
+        break;
+      case "accessories":
+        requiredFields.push("compatibility");
+        break;
+    }
+  }
+
   const missingFields = requiredFields.filter(
     (field) => !productData[field] && productData[field] !== 0
   );
@@ -145,6 +165,22 @@ export const createProduct = async (req, res, next) => {
       shippingCost: parseFloat(productData.shippingCost) || 0,
       stock: parseInt(productData.stock) || 0,
     };
+
+    // Handle category-specific numeric fields
+    if (productData.category === "rims" || productData.category === "offroad-rims") {
+      sanitizedProductData.wheelDiameter = parseFloat(productData.wheelDiameter) || 0;
+      sanitizedProductData.wheelWidth = parseFloat(productData.wheelWidth) || 0;
+      sanitizedProductData.offset = parseFloat(productData.offset) || 0;
+    }
+
+    if (productData.category === "tyres") {
+      sanitizedProductData.treadDepth = parseFloat(productData.treadDepth) || 0;
+    }
+
+    if (productData.category === "cars") {
+      sanitizedProductData.year = parseInt(productData.year) || 0;
+      sanitizedProductData.mileage = parseFloat(productData.mileage) || 0;
+    }
 
     const missingFields = validateProductData(sanitizedProductData);
     if (missingFields.length) {
@@ -226,6 +262,22 @@ export const updateProduct = async (req, res, next) => {
       shippingCost,
       deliveryTime: productData.deliveryTime || "2-3 business days", // Add default value
     };
+
+    // Handle category-specific numeric fields
+    if (productData.category === "rims" || productData.category === "offroad-rims") {
+      sanitizedProductData.wheelDiameter = Number(productData.wheelDiameter) || 0;
+      sanitizedProductData.wheelWidth = Number(productData.wheelWidth) || 0;
+      sanitizedProductData.offset = Number(productData.offset) || 0;
+    }
+
+    if (productData.category === "tyres") {
+      sanitizedProductData.treadDepth = Number(productData.treadDepth) || 0;
+    }
+
+    if (productData.category === "cars") {
+      sanitizedProductData.year = Number(productData.year) || 0;
+      sanitizedProductData.mileage = Number(productData.mileage) || 0;
+    }
 
     console.log("Sanitized product data:", sanitizedProductData);
 

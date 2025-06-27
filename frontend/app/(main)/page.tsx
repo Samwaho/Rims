@@ -68,9 +68,11 @@ export default function Home() {
     >
       <main className="min-h-screen">
         <Hero />
-        <Categories />
-        <Banner />
-        <CTA />
+        <div className="mx-auto max-w-[100rem] px-1 py-8 sm:px-2 md:px-4 lg:px-6">
+          <Categories />
+          <Banner />
+          <CTA />
+        </div>
       </main>
     </Suspense>
   );

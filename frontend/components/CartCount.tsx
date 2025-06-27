@@ -48,8 +48,8 @@ const CartCountInner = memo(() => {
   if (count === 0) return null;
 
   return (
-    <span className="absolute -top-2 -right-2 bg-primary text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center">
-      {count}
+    <span className="absolute -top-2 -right-2 bg-gradient-to-r from-red-500 to-red-600 text-white text-xs font-bold rounded-full h-6 w-6 flex items-center justify-center shadow-lg border-2 border-white transition-all duration-300 hover:scale-110">
+      {count > 99 ? "99+" : count}
     </span>
   );
 });

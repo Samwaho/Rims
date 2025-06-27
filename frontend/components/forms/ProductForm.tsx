@@ -15,8 +15,8 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import * as z from "zod";
-import { productSchema } from "@/lib/utils";
-import { memo, useEffect } from "react";
+import { productSchema, getCategorySpecifications, isFieldRequired } from "@/lib/utils";
+import { memo, useEffect, useState } from "react";
 import {
   PRODUCT_CATEGORIES,
   PRODUCT_TYPES,
@@ -29,6 +29,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
 
 export type ProductFormValues = z.infer<typeof productSchema> & {
   images: File[];
@@ -37,6 +38,21 @@ export type ProductFormValues = z.infer<typeof productSchema> & {
   deliveryTime: string;
   productType: string;
   condition: string;
+  // Category-specific fields
+  brand?: string;
+  model?: string;
+  year?: number;
+  mileage?: number;
+  fuelType?: string;
+  transmission?: string;
+  wheelDiameter?: number;
+  wheelWidth?: number;
+  offset?: number;
+  boltPattern?: string;
+  loadIndex?: string;
+  speedRating?: string;
+  treadDepth?: number;
+  compatibility?: string[];
 };
 
 export interface Specification {
@@ -154,27 +170,11 @@ const formatNumberWithCommas = (value: string) => {
   return parts.join(".");
 };
 
-const WHEEL_SPECIFICATIONS: Specification[] = [
-  { name: "Brand", value: "" },
-  { name: "Model", value: "" },
-  { name: "Wheel Diameter", value: "" },
-  { name: "Wheel Width", value: "" },
-  { name: "Offset", value: "" },
-  { name: "Hub Bore", value: "" },
-  { name: "Bolt Pattern", value: "" },
-  { name: "Wheel Material", value: "" },
-  { name: "Color", value: "" },
-];
-
-const TYRE_SPECIFICATIONS: Specification[] = [
-  { name: "Brand", value: "" },
-  { name: "Model", value: "" },
-  { name: "Size", value: "" },
-  { name: "Load index", value: "" },
-  { name: "Traction", value: "" },
-  { name: "Tread wear", value: "" },
-  { name: "Speed index", value: "" },
-  { name: "Tyre type", value: "" },
+// Compatibility options for accessories
+const COMPATIBILITY_OPTIONS = [
+  "Toyota", "Honda", "Ford", "Chevrolet", "Nissan", "BMW", "Mercedes", "Audi", 
+  "Volkswagen", "Hyundai", "Kia", "Mazda", "Subaru", "Lexus", "Acura", "Infiniti",
+  "Universal", "Custom"
 ];
 
 export const ProductForm = memo(function ProductForm({
@@ -192,6 +192,8 @@ export const ProductForm = memo(function ProductForm({
   setIsDirty,
   existingImages,
 }: ProductFormProps) {
+  const [selectedCategory, setSelectedCategory] = useState<string>("");
+
   useEffect(() => {
     if (existingImages?.length) {
       const dummyFiles = existingImages.map(
@@ -203,23 +205,18 @@ export const ProductForm = memo(function ProductForm({
 
   const addSpecification = () => {
     const currentSpecs = form.getValues("specifications") || [];
-    const newSpec = { name: "", value: "" };
-    form.setValue("specifications", [...currentSpecs, newSpec], {
-      shouldDirty: true,
-      shouldTouch: true,
-    });
+    form.setValue("specifications", [
+      ...currentSpecs,
+      { name: "", value: "" },
+    ]);
     setIsDirty?.(true);
   };
 
   const removeSpecification = (index: number) => {
-    const currentSpecs = form.getValues("specifications");
+    const currentSpecs = form.getValues("specifications") || [];
     form.setValue(
       "specifications",
-      currentSpecs.filter((_, i) => i !== index),
-      {
-        shouldDirty: true,
-        shouldTouch: true,
-      }
+      currentSpecs.filter((_, i) => i !== index)
     );
     setIsDirty?.(true);
   };
@@ -231,18 +228,549 @@ export const ProductForm = memo(function ProductForm({
   };
 
   const loadTemplateSpecifications = (category: string) => {
-    let templateSpecs: Specification[] = [];
-    if (category === "wheels") {
-      templateSpecs = [...WHEEL_SPECIFICATIONS];
-    } else if (category === "tyres") {
-      templateSpecs = [...TYRE_SPECIFICATIONS];
-    }
-
-    form.setValue("specifications", templateSpecs, {
+    const templateSpecs = getCategorySpecifications(category as any) || [];
+    // Create a mutable copy of the readonly array
+    const mutableSpecs = templateSpecs.map(spec => ({ ...spec }));
+    form.setValue("specifications", mutableSpecs, {
       shouldDirty: true,
       shouldTouch: true,
     });
     setIsDirty?.(true);
+  };
+
+  const renderCategorySpecificFields = () => {
+    const category = form.watch("category");
+    
+    if (!category) return null;
+
+    switch (category) {
+      case "rims":
+      case "offroad-rims":
+        return (
+          <>
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Brand *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter brand name"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Model *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter model name"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="wheelDiameter"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Wheel Diameter (inches) *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      placeholder="e.g., 18"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="wheelWidth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Wheel Width (inches) *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      placeholder="e.g., 8.5"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="offset"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Offset (mm) *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      placeholder="e.g., 35"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="boltPattern"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Bolt Pattern *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="e.g., 5x114.3"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+          </>
+        );
+
+      case "tyres":
+        return (
+          <>
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Brand *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter brand name"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Model *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter model name"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="loadIndex"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Load Index *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="e.g., 91"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="speedRating"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Speed Rating *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="e.g., V"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="treadDepth"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Tread Depth (mm) *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      placeholder="e.g., 8"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+          </>
+        );
+
+      case "cars":
+        return (
+          <>
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Brand *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter brand name"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Model *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter model name"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="year"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Year *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      placeholder="e.g., 2020"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="mileage"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Mileage (km) *
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      type="number"
+                      placeholder="e.g., 50000"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(Number(e.target.value));
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="fuelType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Fuel Type *
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 bg-white">
+                        <SelectValue placeholder="Select fuel type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="petrol">Petrol</SelectItem>
+                      <SelectItem value="diesel">Diesel</SelectItem>
+                      <SelectItem value="electric">Electric</SelectItem>
+                      <SelectItem value="hybrid">Hybrid</SelectItem>
+                      <SelectItem value="lpg">LPG</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="transmission"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Transmission *
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 bg-white">
+                        <SelectValue placeholder="Select transmission" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="manual">Manual</SelectItem>
+                      <SelectItem value="automatic">Automatic</SelectItem>
+                      <SelectItem value="cvt">CVT</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+          </>
+        );
+
+      case "accessories":
+        return (
+          <>
+            <FormField
+              control={form.control}
+              name="brand"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Brand
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter brand name (optional)"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="model"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Model
+                  </FormLabel>
+                  <FormControl>
+                    <Input
+                      {...field}
+                      placeholder="Enter model name (optional)"
+                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                      onChange={(e) => {
+                        field.onChange(e);
+                        handleFieldChange(e);
+                      }}
+                    />
+                  </FormControl>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <div className="col-span-2">
+              <FormLabel className="text-gray-700 font-medium">
+                Compatibility *
+              </FormLabel>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {COMPATIBILITY_OPTIONS.map((option) => (
+                  <div key={option} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={option}
+                      checked={form.watch("compatibility")?.includes(option) || false}
+                      onCheckedChange={(checked) => {
+                        const current = form.watch("compatibility") || [];
+                        if (checked) {
+                          form.setValue("compatibility", [...current, option]);
+                        } else {
+                          form.setValue("compatibility", current.filter(item => item !== option));
+                        }
+                        setIsDirty?.(true);
+                      }}
+                    />
+                    <label
+                      htmlFor={option}
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                    >
+                      {option}
+                    </label>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        );
+
+      default:
+        return null;
+    }
   };
 
   return (
@@ -295,27 +823,68 @@ export const ProductForm = memo(function ProductForm({
 
             <FormField
               control={form.control}
-              name="size"
+              name="category"
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-gray-700 font-medium">
-                    Size *
+                    Category *
                   </FormLabel>
-                  <FormControl>
-                    <Input
-                      {...field}
-                      placeholder="Enter size"
-                      className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
-                      onChange={(e) => {
-                        field.onChange(e);
-                        handleFieldChange(e);
-                      }}
-                    />
-                  </FormControl>
+                  <Select
+                    onValueChange={(value) => {
+                      field.onChange(value);
+                      setSelectedCategory(value);
+                      loadTemplateSpecifications(value);
+                      setIsDirty?.(true);
+                    }}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 bg-white">
+                        <SelectValue placeholder="Select a category" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PRODUCT_CATEGORIES.map((category) => (
+                        <SelectItem key={category} value={category}>
+                          {category.charAt(0).toUpperCase() + category.slice(1).replace('-', ' ')}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                   <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}
             />
+
+            {/* Size field - conditional based on category */}
+            {isFieldRequired("size", form.watch("category") as any) && (
+              <FormField
+                control={form.control}
+                name="size"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-gray-700 font-medium">
+                      Size *
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        placeholder="Enter size"
+                        className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
+                        onChange={(e) => {
+                          field.onChange(e);
+                          handleFieldChange(e);
+                        }}
+                      />
+                    </FormControl>
+                    <FormMessage className="text-red-500 text-sm" />
+                  </FormItem>
+                )}
+              />
+            )}
+
+            {/* Category-specific fields */}
+            {renderCategorySpecificFields()}
 
             <FormField
               control={form.control}
@@ -430,103 +999,11 @@ export const ProductForm = memo(function ProductForm({
                       placeholder="Enter stock quantity"
                       className="h-11 focus:ring-2 focus:ring-primary/20 bg-white"
                       onChange={(e) => {
-                        const value = e.target.value
-                          ? Number(e.target.value)
-                          : 0;
-                        field.onChange(value);
-                        handleFieldChange(e);
-                      }}
-                      value={field.value || ""}
-                    />
-                  </FormControl>
-                  <FormMessage className="text-red-500 text-sm" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="description"
-              render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel className="text-gray-700 font-medium">
-                    Description *
-                  </FormLabel>
-                  <FormControl>
-                    <Textarea
-                      {...field}
-                      placeholder="Enter product description"
-                      className="min-h-[120px] focus:ring-2 focus:ring-primary/20 resize-y bg-white"
-                      onChange={(e) => {
-                        field.onChange(e);
+                        field.onChange(Number(e.target.value));
                         handleFieldChange(e);
                       }}
                     />
                   </FormControl>
-                  <FormMessage className="text-red-500 text-sm" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="category"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">
-                    Category *
-                  </FormLabel>
-                  <Select
-                    onValueChange={(value) => {
-                      field.onChange(value);
-                      loadTemplateSpecifications(value);
-                      setIsDirty?.(true);
-                    }}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="h-11 bg-white">
-                        <SelectValue placeholder="Select a category" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {PRODUCT_CATEGORIES.map((category) => (
-                        <SelectItem key={category} value={category}>
-                          {category}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <FormMessage className="text-red-500 text-sm" />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              control={form.control}
-              name="productType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-gray-700 font-medium">
-                    Product Type *
-                  </FormLabel>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                  >
-                    <FormControl>
-                      <SelectTrigger className="h-11 bg-white">
-                        <SelectValue placeholder="Select product type" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      {PRODUCT_TYPES.map((type) => (
-                        <SelectItem key={type} value={type}>
-                          {type.charAt(0).toUpperCase() + type.slice(1)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
                   <FormMessage className="text-red-500 text-sm" />
                 </FormItem>
               )}
@@ -595,6 +1072,36 @@ export const ProductForm = memo(function ProductForm({
 
             <FormField
               control={form.control}
+              name="productType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-gray-700 font-medium">
+                    Product Type *
+                  </FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger className="h-11 bg-white">
+                        <SelectValue placeholder="Select product type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      {PRODUCT_TYPES.map((type) => (
+                        <SelectItem key={type} value={type}>
+                          {type.charAt(0).toUpperCase() + type.slice(1)}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <FormMessage className="text-red-500 text-sm" />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
               name="condition"
               render={({ field }) => (
                 <FormItem>
@@ -602,21 +1109,20 @@ export const ProductForm = memo(function ProductForm({
                     Condition
                   </FormLabel>
                   <Select
-                    onValueChange={(value) => {
-                      field.onChange(value === "unspecified" ? null : value);
-                      setIsDirty?.(true);
-                    }}
-                    value={field.value || "unspecified"}
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
                   >
                     <FormControl>
                       <SelectTrigger className="h-11 bg-white">
-                        <SelectValue placeholder="Select product condition (optional)" />
+                        <SelectValue placeholder="Select condition" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="unspecified">Not specified</SelectItem>
-                      <SelectItem value="new">New</SelectItem>
-                      <SelectItem value="used">Slightly Used</SelectItem>
+                      {PRODUCT_CONDITIONS.map((condition) => (
+                        <SelectItem key={condition} value={condition}>
+                          {condition.charAt(0).toUpperCase() + condition.slice(1)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                   <FormMessage className="text-red-500 text-sm" />
@@ -625,106 +1131,145 @@ export const ProductForm = memo(function ProductForm({
             />
           </div>
 
-          <fieldset className="space-y-4 border border-gray-200 p-6 rounded-xl bg-gray-50/50">
-            <legend className="text-lg font-semibold px-2 text-gray-700">
-              Product Images {imagePreview.length === 0 && "*"}
-            </legend>
-            <div className="space-y-4">
-              <Input
-                id="images"
-                type="file"
-                multiple
-                accept="image/*"
-                onChange={handleImageChange}
-                className="h-12 cursor-pointer focus:ring-2 focus:ring-primary/20 bg-white file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-primary file:text-white hover:file:bg-primary/90 transition-colors"
-              />
-              <p className="text-sm text-muted-foreground">
-                Maximum file size: 5MB. Supported formats: JPG, PNG, GIF
-              </p>
-              {imagePreview.length > 0 && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                  {imagePreview.map((url, index) => (
-                    <ImagePreview
-                      key={url}
-                      url={url}
-                      index={index}
-                      removeImage={removeImage}
-                      isExisting={
-                        existingImages && index < existingImages.length
-                      }
-                    />
-                  ))}
-                </div>
-              )}
-            </div>
-          </fieldset>
+          <FormField
+            control={form.control}
+            name="description"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel className="text-gray-700 font-medium">
+                  Description *
+                </FormLabel>
+                <FormControl>
+                  <Textarea
+                    {...field}
+                    placeholder="Enter product description"
+                    className="min-h-[120px] focus:ring-2 focus:ring-primary/20 bg-white resize-none"
+                    onChange={(e) => {
+                      field.onChange(e);
+                      handleFieldChange(e);
+                    }}
+                  />
+                </FormControl>
+                <FormMessage className="text-red-500 text-sm" />
+              </FormItem>
+            )}
+          />
 
-          <fieldset className="space-y-4 border border-gray-200 p-6 rounded-xl bg-gray-50/50">
-            <div className="flex items-center justify-between flex-wrap gap-4">
-              <legend className="text-lg font-semibold px-2 text-gray-700">
+          {/* Specifications Section */}
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-lg font-semibold text-gray-900">
                 Specifications
-              </legend>
+              </h3>
               <Button
                 type="button"
                 variant="outline"
+                size="sm"
                 onClick={addSpecification}
-                className="text-sm hover:bg-primary/10 transition-colors border-primary/20"
+                className="text-primary border-primary hover:bg-primary/10"
               >
                 <Plus className="w-4 h-4 mr-2" />
-                Add Custom Specification
+                Add Specification
               </Button>
             </div>
 
             <div className="space-y-4">
               {form.watch("specifications")?.map((spec, index) => (
                 <SpecificationField
-                  key={`spec-${index}`}
+                  key={index}
                   spec={spec}
                   index={index}
                   onNameChange={(value) => {
-                    const currentSpecs = [...form.getValues("specifications")];
-                    currentSpecs[index] = {
-                      ...currentSpecs[index],
-                      name: value,
-                    };
-                    form.setValue("specifications", currentSpecs, {
-                      shouldDirty: true,
-                      shouldTouch: true,
-                    });
+                    const currentSpecs = form.getValues("specifications") || [];
+                    currentSpecs[index].name = value;
+                    form.setValue("specifications", [...currentSpecs]);
                     setIsDirty?.(true);
                   }}
                   onValueChange={(value) => {
-                    const currentSpecs = [...form.getValues("specifications")];
-                    currentSpecs[index] = {
-                      ...currentSpecs[index],
-                      value: value,
-                    };
-                    form.setValue("specifications", currentSpecs, {
-                      shouldDirty: true,
-                      shouldTouch: true,
-                    });
+                    const currentSpecs = form.getValues("specifications") || [];
+                    currentSpecs[index].value = value;
+                    form.setValue("specifications", [...currentSpecs]);
                     setIsDirty?.(true);
                   }}
                   onRemove={() => removeSpecification(index)}
                 />
               ))}
             </div>
-          </fieldset>
+          </div>
 
-          <Button
-            type="submit"
-            className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 disabled:opacity-70 bg-primary hover:bg-primary/90"
-            disabled={isSubmitting || isUploading}
-          >
-            {isSubmitting || isUploading ? (
-              <div className="flex items-center justify-center gap-2">
-                <Loader2 className="w-5 h-5 animate-spin" />
-                {isUploading ? "Uploading Images..." : "Saving..."}
+          {/* Images Section */}
+          <div className="space-y-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                Product Images
+              </h3>
+              <div className="flex items-center justify-center w-full">
+                <label
+                  htmlFor="image-upload"
+                  className="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-300 border-dashed rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 transition-colors"
+                >
+                  <div className="flex flex-col items-center justify-center pt-5 pb-6">
+                    <Loader2 className="w-8 h-8 mb-4 text-gray-500" />
+                    <p className="mb-2 text-sm text-gray-500">
+                      <span className="font-semibold">Click to upload</span> or drag
+                      and drop
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      PNG, JPG, GIF up to 5MB
+                    </p>
+                  </div>
+                  <input
+                    id="image-upload"
+                    type="file"
+                    multiple
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageChange}
+                  />
+                </label>
               </div>
-            ) : (
-              submitLabel
+            </div>
+
+            {imagePreview.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {imagePreview.map((url, index) => (
+                  <ImagePreview
+                    key={index}
+                    url={url}
+                    index={index}
+                    removeImage={removeImage}
+                  />
+                ))}
+              </div>
             )}
-          </Button>
+          </div>
+
+          <div className="flex justify-end gap-4">
+            {onBack && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={onBack}
+                className="px-8"
+              >
+                Cancel
+              </Button>
+            )}
+            <Button
+              type="submit"
+              disabled={isSubmitting || isUploading}
+              className="px-8"
+            >
+              {isSubmitting || isUploading ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isUploading ? "Uploading..." : "Saving..."}
+                </>
+              ) : (
+                submitLabel
+              )}
+            </Button>
+          </div>
         </form>
       </Form>
     </Card>

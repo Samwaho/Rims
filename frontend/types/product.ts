@@ -7,7 +7,7 @@ export interface Specification {
   value: string;
 }
 
-// Review type to avoid using any[]
+// Review interface
 export interface Review {
   _id: string;
   user: string;
@@ -35,6 +35,31 @@ export type ProductType = (typeof PRODUCT_TYPES)[number];
 // Product condition type
 export type ProductCondition = "new" | "used";
 
+// Category-specific field interfaces
+export interface RimFields {
+  wheelDiameter: number;
+  wheelWidth: number;
+  offset: number;
+  boltPattern: string;
+}
+
+export interface TyreFields {
+  loadIndex: string;
+  speedRating: string;
+  treadDepth: number;
+}
+
+export interface CarFields {
+  year: number;
+  mileage: number;
+  fuelType: "petrol" | "diesel" | "electric" | "hybrid" | "lpg";
+  transmission: "manual" | "automatic" | "cvt";
+}
+
+export interface AccessoryFields {
+  compatibility: string[];
+}
+
 // Main product interface with strict typing
 export interface Product {
   _id: string;
@@ -48,7 +73,7 @@ export interface Product {
   images: string[];
   category: ProductCategory;
   productType: ProductType;
-  size: string;
+  size?: string; // Optional for accessories and cars
   madeIn?: string;
   specifications: Specification[];
   reviews: Review[];
@@ -58,6 +83,30 @@ export interface Product {
   createdAt: string;
   updatedAt: string;
   priceDetails?: PriceDetails;
+  
+  // Category-specific fields
+  brand?: string;
+  model?: string;
+  
+  // Rim-specific fields
+  wheelDiameter?: number;
+  wheelWidth?: number;
+  offset?: number;
+  boltPattern?: string;
+  
+  // Tyre-specific fields
+  loadIndex?: string;
+  speedRating?: string;
+  treadDepth?: number;
+  
+  // Car-specific fields
+  year?: number;
+  mileage?: number;
+  fuelType?: "petrol" | "diesel" | "electric" | "hybrid" | "lpg";
+  transmission?: "manual" | "automatic" | "cvt";
+  
+  // Accessory-specific fields
+  compatibility?: string[];
 }
 
 // Product filter state with precise types
@@ -75,12 +124,29 @@ export interface ProductFormValues {
   price: number;
   stock: number;
   category: ProductCategory;
-  productType: (typeof PRODUCT_TYPES)[number];
-  size: string;
-  madeIn: string;
+  productType: ProductType;
+  size?: string;
+  madeIn?: string;
   images: any;
   specifications: Specification[];
   buyingPrice: number;
   shippingCost: number;
   deliveryTime: string;
+  condition?: ProductCondition;
+  
+  // Category-specific fields
+  brand?: string;
+  model?: string;
+  year?: number;
+  mileage?: number;
+  fuelType?: "petrol" | "diesel" | "electric" | "hybrid" | "lpg";
+  transmission?: "manual" | "automatic" | "cvt";
+  wheelDiameter?: number;
+  wheelWidth?: number;
+  offset?: number;
+  boltPattern?: string;
+  loadIndex?: string;
+  speedRating?: string;
+  treadDepth?: number;
+  compatibility?: string[];
 }
