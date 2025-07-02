@@ -29,62 +29,31 @@ const CategoryIcon = ({ category }: { category: string }) => {
 const CategoryCard = memo(
   ({
     title,
-    description,
     image,
-    href,
-    buttonText,
     category,
   }: {
     title: string;
-    description: string;
     image: any;
-    href: string;
-    buttonText: string;
     category: string;
   }) => (
-    <div className="group relative overflow-hidden rounded-3xl bg-white shadow-lg transition-all duration-500 hover:shadow-2xl hover:scale-[1.02] border border-gray-100">
-      {/* Background Image */}
-      <div className="aspect-[4/3] relative overflow-hidden">
+    <div className="group flex flex-col items-center bg-white rounded-3xl shadow-lg border border-gray-100 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:scale-[1.02]">
+      {/* Image at the top */}
+      <div className="w-full aspect-[4/3] relative">
         <Image
           src={image}
           alt={title}
           fill
-          className="object-cover transition-transform duration-700 group-hover:scale-110"
+          className="object-cover w-full h-full"
           sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
         />
-        {/* Gradient Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent" />
-        
-        {/* Category Icon */}
-        <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-sm rounded-full p-2 border border-white/30">
+      </div>
+      {/* Category Name and Icon */}
+      <div className="flex flex-col items-center p-4 w-full">
+        <div className="flex items-center gap-2">
           <CategoryIcon category={category} />
-        </div>
-        
-        {/* Hover Effect Overlay */}
-        <div className="absolute inset-0 bg-gradient-to-t from-primary/20 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
-      </div>
-      
-      {/* Content */}
-      <div className="absolute bottom-0 left-0 right-0 p-6 text-white">
-        <div className="space-y-3">
-          <h3 className="text-2xl font-bold leading-tight group-hover:text-primary transition-colors duration-300">
-            {title}
-          </h3>
-          <p className="text-gray-200 text-sm leading-relaxed opacity-90 group-hover:opacity-100 transition-opacity duration-300">
-            {description}
-          </p>
-          <Link
-            href={href}
-            className="inline-flex items-center text-sm font-semibold text-white hover:text-primary transition-all duration-300 group/link bg-white/10 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20 hover:bg-white/20 hover:border-white/40"
-          >
-            {buttonText}
-            <ArrowIcon />
-          </Link>
+          <h3 className="text-lg font-bold text-gray-900">{title}</h3>
         </div>
       </div>
-      
-      {/* Shine Effect */}
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000" />
     </div>
   )
 );
@@ -105,7 +74,7 @@ const categories = [
     title: "Premium Tyres",
     description:
       "Experience superior performance with our collection of high-quality tyres, engineered for exceptional grip, durability, and driving comfort.",
-    image: "https://images.unsplash.com/photo-1717355736782-23bcd0748c7d?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8Mjh8fHRpcmV8ZW58MHx8MHx8fDA%3D",
+    image: "https://images.unsplash.com/photo-1693441466798-cd56329c4377?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NDB8fHR5cmVzfGVufDB8fDB8fHww",
     href: "/products?category=tyres",
     buttonText: "Shop Tyres",
     category: "tyres",
@@ -123,7 +92,7 @@ const categories = [
     title: "Off-Road Rims",
     description:
       "Built for adventure with our rugged off-road rims, engineered to withstand the toughest terrains while maintaining superior performance.",
-    image: "https://images.unsplash.com/photo-1600718042170-36ac0c42e203?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1yZWxhdGVkfDl8fHxlbnwwfHx8fHw%3D",
+    image: "https://images.unsplash.com/photo-1560380968-8753ed6f51ab?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NHx8b2Zmcm9hZCUyMHJpbXN8ZW58MHx8MHx8fDA%3D",
     href: "/products?category=offroad-rims",
     buttonText: "Shop Off-Road Rims",
     category: "offroad-rims",
@@ -134,7 +103,7 @@ const categories = [
     title: "Cars",
     description:
       "Find your perfect vehicle from our carefully curated selection of quality cars, all thoroughly inspected and ready for the road.",
-    image: "https://images.unsplash.com/photo-1580273916550-e323be2ae537?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8OHx8Y2FyfGVufDB8fDB8fHww",
+    image: "https://images.unsplash.com/photo-1565043666747-69f6646db940?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTF8fGF1dG9tb3RpdmV8ZW58MHx8MHx8fDA%3D",
     href: "/products?category=cars",
     buttonText: "Browse Cars",
     category: "cars",
@@ -176,7 +145,7 @@ const Categories = memo(() => {
         </div>
 
         {/* Categories Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 md:gap-10 max-w-7xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-8 md:gap-10 max-w-7xl mx-auto">
           {categories.map((category, index) => (
             <div
               key={category.title}
@@ -186,7 +155,7 @@ const Categories = memo(() => {
                 animationFillMode: 'both'
               }}
             >
-              <CategoryCard {...category} />
+              <CategoryCard title={category.title} image={category.image} category={category.category} />
             </div>
           ))}
         </div>

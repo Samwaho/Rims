@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Star, Shield, Zap } from "lucide-react";
 
 const HERO_BG =
-  "https://images.unsplash.com/photo-1532581140115-3e355d1ed1de?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8NjB8fGNhcnN8ZW58MHx8MHx8fDA%3D";
+  "https://images.unsplash.com/photo-1577777028895-1bd4d7b3e9a7?w=600&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTE1fHxhdXRvbW90aXZlfGVufDB8fDB8fHww";
 
 const badges = [
   { icon: Star, text: "Premium Quality" },
@@ -33,11 +33,11 @@ export default function Hero() {
         </div>
         {/* Headline */}
         <h1 className="text-4xl sm:text-5xl md:text-6xl font-extrabold text-white text-center mb-4 drop-shadow-lg">
-          Find Your Perfect <span className="text-primary">Wheels</span>
+          Welcome to your <span className="text-primary">Automotive Hub</span>
         </h1>
         {/* Subheadline */}
         <p className="max-w-2xl text-center text-lg md:text-xl text-white/90 mb-8 font-medium">
-          Discover our curated collection of premium <span className="font-bold text-white">rims, tyres, accessories, and cars</span>. Experience unmatched quality, style, and performance with every mile.
+          Discover our curated collection of Premium <span className="font-bold text-white"> Rims, Tires, Accessories and Cars</span>. Experience unmatched quality, style, and performance with every mile.
         </p>
         {/* CTAs */}
         <div className="flex flex-col sm:flex-row gap-4 mb-8">
